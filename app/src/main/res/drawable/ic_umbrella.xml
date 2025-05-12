@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- 우산 윗부분 -->
+    <path
+        android:fillColor="#FF9EB5"
+        android:pathData="M12,2 C6.5,2 2,6.5 2,12 L12,12 L22,12 C22,6.5 17.5,2 12,2 Z" />
+
+    <!-- 우산 손잡이 -->
+    <path
+        android:strokeColor="#FF9EB5"
+        android:strokeWidth="2"
+        android:pathData="M12,12 L12,20 C12,21.1 12.9,22 14,22 C15.1,22 16,21.1 16,20 L16,19" />
+
+    <!-- 우산 패턴 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1"
+        android:pathData="M12,2 C9,3 6,5 4,8" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1"
+        android:pathData="M12,2 C15,3 18,5 20,8" />
+</vector>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#73c0ff</color>
+    <color name="colorPrimaryDark">#78c9d6</color>
+    <color name="colorAccent">#ff9eb5</color>
+
+    <!-- 앱 전용 색상 -->
+    <color name="sunny_bg">#73c0ff</color>
+    <color name="rainy_bg">#78c9d6</color>
+    <color name="alert_color">#ff9eb5</color>
+    <color name="widget_bg">#FFFFFF</color>
+    <color name="text_primary">#333333</color>
+    <color name="text_secondary">#666666</color>
+    <color name="text_on_alert">#FFFFFF</color>
+</resources>

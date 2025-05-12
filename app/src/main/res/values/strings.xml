@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">아 맞다 우산!</string>
+
+    <!-- 메인 화면 -->
+    <string name="location_time_format">%s %s %s</string>
+    <string name="temperature_format">%d°</string>
+    <string name="loading_weather">날씨 정보를 불러오는 중이다냥~</string>
+
+    <!-- 날씨 메시지 - 맑은 날 -->
+    <string name="weather_clear_cool">지금은 맑고 선선하다냥\n계속 엎어지게 긴팔티를 입어보자냥</string>
+    <string name="weather_clear_warm">지금은 맑고 따뜻하다냥\n반팔 입고 산책하기 좋은 날이다냥~</string>
+    <string name="weather_clear_hot">지금은 맑고 덥다냥\n시원한 음료수를 준비하자냥!</string>
+
+    <!-- 날씨 메시지 - 구름 -->
+    <string name="weather_clouds_cool">지금은 구름 많고 선선하다냥\n계속 엎어지게 긴팔티를 입어보자냥</string>
+    <string name="weather_clouds_warm">지금은 구름 많고 따뜻하다냥\n가볍게 입고 나가도 좋을 것 같다냥~</string>
+
+    <!-- 날씨 메시지 - 비 -->
+    <string name="weather_rain_light">지금 비가 오고 선선하다냥\n깜짝게 서둘러 우산을 챙겨보자냥</string>
+    <string name="weather_rain_heavy">지금 비가 많이 온다냥!\n서둘러 우산을 챙겨야겠다냥!</string>
+
+    <!-- 위치 설정 화면 -->
+    <string name="title_location">장소 설정</string>
+    <string name="add_location">장소 추가</string>
+    <string name="no_locations">등록된 장소가 없다냥!\n장소를 추가해보자냥~</string>
+    <string name="location_name_hint">장소 이름 (예: 집, 회사)</string>
+    <string name="latitude_hint">위도 (예: 37.5665)</string>
+    <string name="longitude_hint">경도 (예: 126.9780)</string>
+    <string name="frequent_location">자주 가는 장소</string>
+    <string name="enable_notification">이 장소에 대한 알림 활성화</string>
+    <string name="location_added">새 장소가 추가되었다냥!</string>
+    <string name="location_deleted">장소가 삭제되었다냥!</string>
+    <string name="location_coords">위도: %1$.6f, 경도: %2$.6f</string>
+
+    <!-- 알림 설정 화면 -->
+    <string name="title_settings">알림 설정</string>
+    <string name="morning_alert">아침 날씨 알림</string>
+    <string name="enable_morning_alert">아침 날씨 알림 활성화</string>
+    <string name="alert_time">알림 시간</string>
+    <string name="rain_alert">비소식 알림</string>
+    <string name="enable_rain_alert">비 예보 시 알림 활성화</string>
+    <string name="notification_method">알림 방식</string>
+    <string name="vibration">진동</string>
+    <string name="sound">소리</string>
+    <string name="alert_enabled">알림이 활성화되었다냥!</string>
+    <string name="alert_disabled">알림이 비활성화되었다냥!</string>
+    <string name="time_set">알림 시간이 %s로 설정되었다냥!</string>
+
+    <!-- 알림 메시지 -->
+    <string name="umbrella_needed_title">우산이 필요하다냥!</string>
+    <string name="umbrella_needed_message">오늘 비가 올 예정이다냥! 우산을 챙겨라냥~</string>
+    <string name="umbrella_not_needed_title">맑은 하루다냥~</string>
+    <string name="umbrella_not_needed_message">오늘은 비 소식이 없다냥! 편안한 하루 보내라냥~</string>
+
+    <!-- 오류 메시지 -->
+    <string name="error_location">위치 정보를 가져올 수 없다냥...</string>
+    <string name="error_weather">날씨 정보를 가져올 수 없다냥...</string>
+    <string name="error_permission">위치 권한이 필요하다냥!</string>
+    <string name="error_input">모든 정보를 입력해달라냥!</string>
+    <string name="error_latitude">위도는 -90에서 90 사이의 값이어야 한다냥!</string>
+    <string name="error_longitude">경도는 -180에서 180 사이의 값이어야 한다냥!</string>
+
+    <!-- 날씨 상태 -->
+    <string name="weather_clear">맑음</string>
+    <string name="weather_clouds">구름 많음</string>
+    <string name="weather_rain">비</string>
+    <string name="weather_drizzle">이슬비</string>
+    <string name="weather_thunderstorm">뇌우</string>
+    <string name="weather_snow">눈</string>
+    <string name="weather_mist">안개</string>
+
+    <!-- 위젯 -->
+    <string name="widget_loading">날씨 확인 중이다냥~</string>
+    <string name="widget_description">아 맞다 우산! 날씨 위젯</string>
+
+    <!-- 기타 -->
+    <string name="precipitation_format">강수량: %1$.1fmm</string>
+    <string name="precipitation_none">강수량: 없음</string>
+    <string name="humidity_format">습도: %d%%</string>
+    <string name="default_location">서울</string>
+    <string name="cancel">취소</string>
+    <string name="add">추가</string>
+    <string name="delete">삭제</string>
+    <string name="save">저장</string>
+</resources>

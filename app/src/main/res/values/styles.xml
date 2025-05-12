@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 기본 앱 테마 -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+
+        <!-- 상태 표시줄 설정 -->
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- 버튼 스타일 -->
+        <item name="materialButtonStyle">@style/CatButton</item>
+
+        <!-- 카드 스타일 -->
+        <item name="materialCardViewStyle">@style/CatCard</item>
+
+        <!-- 다이얼로그 스타일 -->
+        <item name="materialAlertDialogTheme">@style/CatDialog</item>
+    </style>
+
+    <!-- 버튼 스타일 -->
+    <style name="CatButton" parent="Widget.MaterialComponents.Button">
+        <item name="cornerRadius">24dp</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <!-- 카드 스타일 -->
+    <style name="CatCard" parent="Widget.MaterialComponents.CardView">
+        <item name="cardCornerRadius">24dp</item>
+        <item name="cardElevation">4dp</item>
+        <item name="contentPadding">16dp</item>
+    </style>
+
+    <!-- 다이얼로그 스타일 -->
+    <style name="CatDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="shapeAppearanceOverlay">@style/CatDialogCorners</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/CatDialogTitle</item>
+        <item name="buttonBarPositiveButtonStyle">@style/CatDialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/CatDialogButton</item>
+    </style>
+
+    <!-- 다이얼로그 모서리 스타일 -->
+    <style name="CatDialogCorners">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <!-- 다이얼로그 제목 스타일 -->
+    <style name="CatDialogTitle" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- 다이얼로그 버튼 스타일 -->
+    <style name="CatDialogButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <!-- 입력 필드 스타일 -->
+    <style name="CatInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusBottomEnd">16dp</item>
+        <item name="boxCornerRadiusBottomStart">16dp</item>
+        <item name="boxCornerRadiusTopEnd">16dp</item>
+        <item name="boxCornerRadiusTopStart">16dp</item>
+        <item name="boxStrokeColor">@color/colorAccent</item>
+        <item name="hintTextColor">@color/colorAccent</item>
+    </style>
+
+    <!-- FAB 스타일 -->
+    <style name="CatFab" parent="Widget.MaterialComponents.FloatingActionButton">
+        <item name="backgroundTint">@color/alert_color</item>
+        <item name="tint">#ffffff</item>
+        <item name="borderWidth">0dp</item>
+    </style>
+
+    <!-- 스위치 스타일 -->
+    <style name="CatSwitch" parent="Widget.MaterialComponents.CompoundButton.Switch">
+        <item name="thumbTint">@color/colorAccent</item>
+        <item name="trackTint">@color/colorPrimary</item>
+    </style>
+
+    <!-- 텍스트 스타일 - 대제목 -->
+    <style name="TextHeadline" parent="TextAppearance.MaterialComponents.Headline5">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- 텍스트 스타일 - 소제목 -->
+    <style name="TextSubheader" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- 텍스트 스타일 - 본문 -->
+    <style name="TextBody" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- 텍스트 스타일 - 캡션 -->
+    <style name="TextCaption" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+</resources>

@@ -1,0 +1,38 @@
+package com.example.umbrellaalert;
+
+import android.app.Application;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.os.Build;
+
+import com.example.umbrellaalert.service.WeatherUpdateService;
+
+public class UmbrellaApplication extends Application {
+
+    public static final String CHANNEL_ID = "umbrella_alert_channel";
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        // 알림 채널 생성
+        createNotificationChannel();
+
+        // 서비스 시작
+        WeatherUpdateService.startService(this);
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "우산 알림",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("날씨 상태에 따른 우산 필요 여부 알림");
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+}
