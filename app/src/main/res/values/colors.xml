@@ -14,15 +14,16 @@
     <color name="rainy_bg_start">#E6EEF2</color>
     <color name="rainy_bg_end">#D8E5EB</color>
 
-    <color name="alert_color">#FF2D55</color>
-    <color name="alert_color_light">#FFE5EB</color>
+    <color name="alert_color">#5AC8FA</color>
+    <color name="alert_color_light">#E5F5FF</color>
+    <color name="alert_color_dark">#0091EA</color>
 
     <color name="widget_bg">#FFFFFF</color>
     <color name="widget_bg_translucent">#F5FFFFFF</color>
 
     <color name="text_primary">#000000</color>
     <color name="text_secondary">#555555</color>
-    <color name="text_on_alert">#FFFFFF</color>
+    <color name="text_on_alert">#000000</color>
 
     <!-- iOS 시스템 색상 -->
     <color name="ios_blue">#007AFF</color>
