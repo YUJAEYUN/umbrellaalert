@@ -8,74 +8,97 @@
     tools:context=".ui.location.LocationActivity">
 
     <!-- 상단 바 -->
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/top_bar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/sunny_bg"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
+        android:background="@color/colorPrimary"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
             android:id="@+id/btn_back"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_back" />
+            android:src="@drawable/ic_back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_weight="1"
             android:text="장소 설정"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/widget_bg"
             android:textSize="18sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 장소 목록 -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_locations"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:padding="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/top_bar" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- 빈 상태 메시지 -->
-    <LinearLayout
-        android:id="@+id/empty_view"
+    <!-- 장소 목록 카드 -->
+    <androidx.cardview.widget.CardView
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="32dp"
+        android:layout_height="0dp"
+        android:layout_margin="16dp"
+        app:cardBackgroundColor="@color/widget_bg"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/top_bar">
+
+        <!-- 장소 목록 -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_locations"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:padding="16dp" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- 빈 상태 메시지 -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/empty_view"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        app:cardBackgroundColor="@color/widget_bg"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/top_bar"
         app:layout_constraintWidth_percent="0.8">
 
-        <!-- 고양이 이미지 -->
-        <ImageView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:src="@drawable/cat_sunny" />
-
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:gravity="center"
-            android:text="등록된 장소가 없다냥!\n장소를 추가해보자냥~"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp" />
-    </LinearLayout>
+            android:orientation="vertical"
+            android:padding="32dp">
+
+            <!-- 고양이 이미지 -->
+            <ImageView
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@drawable/cat_sunny" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="등록된 장소가 없다냥!\n장소를 추가해보자냥~"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
     <!-- 장소 추가 버튼 -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
