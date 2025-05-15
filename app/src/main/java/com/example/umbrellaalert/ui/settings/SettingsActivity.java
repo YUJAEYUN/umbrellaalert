@@ -3,6 +3,7 @@ package com.example.umbrellaalert.ui.settings;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
+import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,6 +12,8 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.TimePicker;
 import android.widget.Toast;
+
+import com.example.umbrellaalert.widget.WeatherWidgetProvider;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
@@ -38,6 +41,8 @@ public class SettingsActivity extends AppCompatActivity {
     private static final String KEY_SOUND = "sound_enabled";
     private static final String KEY_MORNING_HOUR = "morning_hour";
     private static final String KEY_MORNING_MINUTE = "morning_minute";
+    private static final String KEY_WIDGET_ENABLED = "widget_enabled";
+    private static final String KEY_WIDGET_AUTO_UPDATE = "widget_auto_update";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,6 +110,24 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
+        // 위젯 활성화 스위치
+        binding.switchWidget.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                preferences.edit().putBoolean(KEY_WIDGET_ENABLED, isChecked).apply();
+                updateWidgetSettings(isChecked);
+            }
+        });
+
+        // 위젯 자동 업데이트 스위치
+        binding.switchWidgetAutoUpdate.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                preferences.edit().putBoolean(KEY_WIDGET_AUTO_UPDATE, isChecked).apply();
+                updateWidgetUpdateSettings(isChecked);
+            }
+        });
+
         // 아침 알림 시간 설정
         binding.timePickerContainer.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -120,6 +143,8 @@ public class SettingsActivity extends AppCompatActivity {
         binding.switchRainAlert.setChecked(preferences.getBoolean(KEY_RAIN_ALERT, true));
         binding.switchVibration.setChecked(preferences.getBoolean(KEY_VIBRATION, true));
         binding.switchSound.setChecked(preferences.getBoolean(KEY_SOUND, true));
+        binding.switchWidget.setChecked(preferences.getBoolean(KEY_WIDGET_ENABLED, false));
+        binding.switchWidgetAutoUpdate.setChecked(preferences.getBoolean(KEY_WIDGET_AUTO_UPDATE, true));
 
         // 아침 알림 시간 로드 및 표시
         int hour = preferences.getInt(KEY_MORNING_HOUR, 7);
@@ -195,6 +220,35 @@ public class SettingsActivity extends AppCompatActivity {
             // 알람 취소
             alarmManager.cancel(morningAlarmIntent);
             Toast.makeText(this, "아침 알림이 비활성화되었습니다", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * 위젯 활성화/비활성화 설정
+     */
+    private void updateWidgetSettings(boolean isEnabled) {
+        if (isEnabled) {
+            // 위젯 활성화 로직
+            Intent intent = new Intent(this, WeatherWidgetProvider.class);
+            intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+            sendBroadcast(intent);
+            Toast.makeText(this, "날씨 위젯이 활성화되었습니다", Toast.LENGTH_SHORT).show();
+        } else {
+            // 위젯 비활성화 로직
+            Toast.makeText(this, "날씨 위젯이 비활성화되었습니다", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * 위젯 자동 업데이트 설정
+     */
+    private void updateWidgetUpdateSettings(boolean isEnabled) {
+        if (isEnabled) {
+            // 위젯 자동 업데이트 활성화
+            Toast.makeText(this, "위젯 자동 업데이트가 활성화되었습니다", Toast.LENGTH_SHORT).show();
+        } else {
+            // 위젯 자동 업데이트 비활성화
+            Toast.makeText(this, "위젯 자동 업데이트가 비활성화되었습니다", Toast.LENGTH_SHORT).show();
         }
     }
 }
