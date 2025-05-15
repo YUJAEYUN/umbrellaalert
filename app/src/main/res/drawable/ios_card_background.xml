@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 그림자 효과 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#10000000" />
+            <corners android:radius="16dp" />
+            <padding
+                android:bottom="1dp"
+                android:left="1dp"
+                android:right="1dp"
+                android:top="1dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#08000000" />
+            <corners android:radius="16dp" />
+            <padding
+                android:bottom="1dp"
+                android:left="1dp"
+                android:right="1dp"
+                android:top="1dp" />
+        </shape>
+    </item>
+    <!-- 카드 배경 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/ios_card_background" />
+            <corners android:radius="16dp" />
+            <stroke android:color="#20000000" android:width="0.5dp" />
+        </shape>
+    </item>
+</layer-list>

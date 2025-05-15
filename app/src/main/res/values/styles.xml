@@ -1,23 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 기본 앱 테마 -->
+    <!-- 기본 앱 테마 (iOS 스타일) -->
     <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorPrimary">@color/ios_blue</item>
+        <item name="colorPrimaryDark">@color/ios_blue</item>
+        <item name="colorAccent">@color/ios_blue</item>
 
-        <!-- 상태 표시줄 설정 -->
-        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <!-- 상태 표시줄 설정 (iOS 스타일) -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+
+        <!-- 배경 설정 -->
+        <item name="android:windowBackground">@color/ios_background</item>
 
         <!-- 버튼 스타일 -->
-        <item name="materialButtonStyle">@style/CatButton</item>
+        <item name="materialButtonStyle">@style/iOSButton</item>
 
         <!-- 카드 스타일 -->
-        <item name="materialCardViewStyle">@style/CatCard</item>
+        <item name="materialCardViewStyle">@style/iOSCard</item>
 
         <!-- 다이얼로그 스타일 -->
-        <item name="materialAlertDialogTheme">@style/CatDialog</item>
+        <item name="materialAlertDialogTheme">@style/iOSDialog</item>
     </style>
 
     <!-- 버튼 스타일 -->
@@ -114,5 +119,62 @@
     <style name="TextCaption" parent="TextAppearance.MaterialComponents.Caption">
         <item name="android:textColor">@color/text_secondary</item>
         <item name="android:textSize">14sp</item>
+    </style>
+
+    <!-- iOS 스타일 버튼 -->
+    <style name="iOSButton" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+        <item name="cornerRadius">12dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="backgroundTint">@color/ios_card_background</item>
+        <item name="rippleColor">@color/ios_blue</item>
+        <item name="android:textColor">@color/ios_blue</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <!-- iOS 스타일 카드 -->
+    <style name="iOSCard" parent="Widget.MaterialComponents.CardView">
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="contentPadding">0dp</item>
+        <item name="cardBackgroundColor">@color/widget_bg_translucent</item>
+    </style>
+
+    <!-- iOS 스타일 다이얼로그 -->
+    <style name="iOSDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorPrimary">@color/ios_blue</item>
+        <item name="colorAccent">@color/ios_blue</item>
+        <item name="shapeAppearanceOverlay">@style/iOSDialogCorners</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/iOSDialogTitle</item>
+        <item name="buttonBarPositiveButtonStyle">@style/iOSDialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/iOSDialogButton</item>
+    </style>
+
+    <!-- iOS 스타일 다이얼로그 모서리 -->
+    <style name="iOSDialogCorners">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+
+    <!-- iOS 스타일 다이얼로그 제목 -->
+    <style name="iOSDialogTitle" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textSize">17sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <!-- iOS 스타일 다이얼로그 버튼 -->
+    <style name="iOSDialogButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/ios_blue</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.01</item>
     </style>
 </resources>

@@ -72,15 +72,19 @@ public class WeatherWidget extends AppWidgetProvider {
         views.setTextViewText(R.id.widget_temperature,
                 String.format(Locale.getDefault(), "%.1f°C", weather.getTemperature()));
 
-        // 메시지 및 배경색 업데이트
+        // 메시지 및 배경색 업데이트 (iOS 스타일)
         if (weather.isNeedUmbrella()) {
             views.setTextViewText(R.id.widget_message, "우산이 필요하다냥!");
             views.setInt(R.id.widget_container, "setBackgroundResource", R.drawable.widget_bg_rainy);
             views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella);
+            // RemoteViews에서는 setShadowLayer 직접 호출 불가능
+            // 그림자 효과는 XML에서 정의해야 함
         } else {
             views.setTextViewText(R.id.widget_message, "오늘은 맑은 하루다냥~");
             views.setInt(R.id.widget_container, "setBackgroundResource", R.drawable.widget_bg_sunny);
             views.setImageViewResource(R.id.widget_icon, R.drawable.ic_weather_sunny);
+            // RemoteViews에서는 setShadowLayer 직접 호출 불가능
+            // 그림자 효과는 XML에서 정의해야 함
         }
 
         // 위젯 업데이트

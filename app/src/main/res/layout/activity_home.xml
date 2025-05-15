@@ -35,14 +35,14 @@
             android:src="@drawable/cat_sunny" />
     </FrameLayout>
 
-    <!-- 고양이 말풍선 메시지 -->
+    <!-- 고양이 말풍선 메시지 (iOS 스타일) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/message_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        app:cardBackgroundColor="@color/widget_bg"
-        app:cardCornerRadius="24dp"
+        app:cardBackgroundColor="@color/ios_card_background"
+        app:cardCornerRadius="16dp"
         app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -57,18 +57,19 @@
             android:text="날씨 정보를 불러오는 중이다냥~"
             android:textAlignment="center"
             android:textColor="@color/text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textSize="17sp"
+            android:fontFamily="sans-serif"
+            android:letterSpacing="-0.01" />
     </androidx.cardview.widget.CardView>
 
-    <!-- 날씨 정보 카드 -->
+    <!-- 날씨 정보 카드 (iOS 스타일) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/weather_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        app:cardBackgroundColor="@color/widget_bg"
-        app:cardCornerRadius="24dp"
+        app:cardBackgroundColor="@color/ios_card_background"
+        app:cardCornerRadius="16dp"
         app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -87,8 +88,9 @@
                 android:layout_height="wrap_content"
                 android:text="현재 날씨"
                 android:textColor="@color/text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="-0.01"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -111,7 +113,8 @@
                 android:text="--°C"
                 android:textColor="@color/text_primary"
                 android:textSize="42sp"
-                android:textStyle="bold"
+                android:fontFamily="sans-serif-light"
+                android:letterSpacing="-0.02"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -186,14 +189,14 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- 우산 알림 카드 -->
+    <!-- 우산 알림 카드 (iOS 스타일) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/umbrella_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         app:cardBackgroundColor="@color/alert_color"
-        app:cardCornerRadius="24dp"
+        app:cardCornerRadius="16dp"
         app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -223,8 +226,13 @@
                 android:layout_marginStart="16dp"
                 android:text="날씨 정보를 확인 중이다냥!"
                 android:textColor="@color/text_on_alert"
-                android:textSize="18sp"
-                android:textStyle="bold"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="-0.01"
+                android:shadowColor="#40000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="2"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/umbrella_icon"
@@ -250,9 +258,11 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:backgroundTint="@color/widget_bg"
+            android:backgroundTint="@color/ios_blue"
             android:text="장소 설정"
-            android:textColor="@color/text_primary" />
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:fontFamily="sans-serif-medium" />
 
         <Button
             android:id="@+id/btn_settings"
@@ -260,9 +270,11 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:backgroundTint="@color/widget_bg"
+            android:backgroundTint="@color/ios_blue"
             android:text="알림 설정"
-            android:textColor="@color/text_primary" />
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:fontFamily="sans-serif-medium" />
     </LinearLayout>
 
     <!-- 로딩 인디케이터 -->

@@ -222,12 +222,12 @@ public class HomeActivity extends AppCompatActivity implements LocationService.L
     private void updateWeatherUI(Weather weather) {
         currentWeather = weather;
 
-        // 배경색 설정 (날씨에 따라)
+        // 배경 설정 (날씨에 따라)
         if (weather.isNeedUmbrella()) {
-            binding.mainContainer.setBackgroundColor(getResources().getColor(R.color.rainy_bg, null));
+            binding.mainContainer.setBackgroundResource(R.drawable.ios_background_rainy);
             binding.catImage.setImageResource(R.drawable.cat_rainy);
         } else {
-            binding.mainContainer.setBackgroundColor(getResources().getColor(R.color.sunny_bg, null));
+            binding.mainContainer.setBackgroundResource(R.drawable.ios_background_sunny);
             binding.catImage.setImageResource(R.drawable.cat_sunny);
         }
 

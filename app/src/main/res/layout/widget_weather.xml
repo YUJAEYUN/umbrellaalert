@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg_sunny"
-    android:padding="8dp">
+    android:padding="12dp">
 
     <ImageView
         android:id="@+id/widget_icon"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
-        android:src="@drawable/ic_weather_sunny" />
+        android:src="@drawable/ic_weather_sunny"
+        android:alpha="0.9" />
 
     <TextView
         android:id="@+id/widget_temperature"
@@ -22,21 +24,31 @@
         android:layout_alignParentTop="true"
         android:text="--°C"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:textSize="22sp"
+        android:fontFamily="sans-serif-light"
+        android:textStyle="bold"
+        android:shadowColor="#40000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="2" />
 
     <TextView
         android:id="@+id/widget_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="10dp"
         android:layout_toEndOf="@id/widget_icon"
         android:layout_toStartOf="@id/widget_temperature"
         android:ellipsize="end"
         android:maxLines="1"
         android:text="날씨 확인 중이다냥~"
         android:textColor="#FFFFFF"
-        android:textSize="14sp" />
+        android:fontFamily="sans-serif"
+        android:textSize="15sp"
+        android:shadowColor="#40000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="2" />
 
 </RelativeLayout>

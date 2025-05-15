@@ -1,15 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#73c0ff</color>
-    <color name="colorPrimaryDark">#78c9d6</color>
-    <color name="colorAccent">#ff9eb5</color>
+    <!-- iOS 스타일 색상 팔레트 -->
+    <color name="colorPrimary">#007AFF</color>
+    <color name="colorPrimaryDark">#0062CC</color>
+    <color name="colorAccent">#FF2D55</color>
 
-    <!-- 앱 전용 색상 -->
-    <color name="sunny_bg">#73c0ff</color>
-    <color name="rainy_bg">#78c9d6</color>
-    <color name="alert_color">#ff9eb5</color>
+    <!-- 앱 전용 색상 - iOS 스타일 -->
+    <color name="sunny_bg">#F2F6FF</color>
+    <color name="sunny_bg_start">#E0F4FF</color>
+    <color name="sunny_bg_end">#C9E9FF</color>
+
+    <color name="rainy_bg">#F0F4F7</color>
+    <color name="rainy_bg_start">#E6EEF2</color>
+    <color name="rainy_bg_end">#D8E5EB</color>
+
+    <color name="alert_color">#FF2D55</color>
+    <color name="alert_color_light">#FFE5EB</color>
+
     <color name="widget_bg">#FFFFFF</color>
-    <color name="text_primary">#333333</color>
-    <color name="text_secondary">#666666</color>
+    <color name="widget_bg_translucent">#F5FFFFFF</color>
+
+    <color name="text_primary">#000000</color>
+    <color name="text_secondary">#555555</color>
     <color name="text_on_alert">#FFFFFF</color>
+
+    <!-- iOS 시스템 색상 -->
+    <color name="ios_blue">#007AFF</color>
+    <color name="ios_green">#34C759</color>
+    <color name="ios_indigo">#5856D6</color>
+    <color name="ios_orange">#FF9500</color>
+    <color name="ios_pink">#FF2D55</color>
+    <color name="ios_purple">#AF52DE</color>
+    <color name="ios_red">#FF3B30</color>
+    <color name="ios_teal">#5AC8FA</color>
+    <color name="ios_yellow">#FFCC00</color>
+
+    <!-- 배경 색상 -->
+    <color name="ios_background">#F2F2F7</color>
+    <color name="ios_card_background">#FFFFFF</color>
 </resources>
