@@ -21,6 +21,7 @@ import androidx.appcompat.widget.SwitchCompat;
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.databinding.ActivitySettingsBinding;
 import com.example.umbrellaalert.receiver.AlarmReceiver;
+import com.example.umbrellaalert.service.PersistentNotificationService;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -43,6 +44,7 @@ public class SettingsActivity extends AppCompatActivity {
     private static final String KEY_MORNING_MINUTE = "morning_minute";
     private static final String KEY_WIDGET_ENABLED = "widget_enabled";
     private static final String KEY_WIDGET_AUTO_UPDATE = "widget_auto_update";
+    private static final String KEY_PERSISTENT_NOTIFICATION = "persistent_notification_enabled";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,6 +130,15 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
+        // 상태바 알림 스위치
+        binding.switchPersistentNotification.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                preferences.edit().putBoolean(KEY_PERSISTENT_NOTIFICATION, isChecked).apply();
+                PersistentNotificationService.setEnabled(SettingsActivity.this, isChecked);
+            }
+        });
+
         // 아침 알림 시간 설정
         binding.timePickerContainer.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -145,6 +156,7 @@ public class SettingsActivity extends AppCompatActivity {
         binding.switchSound.setChecked(preferences.getBoolean(KEY_SOUND, true));
         binding.switchWidget.setChecked(preferences.getBoolean(KEY_WIDGET_ENABLED, false));
         binding.switchWidgetAutoUpdate.setChecked(preferences.getBoolean(KEY_WIDGET_AUTO_UPDATE, true));
+        binding.switchPersistentNotification.setChecked(preferences.getBoolean(KEY_PERSISTENT_NOTIFICATION, false));
 
         // 아침 알림 시간 로드 및 표시
         int hour = preferences.getInt(KEY_MORNING_HOUR, 7);

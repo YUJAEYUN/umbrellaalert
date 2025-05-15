@@ -43,6 +43,13 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <!-- 상태바 날씨 알림 서비스 -->
+        <service
+            android:name=".service.PersistentNotificationService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <!-- 부팅 시 서비스 시작을 위한 리시버 -->
         <receiver
             android:name=".receiver.BootReceiver"

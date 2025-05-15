@@ -5,6 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.os.Build;
 
+import com.example.umbrellaalert.service.PersistentNotificationService;
 import com.example.umbrellaalert.service.WeatherUpdateService;
 
 public class UmbrellaApplication extends Application {
@@ -20,6 +21,11 @@ public class UmbrellaApplication extends Application {
 
         // 서비스 시작
         WeatherUpdateService.startService(this);
+
+        // 상태바 알림 서비스 시작 (설정에 따라)
+        if (PersistentNotificationService.isEnabled(this)) {
+            PersistentNotificationService.setEnabled(this, true);
+        }
     }
 
     private void createNotificationChannel() {
