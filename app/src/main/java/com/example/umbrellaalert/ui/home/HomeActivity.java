@@ -70,6 +70,16 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
         checkLocationPermission();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // 앱이 포그라운드로 돌아올 때 위치 업데이트 다시 시작
+        if (locationViewModel.getLocationPermissionGranted().getValue() == Boolean.TRUE) {
+            locationViewModel.startLocationUpdates();
+        }
+    }
+
     private void setupUI() {
         // 장소 설정 버튼
         binding.btnLocation.setOnClickListener(v -> {
@@ -216,7 +226,16 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        // 앱이 백그라운드로 갈 때 위치 업데이트 중지 (배터리 절약)
+        locationViewModel.stopLocationUpdates();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
+        // 앱이 종료될 때 위치 업데이트 중지
+        locationViewModel.stopLocationUpdates();
     }
 }

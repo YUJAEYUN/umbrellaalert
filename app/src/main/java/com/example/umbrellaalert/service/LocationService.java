@@ -15,8 +15,8 @@ import androidx.core.app.ActivityCompat;
 public class LocationService implements LocationListener {
 
     private static final String TAG = "LocationService";
-    private static final long MIN_TIME_BW_UPDATES = 10000; // 10초
-    private static final float MIN_DISTANCE_CHANGE_FOR_UPDATES = 10; // 10미터
+    private static final long MIN_TIME_BW_UPDATES = 5000; // 5초
+    private static final float MIN_DISTANCE_CHANGE_FOR_UPDATES = 5; // 5미터
 
     private static LocationService instance;
     private final Context context;
@@ -55,43 +55,96 @@ public class LocationService implements LocationListener {
             return;
         }
 
-        // GPS 위치 업데이트 요청
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    MIN_TIME_BW_UPDATES,
-                    MIN_DISTANCE_CHANGE_FOR_UPDATES,
-                    this);
-            isLocationEnabled = true;
-            Log.d(TAG, "GPS location updates started");
-        }
+        try {
+            // 기존 업데이트 중지 (중복 방지)
+            stopLocationUpdates();
 
-        // 네트워크 위치 업데이트 요청 (대체 제공자)
-        if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-            locationManager.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER,
-                    MIN_TIME_BW_UPDATES,
-                    MIN_DISTANCE_CHANGE_FOR_UPDATES,
-                    this);
-            isLocationEnabled = true;
-            Log.d(TAG, "Network location updates started");
-        }
-
-        // 마지막 알려진 위치 가져오기
-        Location gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        Location networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-
-        // 더 최근 위치 사용
-        if (gpsLocation != null && networkLocation != null) {
-            if (gpsLocation.getTime() > networkLocation.getTime()) {
-                lastLocation = gpsLocation;
-            } else {
-                lastLocation = networkLocation;
+            // GPS 위치 업데이트 요청 (높은 정확도)
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER,
+                        MIN_TIME_BW_UPDATES,
+                        MIN_DISTANCE_CHANGE_FOR_UPDATES,
+                        this);
+                isLocationEnabled = true;
+                Log.d(TAG, "GPS location updates started");
             }
-        } else if (gpsLocation != null) {
-            lastLocation = gpsLocation;
-        } else if (networkLocation != null) {
-            lastLocation = networkLocation;
+
+            // 네트워크 위치 업데이트 요청 (대체 제공자)
+            if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                locationManager.requestLocationUpdates(
+                        LocationManager.NETWORK_PROVIDER,
+                        MIN_TIME_BW_UPDATES,
+                        MIN_DISTANCE_CHANGE_FOR_UPDATES,
+                        this);
+                isLocationEnabled = true;
+                Log.d(TAG, "Network location updates started");
+            }
+
+            // 수동 위치 업데이트 요청 (배터리 효율적)
+            if (locationManager.isProviderEnabled(LocationManager.PASSIVE_PROVIDER)) {
+                locationManager.requestLocationUpdates(
+                        LocationManager.PASSIVE_PROVIDER,
+                        MIN_TIME_BW_UPDATES,
+                        MIN_DISTANCE_CHANGE_FOR_UPDATES,
+                        this);
+                isLocationEnabled = true;
+                Log.d(TAG, "Passive location updates started");
+            }
+
+            // 위치 제공자가 없는 경우 로그 출력
+            if (!isLocationEnabled) {
+                Log.e(TAG, "No location providers are enabled");
+            }
+        } catch (SecurityException e) {
+            Log.e(TAG, "Security exception when requesting location updates", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error requesting location updates", e);
+        }
+
+        // 마지막 알려진 위치 가져오기 (적극적으로 모든 제공자에서 시도)
+        try {
+            Location gpsLocation = null;
+            Location networkLocation = null;
+            Location passiveLocation = null;
+
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            }
+
+            if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            }
+
+            if (locationManager.isProviderEnabled(LocationManager.PASSIVE_PROVIDER)) {
+                passiveLocation = locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+            }
+
+            // 가장 정확하고 최근 위치 선택
+            Location bestLocation = null;
+
+            if (gpsLocation != null) {
+                bestLocation = gpsLocation;
+            }
+
+            if (networkLocation != null && (bestLocation == null || networkLocation.getTime() > bestLocation.getTime())) {
+                bestLocation = networkLocation;
+            }
+
+            if (passiveLocation != null && (bestLocation == null || passiveLocation.getTime() > bestLocation.getTime())) {
+                bestLocation = passiveLocation;
+            }
+
+            if (bestLocation != null) {
+                lastLocation = bestLocation;
+                Log.d(TAG, "Found last known location: " + lastLocation.getLatitude() + ", " + lastLocation.getLongitude());
+            } else {
+                Log.d(TAG, "No last known location found");
+            }
+        } catch (SecurityException e) {
+            Log.e(TAG, "Security exception when getting last location", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting last location", e);
         }
 
         // 마지막 위치로 콜백 호출
