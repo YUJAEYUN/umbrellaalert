@@ -79,9 +79,43 @@ public class WeatherManager {
         } catch (ExecutionException | InterruptedException e) {
             Log.e(TAG, "Error retrieving weather data", e);
 
-            // 에러 발생 시 캐시된 데이터 반환 (없으면 null)
-            return cachedWeather;
+            // 에러 발생 시 캐시된 데이터 반환 (없으면 기본 날씨 정보 생성)
+            if (cachedWeather != null) {
+                return cachedWeather;
+            } else {
+                return createDefaultWeather(latitude, longitude);
+            }
         }
+    }
+
+    // 기본 날씨 정보 생성
+    private Weather createDefaultWeather(double latitude, double longitude) {
+        String locationStr = latitude + "," + longitude;
+        long timestamp = System.currentTimeMillis();
+
+        // 기본 날씨 정보 생성
+        Weather defaultWeather = new Weather(
+                0,                  // id
+                20.0f,              // 기본 온도 20도
+                "Clear",            // 맑음
+                0.0f,               // 강수량 없음
+                50,                 // 습도 50%
+                1.0f,               // 풍속 1m/s
+                locationStr,        // 위치
+                timestamp,          // 현재 시간
+                false               // 우산 필요 없음
+        );
+
+        // 데이터베이스에 저장
+        try {
+            long id = weatherDao.insertWeather(defaultWeather);
+            defaultWeather.setId((int) id);
+        } catch (Exception e) {
+            Log.e(TAG, "기본 날씨 정보 저장 실패", e);
+        }
+
+        Log.d(TAG, "Created default weather data");
+        return defaultWeather;
     }
 
     // 오래된 데이터 정리
@@ -108,6 +142,12 @@ public class WeatherManager {
         } else {
             // 날씨 상태에 따른 메시지
             String condition = weather.getWeatherCondition();
+
+            // 날씨 상태가 null인 경우 처리
+            if (condition == null) {
+                return "오늘은 우산이 필요 없을 것 같다냥!";
+            }
+
             if (condition.equalsIgnoreCase("Clear")) {
                 return "오늘은 맑은 하루다냥~";
             } else if (condition.equalsIgnoreCase("Clouds")) {

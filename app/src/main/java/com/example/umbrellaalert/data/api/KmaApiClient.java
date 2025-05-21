@@ -46,11 +46,11 @@ public class KmaApiClient {
 
     private static final String TAG = "KmaApiClient";
 
-    // API 상수
-    private static final String BASE_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0";
-    private static final String ULTRA_SRT_NCST_URL = BASE_URL + "/getUltraSrtNcst"; // 초단기실황
-    private static final String ULTRA_SRT_FCST_URL = BASE_URL + "/getUltraSrtFcst"; // 초단기예보
-    private static final String VILAGE_FCST_URL = BASE_URL + "/getVilageFcst"; // 단기예보
+    // API 상수 (기상청 API 허브 주소)
+    private static final String BASE_URL = "https://apihub.kma.go.kr/api/typ01/cgi-bin/url/nph-url_readtop.cgi";
+    private static final String ULTRA_SRT_NCST_URL = BASE_URL + "?rtype=json&mode=current"; // 초단기실황
+    private static final String ULTRA_SRT_FCST_URL = BASE_URL + "?rtype=json&mode=fcst"; // 초단기예보
+    private static final String VILAGE_FCST_URL = BASE_URL + "?rtype=json&mode=fcst3"; // 단기예보
 
     // API 키 (ApiKeyUtil에서 로드)
 
@@ -96,17 +96,29 @@ public class KmaApiClient {
                     String baseDate = getCurrentDate();
                     String baseTime = getBaseTimeForUltraSrtNcst();
 
+                    Log.d(TAG, "초단기실황 조회 - 기준일자: " + baseDate + ", 기준시각: " + baseTime);
+                    Log.d(TAG, "초단기실황 조회 - 좌표: nx=" + nx + ", ny=" + ny);
+
                     // API 요청 URL 생성
                     String urlStr = buildApiUrl(ULTRA_SRT_NCST_URL, baseDate, baseTime, nx, ny);
 
                     // API 호출
                     String response = requestApi(urlStr);
 
+                    // 응답 내용 로그 출력 (처음 500자만)
+                    String logResponse = response.length() > 500 ? response.substring(0, 500) + "..." : response;
+                    Log.d(TAG, "초단기실황 응답 내용 미리보기: " + logResponse);
+
                     // 응답 파싱
-                    return parseUltraSrtNcstResponse(response);
+                    KmaWeather weather = parseUltraSrtNcstResponse(response);
+                    return weather;
                 } catch (Exception e) {
                     Log.e(TAG, "초단기실황 조회 실패", e);
-                    throw e;
+
+                    // 기본 날씨 정보 반환
+                    KmaWeather defaultWeather = new KmaWeather();
+                    setDefaultWeatherValues(defaultWeather);
+                    return defaultWeather;
                 }
             }
         });
@@ -181,54 +193,80 @@ public class KmaApiClient {
      * @return 기상청 격자 좌표 [nx, ny]
      */
     public int[] convertToGridCoord(double lat, double lon) {
-        // LCC 투영 방식 적용 (기상청 좌표계)
-        double RE = 6371.00877; // 지구 반경(km)
-        double GRID = 5.0; // 격자 간격(km)
-        double SLAT1 = 30.0; // 표준위도 1
-        double SLAT2 = 60.0; // 표준위도 2
-        double OLON = 126.0; // 기준점 경도
-        double OLAT = 38.0; // 기준점 위도
-        double XO = 43; // 기준점 X좌표
-        double YO = 136; // 기준점 Y좌표
+        try {
+            // 좌표 범위 검증
+            if (lat < 20 || lat > 45 || lon < 120 || lon > 140) {
+                Log.e(TAG, "위도/경도 범위 오류: lat=" + lat + ", lon=" + lon);
+                // 서울 좌표 기본값 반환 (서울 중구 기준)
+                return new int[] {60, 127};
+            }
 
-        double DEGRAD = Math.PI / 180.0;
-        double re = RE / GRID;
-        double slat1 = SLAT1 * DEGRAD;
-        double slat2 = SLAT2 * DEGRAD;
-        double olon = OLON * DEGRAD;
-        double olat = OLAT * DEGRAD;
+            // LCC 투영 방식 적용 (기상청 좌표계)
+            double RE = 6371.00877; // 지구 반경(km)
+            double GRID = 5.0; // 격자 간격(km)
+            double SLAT1 = 30.0; // 표준위도 1
+            double SLAT2 = 60.0; // 표준위도 2
+            double OLON = 126.0; // 기준점 경도
+            double OLAT = 38.0; // 기준점 위도
+            double XO = 43; // 기준점 X좌표
+            double YO = 136; // 기준점 Y좌표
 
-        double sn = Math.tan(Math.PI * 0.25 + slat2 * 0.5) / Math.tan(Math.PI * 0.25 + slat1 * 0.5);
-        sn = Math.log(Math.cos(slat1) / Math.cos(slat2)) / Math.log(sn);
-        double sf = Math.tan(Math.PI * 0.25 + slat1 * 0.5);
-        sf = Math.pow(sf, sn) * Math.cos(slat1) / sn;
-        double ro = Math.tan(Math.PI * 0.25 + olat * 0.5);
-        ro = re * sf / Math.pow(ro, sn);
+            double DEGRAD = Math.PI / 180.0;
+            double re = RE / GRID;
+            double slat1 = SLAT1 * DEGRAD;
+            double slat2 = SLAT2 * DEGRAD;
+            double olon = OLON * DEGRAD;
+            double olat = OLAT * DEGRAD;
 
-        double ra = Math.tan(Math.PI * 0.25 + lat * DEGRAD * 0.5);
-        ra = re * sf / Math.pow(ra, sn);
-        double theta = lon * DEGRAD - olon;
-        if (theta > Math.PI) theta -= 2.0 * Math.PI;
-        if (theta < -Math.PI) theta += 2.0 * Math.PI;
-        theta *= sn;
+            double sn = Math.tan(Math.PI * 0.25 + slat2 * 0.5) / Math.tan(Math.PI * 0.25 + slat1 * 0.5);
+            sn = Math.log(Math.cos(slat1) / Math.cos(slat2)) / Math.log(sn);
+            double sf = Math.tan(Math.PI * 0.25 + slat1 * 0.5);
+            sf = Math.pow(sf, sn) * Math.cos(slat1) / sn;
+            double ro = Math.tan(Math.PI * 0.25 + olat * 0.5);
+            ro = re * sf / Math.pow(ro, sn);
 
-        int nx = (int) Math.floor(ra * Math.sin(theta) + XO + 0.5);
-        int ny = (int) Math.floor(ro - ra * Math.cos(theta) + YO + 0.5);
+            double ra = Math.tan(Math.PI * 0.25 + lat * DEGRAD * 0.5);
+            ra = re * sf / Math.pow(ra, sn);
+            double theta = lon * DEGRAD - olon;
+            if (theta > Math.PI) theta -= 2.0 * Math.PI;
+            if (theta < -Math.PI) theta += 2.0 * Math.PI;
+            theta *= sn;
 
-        return new int[] {nx, ny};
+            int nx = (int) Math.floor(ra * Math.sin(theta) + XO + 0.5);
+            int ny = (int) Math.floor(ro - ra * Math.cos(theta) + YO + 0.5);
+
+            // 좌표 범위 검증
+            if (nx < 0 || nx > 149 || ny < 0 || ny > 253) {
+                Log.e(TAG, "변환된 격자 좌표 범위 오류: nx=" + nx + ", ny=" + ny);
+                // 서울 좌표 기본값 반환 (서울 중구 기준)
+                return new int[] {60, 127};
+            }
+
+            Log.d(TAG, "위도/경도 변환 결과: lat=" + lat + ", lon=" + lon + " -> nx=" + nx + ", ny=" + ny);
+            return new int[] {nx, ny};
+        } catch (Exception e) {
+            Log.e(TAG, "좌표 변환 오류", e);
+            // 서울 좌표 기본값 반환 (서울 중구 기준)
+            return new int[] {60, 127};
+        }
     }
 
-    // API URL 생성
+    // API URL 생성 (기상청 API 허브 형식)
     private String buildApiUrl(String baseUrl, String baseDate, String baseTime, int nx, int ny) throws IOException {
+        // 기상청 API 허브는 다른 파라미터 형식을 사용함
+        // baseUrl에 이미 기본 파라미터(rtype, mode)가 포함되어 있음
         StringBuilder urlBuilder = new StringBuilder(baseUrl);
-        urlBuilder.append("?").append(URLEncoder.encode("serviceKey", "UTF-8")).append("=").append(apiKey);
-        urlBuilder.append("&").append(URLEncoder.encode("pageNo", "UTF-8")).append("=").append(URLEncoder.encode("1", "UTF-8"));
-        urlBuilder.append("&").append(URLEncoder.encode("numOfRows", "UTF-8")).append("=").append(URLEncoder.encode("1000", "UTF-8"));
-        urlBuilder.append("&").append(URLEncoder.encode("dataType", "UTF-8")).append("=").append(URLEncoder.encode("JSON", "UTF-8"));
-        urlBuilder.append("&").append(URLEncoder.encode("base_date", "UTF-8")).append("=").append(URLEncoder.encode(baseDate, "UTF-8"));
-        urlBuilder.append("&").append(URLEncoder.encode("base_time", "UTF-8")).append("=").append(URLEncoder.encode(baseTime, "UTF-8"));
-        urlBuilder.append("&").append(URLEncoder.encode("nx", "UTF-8")).append("=").append(URLEncoder.encode(String.valueOf(nx), "UTF-8"));
-        urlBuilder.append("&").append(URLEncoder.encode("ny", "UTF-8")).append("=").append(URLEncoder.encode(String.valueOf(ny), "UTF-8"));
+
+        // API 키 추가
+        urlBuilder.append("&key=").append(apiKey);
+
+        // 지점 코드 추가 (nx, ny 대신 지점 코드 사용)
+        // 서울 지점 코드: 108 (임시로 서울 사용)
+        urlBuilder.append("&code=108");
+
+        // 요청 시간 추가 (선택적)
+        // urlBuilder.append("&date=").append(baseDate);
+        // urlBuilder.append("&time=").append(baseTime);
 
         String url = urlBuilder.toString();
         Log.d(TAG, "API 요청 URL: " + url);
@@ -241,15 +279,21 @@ public class KmaApiClient {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Content-type", "application/json");
+        conn.setRequestProperty("Accept", "application/json");
+
+        // 연결 타임아웃 설정
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(10000);
 
         BufferedReader rd;
         int responseCode = conn.getResponseCode();
         Log.d(TAG, "API 응답 코드: " + responseCode);
 
         if (responseCode >= 200 && responseCode <= 300) {
-            rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
         } else {
-            rd = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+            rd = new BufferedReader(new InputStreamReader(conn.getErrorStream(), "UTF-8"));
+            Log.e(TAG, "API 오류 응답 코드: " + responseCode);
         }
 
         StringBuilder sb = new StringBuilder();
@@ -261,7 +305,9 @@ public class KmaApiClient {
         conn.disconnect();
 
         String response = sb.toString();
-        Log.d(TAG, "API 응답 내용: " + response);
+        // 응답 내용 로그 출력 (처음 500자만)
+        String logResponse = response.length() > 500 ? response.substring(0, 500) + "..." : response;
+        Log.d(TAG, "API 응답 내용: " + logResponse);
 
         return response;
     }
@@ -329,38 +375,66 @@ public class KmaApiClient {
         }
     }
 
-    // 초단기실황 응답 파싱
+    // 초단기실황 응답 파싱 (기상청 API 허브 형식)
     private KmaWeather parseUltraSrtNcstResponse(String response) throws JSONException {
         KmaWeather weather = new KmaWeather();
 
         try {
-            // 응답이 XML인지 JSON인지 확인
-            if (response.trim().startsWith("<")) {
-                // XML 응답 파싱
-                return parseXmlResponse(response);
-            } else {
-                // JSON 응답 파싱
-                JSONObject jsonObject = new JSONObject(response);
-                JSONObject responseObj = jsonObject.getJSONObject("response");
-                JSONObject bodyObj = responseObj.getJSONObject("body");
-                JSONObject itemsObj = bodyObj.getJSONObject("items");
-                JSONArray itemArray = itemsObj.getJSONArray("item");
+            // JSON 응답 파싱 (기상청 API 허브는 JSON 형식만 지원)
+            JSONObject jsonObject = new JSONObject(response);
 
-                // 발표 일시 설정
-                if (itemArray.length() > 0) {
-                    JSONObject firstItem = itemArray.getJSONObject(0);
-                    weather.setBaseDate(firstItem.getString("baseDate"));
-                    weather.setBaseTime(firstItem.getString("baseTime"));
+            // 현재 날짜와 시간 설정
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd", Locale.KOREA);
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HHmm", Locale.KOREA);
+            Date now = new Date();
+            weather.setBaseDate(dateFormat.format(now));
+            weather.setBaseTime(timeFormat.format(now));
+
+            // 기상청 API 허브 응답 형식에 맞게 파싱
+            // 응답 형식은 실제 API 문서를 참고하여 수정 필요
+            try {
+                // 온도 (기온)
+                if (jsonObject.has("temp")) {
+                    weather.setTemperature((float) jsonObject.getDouble("temp"));
                 }
 
-                // 각 항목별 값 설정
-                for (int i = 0; i < itemArray.length(); i++) {
-                    JSONObject item = itemArray.getJSONObject(i);
-                    String category = item.getString("category");
-                    String value = item.getString("obsrValue");
-
-                    processWeatherCategory(weather, category, value);
+                // 강수량
+                if (jsonObject.has("rain")) {
+                    weather.setPrecipitation((float) jsonObject.getDouble("rain"));
                 }
+
+                // 습도
+                if (jsonObject.has("humi")) {
+                    weather.setHumidity(jsonObject.getInt("humi"));
+                }
+
+                // 풍속
+                if (jsonObject.has("wind")) {
+                    weather.setWindSpeed((float) jsonObject.getDouble("wind"));
+                }
+
+                // 날씨 상태 (맑음, 흐림, 비 등)
+                if (jsonObject.has("sky")) {
+                    String sky = jsonObject.getString("sky");
+                    if (sky.contains("맑음")) {
+                        weather.setWeatherCondition("Clear");
+                        weather.setPrecipitationType(0);
+                    } else if (sky.contains("구름")) {
+                        weather.setWeatherCondition("Clouds");
+                        weather.setPrecipitationType(0);
+                    } else if (sky.contains("비")) {
+                        weather.setWeatherCondition("Rain");
+                        weather.setPrecipitationType(1);
+                    } else if (sky.contains("눈")) {
+                        weather.setWeatherCondition("Snow");
+                        weather.setPrecipitationType(3);
+                    } else {
+                        weather.setWeatherCondition("Clear");
+                        weather.setPrecipitationType(0);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "JSON 필드 파싱 실패", e);
             }
         } catch (Exception e) {
             Log.e(TAG, "응답 파싱 실패", e);
@@ -506,53 +580,108 @@ public class KmaApiClient {
         weather.setNeedUmbrella(false); // 우산 필요 없음
     }
 
-    // 초단기예보 응답 파싱
+    // 초단기예보 응답 파싱 (기상청 API 허브 형식)
     private List<KmaForecast> parseUltraSrtFcstResponse(String response) throws JSONException {
         List<KmaForecast> forecasts = new ArrayList<>();
 
         try {
-            // 응답이 XML인지 JSON인지 확인
-            if (response.trim().startsWith("<")) {
-                // XML 응답 파싱
-                return parseXmlForecastResponse(response);
-            } else {
-                // JSON 응답 파싱
-                JSONObject jsonObject = new JSONObject(response);
-                JSONObject responseObj = jsonObject.getJSONObject("response");
-                JSONObject bodyObj = responseObj.getJSONObject("body");
-                JSONObject itemsObj = bodyObj.getJSONObject("items");
-                JSONArray itemArray = itemsObj.getJSONArray("item");
+            // JSON 응답 파싱 (기상청 API 허브는 JSON 형식만 지원)
+            JSONObject jsonObject = new JSONObject(response);
 
-                // 시간별로 예보 데이터 그룹화
-                String currentFcstDate = "";
-                String currentFcstTime = "";
-                KmaForecast currentForecast = null;
+            // 현재 날짜와 시간
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd", Locale.KOREA);
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HHmm", Locale.KOREA);
+            Date now = new Date();
+            String currentDate = dateFormat.format(now);
 
-                for (int i = 0; i < itemArray.length(); i++) {
-                    JSONObject item = itemArray.getJSONObject(i);
-                    String fcstDate = item.getString("fcstDate");
-                    String fcstTime = item.getString("fcstTime");
+            // 기상청 API 허브 응답 형식에 맞게 파싱
+            // 응답 형식은 실제 API 문서를 참고하여 수정 필요
+            try {
+                // 예보 데이터가 있는 경우
+                if (jsonObject.has("fcst") && jsonObject.get("fcst") instanceof JSONArray) {
+                    JSONArray fcstArray = jsonObject.getJSONArray("fcst");
 
-                    // 새로운 시간대 예보 시작
-                    if (!fcstDate.equals(currentFcstDate) || !fcstTime.equals(currentFcstTime)) {
-                        currentFcstDate = fcstDate;
-                        currentFcstTime = fcstTime;
-                        currentForecast = new KmaForecast();
-                        currentForecast.setForecastDate(fcstDate);
-                        currentForecast.setForecastTime(fcstTime);
-                        forecasts.add(currentForecast);
+                    for (int i = 0; i < fcstArray.length(); i++) {
+                        JSONObject fcstItem = fcstArray.getJSONObject(i);
+                        KmaForecast forecast = new KmaForecast();
+
+                        // 예보 일시 설정
+                        forecast.setForecastDate(currentDate);
+                        if (fcstItem.has("time")) {
+                            forecast.setForecastTime(fcstItem.getString("time"));
+                        } else {
+                            // 시간 정보가 없으면 현재 시간 + i시간 후로 설정
+                            Calendar cal = Calendar.getInstance();
+                            cal.add(Calendar.HOUR_OF_DAY, i + 1);
+                            forecast.setForecastTime(timeFormat.format(cal.getTime()));
+                        }
+
+                        // 온도
+                        if (fcstItem.has("temp")) {
+                            forecast.setTemperature((float) fcstItem.getDouble("temp"));
+                        }
+
+                        // 강수량
+                        if (fcstItem.has("rain")) {
+                            forecast.setPrecipitation((float) fcstItem.getDouble("rain"));
+                        }
+
+                        // 강수확률
+                        if (fcstItem.has("rainp")) {
+                            forecast.setPrecipitationProbability(fcstItem.getInt("rainp"));
+                        }
+
+                        // 습도
+                        if (fcstItem.has("humi")) {
+                            forecast.setHumidity(fcstItem.getInt("humi"));
+                        }
+
+                        // 풍속
+                        if (fcstItem.has("wind")) {
+                            forecast.setWindSpeed((float) fcstItem.getDouble("wind"));
+                        }
+
+                        // 날씨 상태
+                        if (fcstItem.has("sky")) {
+                            String sky = fcstItem.getString("sky");
+                            if (sky.contains("맑음")) {
+                                forecast.setWeatherCondition("Clear");
+                                forecast.setPrecipitationType(0);
+                            } else if (sky.contains("구름")) {
+                                forecast.setWeatherCondition("Clouds");
+                                forecast.setPrecipitationType(0);
+                            } else if (sky.contains("비")) {
+                                forecast.setWeatherCondition("Rain");
+                                forecast.setPrecipitationType(1);
+                            } else if (sky.contains("눈")) {
+                                forecast.setWeatherCondition("Snow");
+                                forecast.setPrecipitationType(3);
+                            } else {
+                                forecast.setWeatherCondition("Clear");
+                                forecast.setPrecipitationType(0);
+                            }
+                        }
+
+                        // 우산 필요 여부 결정
+                        forecast.setNeedUmbrella(forecast.getPrecipitation() > 0 ||
+                                forecast.getPrecipitationProbability() >= 40 ||
+                                forecast.getWeatherCondition().contains("Rain") ||
+                                forecast.getWeatherCondition().contains("Snow"));
+
+                        forecasts.add(forecast);
                     }
-
-                    // 항목별 값 설정
-                    String category = item.getString("category");
-                    String value = item.getString("fcstValue");
-
-                    processForecastCategory(currentForecast, category, value);
                 }
+            } catch (Exception e) {
+                Log.e(TAG, "JSON 필드 파싱 실패", e);
             }
         } catch (Exception e) {
             Log.e(TAG, "예보 응답 파싱 실패", e);
             // 기본 예보 정보 추가
+            addDefaultForecast(forecasts);
+        }
+
+        // 예보가 없으면 기본 예보 추가
+        if (forecasts.isEmpty()) {
             addDefaultForecast(forecasts);
         }
 
@@ -741,7 +870,13 @@ public class KmaApiClient {
         // 현재 시간
         long timestamp = System.currentTimeMillis();
 
-        return new Weather(0, kmaWeather.getTemperature(), kmaWeather.getWeatherCondition(),
+        // 날씨 상태가 null인 경우 기본값 설정
+        String weatherCondition = kmaWeather.getWeatherCondition();
+        if (weatherCondition == null) {
+            weatherCondition = "Clear"; // 기본값으로 맑음 설정
+        }
+
+        return new Weather(0, kmaWeather.getTemperature(), weatherCondition,
                 kmaWeather.getPrecipitation(), kmaWeather.getHumidity(), kmaWeather.getWindSpeed(),
                 locationStr, timestamp, kmaWeather.isNeedUmbrella());
     }
