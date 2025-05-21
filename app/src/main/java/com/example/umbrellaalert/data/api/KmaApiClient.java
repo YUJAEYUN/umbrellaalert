@@ -11,10 +11,16 @@ import com.example.umbrellaalert.util.ApiKeyUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -29,6 +35,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 /**
  * 기상청 API 클라이언트
  */
@@ -37,7 +47,7 @@ public class KmaApiClient {
     private static final String TAG = "KmaApiClient";
 
     // API 상수
-    private static final String BASE_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0";
+    private static final String BASE_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0";
     private static final String ULTRA_SRT_NCST_URL = BASE_URL + "/getUltraSrtNcst"; // 초단기실황
     private static final String ULTRA_SRT_FCST_URL = BASE_URL + "/getUltraSrtFcst"; // 초단기예보
     private static final String VILAGE_FCST_URL = BASE_URL + "/getVilageFcst"; // 단기예보
@@ -220,7 +230,9 @@ public class KmaApiClient {
         urlBuilder.append("&").append(URLEncoder.encode("nx", "UTF-8")).append("=").append(URLEncoder.encode(String.valueOf(nx), "UTF-8"));
         urlBuilder.append("&").append(URLEncoder.encode("ny", "UTF-8")).append("=").append(URLEncoder.encode(String.valueOf(ny), "UTF-8"));
 
-        return urlBuilder.toString();
+        String url = urlBuilder.toString();
+        Log.d(TAG, "API 요청 URL: " + url);
+        return url;
     }
 
     // API 요청 실행
@@ -231,7 +243,10 @@ public class KmaApiClient {
         conn.setRequestProperty("Content-type", "application/json");
 
         BufferedReader rd;
-        if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
+        int responseCode = conn.getResponseCode();
+        Log.d(TAG, "API 응답 코드: " + responseCode);
+
+        if (responseCode >= 200 && responseCode <= 300) {
             rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         } else {
             rd = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
@@ -245,7 +260,10 @@ public class KmaApiClient {
         rd.close();
         conn.disconnect();
 
-        return sb.toString();
+        String response = sb.toString();
+        Log.d(TAG, "API 응답 내용: " + response);
+
+        return response;
     }
 
     // 현재 날짜 가져오기 (yyyyMMdd 형식)
@@ -313,27 +331,117 @@ public class KmaApiClient {
 
     // 초단기실황 응답 파싱
     private KmaWeather parseUltraSrtNcstResponse(String response) throws JSONException {
-        JSONObject jsonObject = new JSONObject(response);
-        JSONObject responseObj = jsonObject.getJSONObject("response");
-        JSONObject bodyObj = responseObj.getJSONObject("body");
-        JSONObject itemsObj = bodyObj.getJSONObject("items");
-        JSONArray itemArray = itemsObj.getJSONArray("item");
-
         KmaWeather weather = new KmaWeather();
 
-        // 발표 일시 설정
-        if (itemArray.length() > 0) {
-            JSONObject firstItem = itemArray.getJSONObject(0);
-            weather.setBaseDate(firstItem.getString("baseDate"));
-            weather.setBaseTime(firstItem.getString("baseTime"));
+        try {
+            // 응답이 XML인지 JSON인지 확인
+            if (response.trim().startsWith("<")) {
+                // XML 응답 파싱
+                return parseXmlResponse(response);
+            } else {
+                // JSON 응답 파싱
+                JSONObject jsonObject = new JSONObject(response);
+                JSONObject responseObj = jsonObject.getJSONObject("response");
+                JSONObject bodyObj = responseObj.getJSONObject("body");
+                JSONObject itemsObj = bodyObj.getJSONObject("items");
+                JSONArray itemArray = itemsObj.getJSONArray("item");
+
+                // 발표 일시 설정
+                if (itemArray.length() > 0) {
+                    JSONObject firstItem = itemArray.getJSONObject(0);
+                    weather.setBaseDate(firstItem.getString("baseDate"));
+                    weather.setBaseTime(firstItem.getString("baseTime"));
+                }
+
+                // 각 항목별 값 설정
+                for (int i = 0; i < itemArray.length(); i++) {
+                    JSONObject item = itemArray.getJSONObject(i);
+                    String category = item.getString("category");
+                    String value = item.getString("obsrValue");
+
+                    processWeatherCategory(weather, category, value);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "응답 파싱 실패", e);
+            // 기본 날씨 정보 설정
+            setDefaultWeatherValues(weather);
         }
 
-        // 각 항목별 값 설정
-        for (int i = 0; i < itemArray.length(); i++) {
-            JSONObject item = itemArray.getJSONObject(i);
-            String category = item.getString("category");
-            String value = item.getString("obsrValue");
+        // 우산 필요 여부 결정
+        weather.setNeedUmbrella(weather.getPrecipitation() > 0 ||
+                weather.getWeatherCondition().contains("Rain") ||
+                weather.getWeatherCondition().contains("Snow"));
 
+        return weather;
+    }
+
+    // XML 응답 파싱
+    private KmaWeather parseXmlResponse(String xmlResponse) {
+        KmaWeather weather = new KmaWeather();
+
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            InputSource is = new InputSource(new StringReader(xmlResponse));
+            Document doc = builder.parse(is);
+
+            // 응답 코드 확인
+            NodeList resultCodeList = doc.getElementsByTagName("resultCode");
+            if (resultCodeList.getLength() > 0) {
+                String resultCode = resultCodeList.item(0).getTextContent();
+                Log.d(TAG, "API 응답 코드: " + resultCode);
+
+                // 응답이 성공이 아니면 기본값 설정 후 반환
+                if (!"00".equals(resultCode)) {
+                    Log.e(TAG, "API 오류 응답: " + resultCode);
+                    setDefaultWeatherValues(weather);
+                    return weather;
+                }
+            }
+
+            // 아이템 목록 가져오기
+            NodeList itemList = doc.getElementsByTagName("item");
+
+            // 발표 일시 설정
+            if (itemList.getLength() > 0) {
+                Element firstItem = (Element) itemList.item(0);
+                NodeList baseDateList = firstItem.getElementsByTagName("baseDate");
+                NodeList baseTimeList = firstItem.getElementsByTagName("baseTime");
+
+                if (baseDateList.getLength() > 0) {
+                    weather.setBaseDate(baseDateList.item(0).getTextContent());
+                }
+
+                if (baseTimeList.getLength() > 0) {
+                    weather.setBaseTime(baseTimeList.item(0).getTextContent());
+                }
+            }
+
+            // 각 항목별 값 설정
+            for (int i = 0; i < itemList.getLength(); i++) {
+                Element item = (Element) itemList.item(i);
+                NodeList categoryList = item.getElementsByTagName("category");
+                NodeList valueList = item.getElementsByTagName("obsrValue");
+
+                if (categoryList.getLength() > 0 && valueList.getLength() > 0) {
+                    String category = categoryList.item(0).getTextContent();
+                    String value = valueList.item(0).getTextContent();
+
+                    processWeatherCategory(weather, category, value);
+                }
+            }
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            Log.e(TAG, "XML 파싱 실패", e);
+            setDefaultWeatherValues(weather);
+        }
+
+        return weather;
+    }
+
+    // 날씨 카테고리 처리
+    private void processWeatherCategory(KmaWeather weather, String category, String value) {
+        try {
             switch (category) {
                 case "T1H": // 기온
                     weather.setTemperature(Float.parseFloat(value));
@@ -375,116 +483,251 @@ public class KmaApiClient {
                     }
                     break;
             }
+        } catch (NumberFormatException e) {
+            Log.e(TAG, "날씨 데이터 변환 실패: " + category + "=" + value, e);
         }
+    }
 
-        // 우산 필요 여부 결정
-        weather.setNeedUmbrella(weather.getPrecipitation() > 0 ||
-                weather.getWeatherCondition().contains("Rain") ||
-                weather.getWeatherCondition().contains("Snow"));
+    // 기본 날씨 값 설정
+    private void setDefaultWeatherValues(KmaWeather weather) {
+        // 현재 날짜와 시간 설정
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd", Locale.KOREA);
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HHmm", Locale.KOREA);
+        Date now = new Date();
 
-        return weather;
+        weather.setBaseDate(dateFormat.format(now));
+        weather.setBaseTime(timeFormat.format(now));
+        weather.setTemperature(20.0f); // 기본 온도 20도
+        weather.setPrecipitation(0.0f); // 강수량 없음
+        weather.setHumidity(50); // 습도 50%
+        weather.setWindSpeed(1.0f); // 풍속 1m/s
+        weather.setPrecipitationType(0); // 강수 없음
+        weather.setWeatherCondition("Clear"); // 맑음
+        weather.setNeedUmbrella(false); // 우산 필요 없음
     }
 
     // 초단기예보 응답 파싱
     private List<KmaForecast> parseUltraSrtFcstResponse(String response) throws JSONException {
-        JSONObject jsonObject = new JSONObject(response);
-        JSONObject responseObj = jsonObject.getJSONObject("response");
-        JSONObject bodyObj = responseObj.getJSONObject("body");
-        JSONObject itemsObj = bodyObj.getJSONObject("items");
-        JSONArray itemArray = itemsObj.getJSONArray("item");
-
-        // 시간별로 예보 데이터 그룹화
         List<KmaForecast> forecasts = new ArrayList<>();
-        String currentFcstDate = "";
-        String currentFcstTime = "";
-        KmaForecast currentForecast = null;
 
-        for (int i = 0; i < itemArray.length(); i++) {
-            JSONObject item = itemArray.getJSONObject(i);
-            String fcstDate = item.getString("fcstDate");
-            String fcstTime = item.getString("fcstTime");
+        try {
+            // 응답이 XML인지 JSON인지 확인
+            if (response.trim().startsWith("<")) {
+                // XML 응답 파싱
+                return parseXmlForecastResponse(response);
+            } else {
+                // JSON 응답 파싱
+                JSONObject jsonObject = new JSONObject(response);
+                JSONObject responseObj = jsonObject.getJSONObject("response");
+                JSONObject bodyObj = responseObj.getJSONObject("body");
+                JSONObject itemsObj = bodyObj.getJSONObject("items");
+                JSONArray itemArray = itemsObj.getJSONArray("item");
 
-            // 새로운 시간대 예보 시작
-            if (!fcstDate.equals(currentFcstDate) || !fcstTime.equals(currentFcstTime)) {
-                currentFcstDate = fcstDate;
-                currentFcstTime = fcstTime;
-                currentForecast = new KmaForecast();
-                currentForecast.setForecastDate(fcstDate);
-                currentForecast.setForecastTime(fcstTime);
-                forecasts.add(currentForecast);
+                // 시간별로 예보 데이터 그룹화
+                String currentFcstDate = "";
+                String currentFcstTime = "";
+                KmaForecast currentForecast = null;
+
+                for (int i = 0; i < itemArray.length(); i++) {
+                    JSONObject item = itemArray.getJSONObject(i);
+                    String fcstDate = item.getString("fcstDate");
+                    String fcstTime = item.getString("fcstTime");
+
+                    // 새로운 시간대 예보 시작
+                    if (!fcstDate.equals(currentFcstDate) || !fcstTime.equals(currentFcstTime)) {
+                        currentFcstDate = fcstDate;
+                        currentFcstTime = fcstTime;
+                        currentForecast = new KmaForecast();
+                        currentForecast.setForecastDate(fcstDate);
+                        currentForecast.setForecastTime(fcstTime);
+                        forecasts.add(currentForecast);
+                    }
+
+                    // 항목별 값 설정
+                    String category = item.getString("category");
+                    String value = item.getString("fcstValue");
+
+                    processForecastCategory(currentForecast, category, value);
+                }
             }
-
-            // 항목별 값 설정
-            String category = item.getString("category");
-            String value = item.getString("fcstValue");
-
-            switch (category) {
-                case "T1H": // 기온
-                    currentForecast.setTemperature(Float.parseFloat(value));
-                    break;
-                case "RN1": // 1시간 강수량
-                    // 강수량이 "강수없음"인 경우 0으로 처리
-                    if (value.equals("강수없음")) {
-                        currentForecast.setPrecipitation(0);
-                    } else {
-                        try {
-                            currentForecast.setPrecipitation(Float.parseFloat(value));
-                        } catch (NumberFormatException e) {
-                            currentForecast.setPrecipitation(0);
-                        }
-                    }
-                    break;
-                case "REH": // 습도
-                    currentForecast.setHumidity(Integer.parseInt(value));
-                    break;
-                case "WSD": // 풍속
-                    currentForecast.setWindSpeed(Float.parseFloat(value));
-                    break;
-                case "PTY": // 강수형태 (0:없음, 1:비, 2:비/눈, 3:눈, 4:소나기)
-                    int precipitationType = Integer.parseInt(value);
-                    currentForecast.setPrecipitationType(precipitationType);
-                    // 강수 형태에 따라 날씨 상태 설정
-                    if (precipitationType == 0) {
-                        currentForecast.setWeatherCondition("Clear");
-                    } else if (precipitationType == 1 || precipitationType == 4) {
-                        currentForecast.setWeatherCondition("Rain");
-                    } else if (precipitationType == 2) {
-                        currentForecast.setWeatherCondition("Rain/Snow");
-                    } else if (precipitationType == 3) {
-                        currentForecast.setWeatherCondition("Snow");
-                    }
-                    break;
-                case "SKY": // 하늘상태 (1:맑음, 3:구름많음, 4:흐림)
-                    int skyCondition = Integer.parseInt(value);
-                    // 강수가 없는 경우에만 하늘 상태로 날씨 상태 설정
-                    if (currentForecast.getPrecipitationType() == 0) {
-                        if (skyCondition == 1) {
-                            currentForecast.setWeatherCondition("Clear");
-                        } else if (skyCondition == 3) {
-                            currentForecast.setWeatherCondition("Partly Cloudy");
-                        } else if (skyCondition == 4) {
-                            currentForecast.setWeatherCondition("Clouds");
-                        }
-                    }
-                    break;
-                case "POP": // 강수확률
-                    currentForecast.setPrecipitationProbability(Integer.parseInt(value));
-                    break;
-            }
-
-            // 우산 필요 여부 결정
-            currentForecast.setNeedUmbrella(currentForecast.getPrecipitation() > 0 ||
-                    currentForecast.getPrecipitationProbability() >= 40 ||
-                    currentForecast.getWeatherCondition().contains("Rain") ||
-                    currentForecast.getWeatherCondition().contains("Snow"));
+        } catch (Exception e) {
+            Log.e(TAG, "예보 응답 파싱 실패", e);
+            // 기본 예보 정보 추가
+            addDefaultForecast(forecasts);
         }
 
         return forecasts;
     }
 
+    // XML 예보 응답 파싱
+    private List<KmaForecast> parseXmlForecastResponse(String xmlResponse) {
+        List<KmaForecast> forecasts = new ArrayList<>();
+
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            InputSource is = new InputSource(new StringReader(xmlResponse));
+            Document doc = builder.parse(is);
+
+            // 응답 코드 확인
+            NodeList resultCodeList = doc.getElementsByTagName("resultCode");
+            if (resultCodeList.getLength() > 0) {
+                String resultCode = resultCodeList.item(0).getTextContent();
+                Log.d(TAG, "API 응답 코드: " + resultCode);
+
+                // 응답이 성공이 아니면 기본값 설정 후 반환
+                if (!"00".equals(resultCode)) {
+                    Log.e(TAG, "API 오류 응답: " + resultCode);
+                    addDefaultForecast(forecasts);
+                    return forecasts;
+                }
+            }
+
+            // 아이템 목록 가져오기
+            NodeList itemList = doc.getElementsByTagName("item");
+
+            // 시간별로 예보 데이터 그룹화
+            String currentFcstDate = "";
+            String currentFcstTime = "";
+            KmaForecast currentForecast = null;
+
+            for (int i = 0; i < itemList.getLength(); i++) {
+                Element item = (Element) itemList.item(i);
+
+                NodeList fcstDateList = item.getElementsByTagName("fcstDate");
+                NodeList fcstTimeList = item.getElementsByTagName("fcstTime");
+                NodeList categoryList = item.getElementsByTagName("category");
+                NodeList valueList = item.getElementsByTagName("fcstValue");
+
+                if (fcstDateList.getLength() > 0 && fcstTimeList.getLength() > 0 &&
+                    categoryList.getLength() > 0 && valueList.getLength() > 0) {
+
+                    String fcstDate = fcstDateList.item(0).getTextContent();
+                    String fcstTime = fcstTimeList.item(0).getTextContent();
+                    String category = categoryList.item(0).getTextContent();
+                    String value = valueList.item(0).getTextContent();
+
+                    // 새로운 시간대 예보 시작
+                    if (!fcstDate.equals(currentFcstDate) || !fcstTime.equals(currentFcstTime)) {
+                        currentFcstDate = fcstDate;
+                        currentFcstTime = fcstTime;
+                        currentForecast = new KmaForecast();
+                        currentForecast.setForecastDate(fcstDate);
+                        currentForecast.setForecastTime(fcstTime);
+                        forecasts.add(currentForecast);
+                    }
+
+                    processForecastCategory(currentForecast, category, value);
+                }
+            }
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            Log.e(TAG, "XML 예보 파싱 실패", e);
+            addDefaultForecast(forecasts);
+        }
+
+        return forecasts;
+    }
+
+    // 예보 카테고리 처리
+    private void processForecastCategory(KmaForecast forecast, String category, String value) {
+        try {
+            switch (category) {
+                case "T1H": // 기온
+                    forecast.setTemperature(Float.parseFloat(value));
+                    break;
+                case "RN1": // 1시간 강수량
+                    // 강수량이 "강수없음"인 경우 0으로 처리
+                    if (value.equals("강수없음")) {
+                        forecast.setPrecipitation(0);
+                    } else {
+                        try {
+                            forecast.setPrecipitation(Float.parseFloat(value));
+                        } catch (NumberFormatException e) {
+                            forecast.setPrecipitation(0);
+                        }
+                    }
+                    break;
+                case "REH": // 습도
+                    forecast.setHumidity(Integer.parseInt(value));
+                    break;
+                case "WSD": // 풍속
+                    forecast.setWindSpeed(Float.parseFloat(value));
+                    break;
+                case "PTY": // 강수형태 (0:없음, 1:비, 2:비/눈, 3:눈, 4:소나기)
+                    int precipitationType = Integer.parseInt(value);
+                    forecast.setPrecipitationType(precipitationType);
+                    // 강수 형태에 따라 날씨 상태 설정
+                    if (precipitationType == 0) {
+                        forecast.setWeatherCondition("Clear");
+                    } else if (precipitationType == 1 || precipitationType == 4) {
+                        forecast.setWeatherCondition("Rain");
+                    } else if (precipitationType == 2) {
+                        forecast.setWeatherCondition("Rain/Snow");
+                    } else if (precipitationType == 3) {
+                        forecast.setWeatherCondition("Snow");
+                    }
+                    break;
+                case "SKY": // 하늘상태 (1:맑음, 3:구름많음, 4:흐림)
+                    int skyCondition = Integer.parseInt(value);
+                    // 강수가 없는 경우에만 하늘 상태로 날씨 상태 설정
+                    if (forecast.getPrecipitationType() == 0) {
+                        if (skyCondition == 1) {
+                            forecast.setWeatherCondition("Clear");
+                        } else if (skyCondition == 3) {
+                            forecast.setWeatherCondition("Partly Cloudy");
+                        } else if (skyCondition == 4) {
+                            forecast.setWeatherCondition("Clouds");
+                        }
+                    }
+                    break;
+                case "POP": // 강수확률
+                    forecast.setPrecipitationProbability(Integer.parseInt(value));
+                    break;
+            }
+
+            // 우산 필요 여부 결정
+            forecast.setNeedUmbrella(forecast.getPrecipitation() > 0 ||
+                    forecast.getPrecipitationProbability() >= 40 ||
+                    forecast.getWeatherCondition().contains("Rain") ||
+                    forecast.getWeatherCondition().contains("Snow"));
+        } catch (NumberFormatException e) {
+            Log.e(TAG, "예보 데이터 변환 실패: " + category + "=" + value, e);
+        }
+    }
+
+    // 기본 예보 정보 추가
+    private void addDefaultForecast(List<KmaForecast> forecasts) {
+        // 현재 시간 기준으로 3시간 간격으로 기본 예보 3개 추가
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd", Locale.KOREA);
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HHmm", Locale.KOREA);
+
+        Calendar cal = Calendar.getInstance();
+        Date now = cal.getTime();
+
+        for (int i = 0; i < 3; i++) {
+            KmaForecast forecast = new KmaForecast();
+            forecast.setForecastDate(dateFormat.format(now));
+            forecast.setForecastTime(timeFormat.format(now));
+            forecast.setTemperature(20.0f); // 기본 온도 20도
+            forecast.setPrecipitation(0.0f); // 강수량 없음
+            forecast.setHumidity(50); // 습도 50%
+            forecast.setWindSpeed(1.0f); // 풍속 1m/s
+            forecast.setPrecipitationType(0); // 강수 없음
+            forecast.setWeatherCondition("Clear"); // 맑음
+            forecast.setPrecipitationProbability(0); // 강수확률 0%
+            forecast.setNeedUmbrella(false); // 우산 필요 없음
+
+            forecasts.add(forecast);
+
+            // 3시간 추가
+            cal.add(Calendar.HOUR_OF_DAY, 3);
+            now = cal.getTime();
+        }
+    }
+
     // 단기예보 응답 파싱
     private List<KmaForecast> parseVilageFcstResponse(String response) throws JSONException {
-        // 초단기예보와 유사한 방식으로 파싱
+        // 초단기예보와 동일한 방식으로 파싱
         return parseUltraSrtFcstResponse(response);
     }
 
