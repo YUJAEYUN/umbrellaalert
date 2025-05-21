@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <!-- 예보 시간 -->
+    <TextView
+        android:id="@+id/forecast_time"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:text="09:00"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- 날씨 아이콘 -->
+    <ImageView
+        android:id="@+id/forecast_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_weather_sunny"
+        app:layout_constraintStart_toEndOf="@id/forecast_time"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- 날씨 상태 -->
+    <TextView
+        android:id="@+id/forecast_condition"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="맑음"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        app:layout_constraintStart_toEndOf="@id/forecast_icon"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- 온도 -->
+    <TextView
+        android:id="@+id/forecast_temp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="22°C"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- 강수확률 -->
+    <TextView
+        android:id="@+id/forecast_pop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="0%"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toStartOf="@id/forecast_temp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- 구분선 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:background="@color/divider"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -236,6 +236,105 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 
+    <!-- API 타입 선택 카드 -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/api_type_card"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="@color/ios_card_background"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/umbrella_card"
+        app:layout_constraintWidth_percent="0.9">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="기상청 API 선택"
+                android:textColor="@color/text_primary"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="-0.01" />
+
+            <RadioGroup
+                android:id="@+id/api_type_radio_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <RadioButton
+                    android:id="@+id/radio_ultra_srt_ncst"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="초단기실황"
+                    android:checked="true" />
+
+                <RadioButton
+                    android:id="@+id/radio_ultra_srt_fcst"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="초단기예보"
+                    android:layout_marginStart="8dp" />
+
+                <RadioButton
+                    android:id="@+id/radio_vilage_fcst"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="단기예보"
+                    android:layout_marginStart="8dp" />
+            </RadioGroup>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- 예보 목록 (초단기예보, 단기예보 선택 시 표시) -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/forecast_card"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/ios_card_background"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/api_type_card"
+        app:layout_constraintWidth_percent="0.9">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/forecast_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="예보 정보"
+                android:textColor="@color/text_primary"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="-0.01" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/forecast_recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
     <!-- 설정 및 위치 버튼 -->
     <LinearLayout
         android:layout_width="0dp"
@@ -245,7 +344,7 @@
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/umbrella_card"
+        app:layout_constraintTop_toBottomOf="@id/forecast_card"
         app:layout_constraintWidth_percent="0.9">
 
         <Button

@@ -39,4 +39,7 @@
     <!-- 배경 색상 -->
     <color name="ios_background">#F2F2F7</color>
     <color name="ios_card_background">#FFFFFF</color>
+
+    <!-- 구분선 색상 -->
+    <color name="divider">#E0E0E0</color>
 </resources>

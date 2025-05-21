@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
+import androidx.annotation.RequiresApi;
 
 import androidx.core.app.NotificationCompat;
 
@@ -40,7 +41,13 @@ public class WeatherUpdateService extends Service {
     // 서비스 시작 (정적 메소드)
     public static void startService(Context context) {
         Intent intent = new Intent(context, WeatherUpdateService.class);
-        context.startForegroundService(intent);
+
+        // API 레벨 26 이상에서는 startForegroundService 사용
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent);
+        } else {
+            context.startService(intent);
+        }
     }
 
     @Override
@@ -63,9 +70,9 @@ public class WeatherUpdateService extends Service {
         if (!isRunning) {
             isRunning = true;
 
-            // Android 14(SDK 34) 이상에서는 Foreground Service 타입 지정 필요
+            // Android 10(SDK 29) 이상에서는 Foreground Service 타입 지정 필요
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIFICATION_ID, createNotification("날씨 정보를 가져오는 중..."), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
+                startForegroundQ(NOTIFICATION_ID, createNotification("날씨 정보를 가져오는 중..."));
             } else {
                 startForeground(NOTIFICATION_ID, createNotification("날씨 정보를 가져오는 중..."));
             }
@@ -203,5 +210,13 @@ public class WeatherUpdateService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null; // 바인딩 불필요
+    }
+
+    /**
+     * Android 10(API 29) 이상에서 Foreground Service 타입을 지정하는 메서드
+     */
+    @RequiresApi(api = Build.VERSION_CODES.Q)
+    private void startForegroundQ(int id, Notification notification) {
+        startForeground(id, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
     }
 }

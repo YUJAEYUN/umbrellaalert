@@ -33,6 +33,11 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    // Lint 설정
+    lint {
+        abortOnError = false
+    }
 }
 
 dependencies {

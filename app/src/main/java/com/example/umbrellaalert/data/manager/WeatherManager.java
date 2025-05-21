@@ -3,7 +3,7 @@ package com.example.umbrellaalert.data.manager;
 import android.content.Context;
 import android.util.Log;
 
-import com.example.umbrellaalert.data.api.WeatherApiClient;
+import com.example.umbrellaalert.data.api.KmaApiClient;
 import com.example.umbrellaalert.data.database.DatabaseHelper;
 import com.example.umbrellaalert.data.database.WeatherDao;
 import com.example.umbrellaalert.data.model.Location;
@@ -22,7 +22,7 @@ public class WeatherManager {
 
     private static WeatherManager instance;
     private WeatherDao weatherDao;
-    private WeatherApiClient apiClient;
+    private KmaApiClient apiClient;
 
     // 싱글톤 패턴
     public static synchronized WeatherManager getInstance(Context context) {
@@ -35,7 +35,7 @@ public class WeatherManager {
     private WeatherManager(Context context) {
         DatabaseHelper dbHelper = DatabaseHelper.getInstance(context);
         weatherDao = new WeatherDao(dbHelper);
-        apiClient = WeatherApiClient.getInstance();
+        apiClient = KmaApiClient.getInstance(context);
 
         // 오래된 데이터 정리
         cleanupOldData();
@@ -58,8 +58,17 @@ public class WeatherManager {
 
         // 새로운 데이터 가져오기
         try {
-            Future<Weather> weatherFuture = apiClient.getCurrentWeather(latitude, longitude);
-            Weather freshWeather = weatherFuture.get(); // 결과 기다리기
+            // 위도/경도를 기상청 격자 좌표로 변환
+            int[] gridCoord = apiClient.convertToGridCoord(latitude, longitude);
+            int nx = gridCoord[0];
+            int ny = gridCoord[1];
+
+            // 초단기실황 API 호출
+            Future<com.example.umbrellaalert.data.model.KmaWeather> weatherFuture = apiClient.getUltraSrtNcst(nx, ny);
+            com.example.umbrellaalert.data.model.KmaWeather kmaWeather = weatherFuture.get(); // 결과 기다리기
+
+            // KmaWeather를 Weather로 변환
+            Weather freshWeather = apiClient.convertToWeather(kmaWeather, latitude, longitude);
 
             // 데이터베이스에 저장
             long id = weatherDao.insertWeather(freshWeather);

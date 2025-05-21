@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -14,7 +15,12 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.umbrellaalert.R;
+import com.example.umbrellaalert.data.api.KmaApiClient;
+import com.example.umbrellaalert.data.model.KmaForecast;
 import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.databinding.ActivityHomeBinding;
 import com.example.umbrellaalert.service.WeatherUpdateService;
@@ -31,6 +37,7 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
     private ActivityHomeBinding binding;
     private WeatherViewModel weatherViewModel;
     private LocationViewModel locationViewModel;
+    private ForecastAdapter forecastAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +54,11 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
 
         // 날씨 업데이트 서비스 시작
         WeatherUpdateService.startService(this);
+
+        // 예보 어댑터 초기화
+        forecastAdapter = new ForecastAdapter();
+        binding.forecastRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        binding.forecastRecyclerView.setAdapter(forecastAdapter);
 
         // UI 초기 설정
         setupUI();
@@ -69,6 +81,26 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
         binding.btnSettings.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, SettingsActivity.class);
             startActivity(intent);
+        });
+
+        // API 타입 라디오 그룹 리스너
+        binding.apiTypeRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            KmaApiClient.ApiType apiType;
+
+            if (checkedId == R.id.radio_ultra_srt_fcst) {
+                apiType = KmaApiClient.ApiType.ULTRA_SRT_FCST;
+                binding.forecastCard.setVisibility(View.VISIBLE);
+                binding.forecastTitle.setText("초단기예보 (6시간)");
+            } else if (checkedId == R.id.radio_vilage_fcst) {
+                apiType = KmaApiClient.ApiType.VILAGE_FCST;
+                binding.forecastCard.setVisibility(View.VISIBLE);
+                binding.forecastTitle.setText("단기예보 (3일)");
+            } else {
+                apiType = KmaApiClient.ApiType.ULTRA_SRT_NCST;
+                binding.forecastCard.setVisibility(View.GONE);
+            }
+
+            weatherViewModel.setApiType(apiType);
         });
     }
 
@@ -99,6 +131,28 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
         // 우산 메시지 관찰
         weatherViewModel.getUmbrellaMessage().observe(this, message ->
             binding.umbrellaText.setText(message));
+
+        // 예보 데이터 관찰
+        weatherViewModel.getForecastData().observe(this, forecasts -> {
+            forecastAdapter.setForecasts(forecasts);
+
+            // 예보 데이터가 있으면 카드 표시, 없으면 숨김
+            boolean hasForecasts = forecasts != null && !forecasts.isEmpty();
+            binding.forecastCard.setVisibility(hasForecasts ? View.VISIBLE : View.GONE);
+        });
+
+        // API 타입 관찰
+        weatherViewModel.getCurrentApiType().observe(this, apiType -> {
+            // 라디오 버튼 상태 업데이트
+            RadioGroup radioGroup = binding.apiTypeRadioGroup;
+            if (apiType == KmaApiClient.ApiType.ULTRA_SRT_FCST) {
+                radioGroup.check(R.id.radio_ultra_srt_fcst);
+            } else if (apiType == KmaApiClient.ApiType.VILAGE_FCST) {
+                radioGroup.check(R.id.radio_vilage_fcst);
+            } else {
+                radioGroup.check(R.id.radio_ultra_srt_ncst);
+            }
+        });
     }
 
     private void checkLocationPermission() {
