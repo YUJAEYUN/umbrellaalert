@@ -12,8 +12,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.umbrellaalert.R;
-import com.example.umbrellaalert.data.api.KmaApiClient;
-import com.example.umbrellaalert.data.model.KmaForecast;
+
 import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.data.repository.WeatherRepository;
 
@@ -45,8 +44,8 @@ public class WeatherViewModel extends AndroidViewModel {
     private final MutableLiveData<Integer> catImageResource = new MutableLiveData<>();
     private final MutableLiveData<String> catMessage = new MutableLiveData<>();
     private final MutableLiveData<String> umbrellaMessage = new MutableLiveData<>();
-    private final MutableLiveData<List<KmaForecast>> forecastData = new MutableLiveData<>();
-    private final MutableLiveData<KmaApiClient.ApiType> currentApiType = new MutableLiveData<>(KmaApiClient.ApiType.ULTRA_SRT_NCST);
+    private final MutableLiveData<List<Object>> forecastData = new MutableLiveData<>();
+    private final MutableLiveData<String> currentApiType = new MutableLiveData<>("ULTRA_SRT_NCST");
 
     public WeatherViewModel(@NonNull Application application) {
         super(application);
@@ -55,16 +54,9 @@ public class WeatherViewModel extends AndroidViewModel {
     }
 
     // API 타입 설정
-    public void setApiType(KmaApiClient.ApiType apiType) {
+    public void setApiType(String apiType) {
         currentApiType.setValue(apiType);
         weatherRepository.setApiType(apiType);
-
-        // 현재 위치 정보가 있으면 날씨 업데이트
-        Location lastLocation = locationName.getValue() != null ?
-                new Location("last") : null;
-        if (lastLocation != null) {
-            updateWeatherWithLocation(lastLocation);
-        }
     }
 
     // 위치 기반 날씨 업데이트
@@ -81,17 +73,8 @@ public class WeatherViewModel extends AndroidViewModel {
                 updateWeatherUI(weather);
             }
 
-            // API 타입에 따라 예보 데이터 가져오기
-            KmaApiClient.ApiType apiType = currentApiType.getValue();
-            if (apiType == KmaApiClient.ApiType.ULTRA_SRT_FCST) {
-                List<KmaForecast> forecasts = weatherRepository.getUltraSrtForecast(
-                        location.getLatitude(), location.getLongitude());
-                forecastData.postValue(forecasts);
-            } else if (apiType == KmaApiClient.ApiType.VILAGE_FCST) {
-                List<KmaForecast> forecasts = weatherRepository.getVilageForecast(
-                        location.getLatitude(), location.getLongitude());
-                forecastData.postValue(forecasts);
-            }
+            // 예보 데이터는 현재 사용하지 않음
+            forecastData.postValue(new java.util.ArrayList<>());
 
             isLoading.postValue(false);
         });
@@ -102,32 +85,25 @@ public class WeatherViewModel extends AndroidViewModel {
 
     // 기본 위치(서울) 사용
     public void updateWeatherWithDefaultLocation() {
-        isLoading.setValue(true);
-
-        executorService.execute(() -> {
-            // 현재 날씨 가져오기
-            Weather weather = weatherRepository.getCurrentWeather(DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
-
-            if (weather != null) {
-                weatherData.postValue(weather);
-                updateWeatherUI(weather);
-                locationName.postValue("서울");
-            }
-
-            // API 타입에 따라 예보 데이터 가져오기
-            KmaApiClient.ApiType apiType = currentApiType.getValue();
-            if (apiType == KmaApiClient.ApiType.ULTRA_SRT_FCST) {
-                List<KmaForecast> forecasts = weatherRepository.getUltraSrtForecast(
-                        DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
-                forecastData.postValue(forecasts);
-            } else if (apiType == KmaApiClient.ApiType.VILAGE_FCST) {
-                List<KmaForecast> forecasts = weatherRepository.getVilageForecast(
-                        DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
-                forecastData.postValue(forecasts);
-            }
-
-            isLoading.postValue(false);
-        });
+        // 기본 위치 대신 위치 권한 요청 유도
+        isLoading.setValue(false);
+        locationName.setValue("위치 권한이 필요합니다");
+        
+        // 기본 날씨 정보 생성
+        Weather defaultWeather = new Weather(
+                0,
+                20.0f,
+                "Clear",
+                0.0f,
+                50,
+                2.0f,
+                "default",
+                System.currentTimeMillis(),
+                false
+        );
+        weatherData.setValue(defaultWeather);
+        updateWeatherUI(defaultWeather);
+        forecastData.setValue(new java.util.ArrayList<>());
     }
 
     // 위치명 업데이트 (지오코딩)
@@ -189,10 +165,23 @@ public class WeatherViewModel extends AndroidViewModel {
 
     // 날씨 상태 텍스트 변환
     public String getWeatherConditionText(String condition) {
+        if (condition == null) {
+            return "알 수 없음";
+        }
+        
+        // 이미 한글인 경우 그대로 반환
+        if (condition.equals("맑음") || condition.equals("구름많음") || condition.equals("흐림") ||
+            condition.equals("비") || condition.equals("눈") || condition.equals("소나기")) {
+            return condition;
+        }
+        
+        // 영어인 경우 한글로 변환
         if (condition.equalsIgnoreCase("Clear")) {
             return "맑음";
         } else if (condition.equalsIgnoreCase("Clouds")) {
-            return "구름";
+            return "구름많음";
+        } else if (condition.equalsIgnoreCase("Overcast")) {
+            return "흐림";
         } else if (condition.equalsIgnoreCase("Rain")) {
             return "비";
         } else if (condition.equalsIgnoreCase("Drizzle")) {
@@ -237,11 +226,11 @@ public class WeatherViewModel extends AndroidViewModel {
         return umbrellaMessage;
     }
 
-    public LiveData<List<KmaForecast>> getForecastData() {
+    public LiveData<List<Object>> getForecastData() {
         return forecastData;
     }
 
-    public LiveData<KmaApiClient.ApiType> getCurrentApiType() {
+    public LiveData<String> getCurrentApiType() {
         return currentApiType;
     }
 

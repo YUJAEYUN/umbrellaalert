@@ -19,8 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.umbrellaalert.R;
-import com.example.umbrellaalert.data.api.KmaApiClient;
-import com.example.umbrellaalert.data.model.KmaForecast;
+
 import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.databinding.ActivityHomeBinding;
 import com.example.umbrellaalert.service.WeatherUpdateService;
@@ -95,18 +94,18 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
 
         // API 타입 라디오 그룹 리스너
         binding.apiTypeRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            KmaApiClient.ApiType apiType;
+            String apiType;
 
             if (checkedId == R.id.radio_ultra_srt_fcst) {
-                apiType = KmaApiClient.ApiType.ULTRA_SRT_FCST;
+                apiType = "ULTRA_SRT_FCST";
                 binding.forecastCard.setVisibility(View.VISIBLE);
                 binding.forecastTitle.setText("초단기예보 (6시간)");
             } else if (checkedId == R.id.radio_vilage_fcst) {
-                apiType = KmaApiClient.ApiType.VILAGE_FCST;
+                apiType = "VILAGE_FCST";
                 binding.forecastCard.setVisibility(View.VISIBLE);
                 binding.forecastTitle.setText("단기예보 (3일)");
             } else {
-                apiType = KmaApiClient.ApiType.ULTRA_SRT_NCST;
+                apiType = "ULTRA_SRT_NCST";
                 binding.forecastCard.setVisibility(View.GONE);
             }
 
@@ -155,9 +154,9 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
         weatherViewModel.getCurrentApiType().observe(this, apiType -> {
             // 라디오 버튼 상태 업데이트
             RadioGroup radioGroup = binding.apiTypeRadioGroup;
-            if (apiType == KmaApiClient.ApiType.ULTRA_SRT_FCST) {
+            if ("ULTRA_SRT_FCST".equals(apiType)) {
                 radioGroup.check(R.id.radio_ultra_srt_fcst);
-            } else if (apiType == KmaApiClient.ApiType.VILAGE_FCST) {
+            } else if ("VILAGE_FCST".equals(apiType)) {
                 radioGroup.check(R.id.radio_vilage_fcst);
             } else {
                 radioGroup.check(R.id.radio_ultra_srt_ncst);
@@ -189,10 +188,10 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
                 locationViewModel.setLocationPermissionGranted(true);
             } else {
                 // 권한 거부됨
-                Toast.makeText(this, "위치 권한이 필요합니다", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "위치 권한이 필요합니다. 정확한 날씨 정보를 위해 위치 권한을 허용해주세요.", Toast.LENGTH_LONG).show();
                 locationViewModel.setLocationPermissionGranted(false);
 
-                // 기본 위치(서울) 사용
+                // 권한이 없으면 기본 날씨 정보만 표시
                 weatherViewModel.updateWeatherWithDefaultLocation();
             }
         }

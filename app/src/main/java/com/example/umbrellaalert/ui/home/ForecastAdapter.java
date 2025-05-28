@@ -10,8 +10,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.umbrellaalert.R;
-import com.example.umbrellaalert.data.model.KmaForecast;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +18,7 @@ import java.util.List;
  */
 public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.ForecastViewHolder> {
 
-    private List<KmaForecast> forecasts = new ArrayList<>();
+    private List<Object> forecasts = new ArrayList<>();
 
     @NonNull
     @Override
@@ -32,8 +30,8 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
 
     @Override
     public void onBindViewHolder(@NonNull ForecastViewHolder holder, int position) {
-        KmaForecast forecast = forecasts.get(position);
-        holder.bind(forecast);
+        // 현재는 예보 데이터를 사용하지 않음
+        holder.bind(null);
     }
 
     @Override
@@ -44,7 +42,7 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
     /**
      * 예보 목록 설정
      */
-    public void setForecasts(List<KmaForecast> forecasts) {
+    public void setForecasts(List<Object> forecasts) {
         this.forecasts = forecasts;
         notifyDataSetChanged();
     }
@@ -71,55 +69,13 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
         /**
          * 예보 데이터 바인딩
          */
-        public void bind(KmaForecast forecast) {
-            // 시간 표시 (예: "09:00")
-            timeText.setText(forecast.getFormattedTime());
-
-            // 날씨 상태에 따른 아이콘 설정
-            if (forecast.isNeedUmbrella()) {
-                if (forecast.getWeatherCondition().contains("Snow")) {
-                    weatherIcon.setImageResource(R.drawable.ic_weather_snow);
-                } else {
-                    weatherIcon.setImageResource(R.drawable.ic_weather_rainy);
-                }
-            } else {
-                if (forecast.getWeatherCondition().contains("Cloud")) {
-                    weatherIcon.setImageResource(R.drawable.ic_weather_cloudy);
-                } else {
-                    weatherIcon.setImageResource(R.drawable.ic_weather_sunny);
-                }
-            }
-
-            // 날씨 상태 텍스트
-            String condition = getWeatherConditionText(forecast.getWeatherCondition());
-            conditionText.setText(condition);
-
-            // 온도
-            tempText.setText(String.format("%.1f°C", forecast.getTemperature()));
-
-            // 강수확률
-            popText.setText(String.format("%d%%", forecast.getPrecipitationProbability()));
-        }
-
-        /**
-         * 날씨 상태 텍스트 변환
-         */
-        private String getWeatherConditionText(String condition) {
-            if (condition.equalsIgnoreCase("Clear")) {
-                return "맑음";
-            } else if (condition.equalsIgnoreCase("Clouds")) {
-                return "구름";
-            } else if (condition.equalsIgnoreCase("Partly Cloudy")) {
-                return "구름조금";
-            } else if (condition.equalsIgnoreCase("Rain")) {
-                return "비";
-            } else if (condition.equalsIgnoreCase("Rain/Snow")) {
-                return "비/눈";
-            } else if (condition.equalsIgnoreCase("Snow")) {
-                return "눈";
-            } else {
-                return condition;
-            }
+        public void bind(Object forecast) {
+            // 현재는 예보 데이터를 사용하지 않으므로 기본값 표시
+            timeText.setText("--:--");
+            weatherIcon.setImageResource(R.drawable.ic_weather_sunny);
+            conditionText.setText("예보 준비중");
+            tempText.setText("--°");
+            popText.setText("--%");
         }
     }
 }

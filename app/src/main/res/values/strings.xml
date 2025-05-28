@@ -3,7 +3,7 @@
     <string name="app_name">아 맞다 우산!</string>
 
     <!-- 메인 화면 -->
-    <string name="location_time_format">%s %s %s</string>
+    <string name="location_time_format" formatted="false">%s %s %s</string>
     <string name="temperature_format">%d°</string>
     <string name="loading_weather">날씨 정보를 불러오는 중이다냥~</string>
 

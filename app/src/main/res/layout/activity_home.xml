@@ -66,10 +66,7 @@
             android:padding="16dp"
             android:text="날씨 정보를 불러오는 중이다냥~"
             android:textAlignment="center"
-            android:textColor="@color/text_primary"
-            android:textSize="17sp"
-            android:fontFamily="sans-serif"
-            android:letterSpacing="-0.01" />
+            style="@style/CatMessage" />
     </androidx.cardview.widget.CardView>
 
     <!-- 날씨 정보 카드 (iOS 스타일) -->
@@ -97,10 +94,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="현재 날씨"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="-0.01"
+                style="@style/TextSubheader"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -110,8 +104,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="위치 확인 중..."
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
+                style="@style/LocationName"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/weather_title" />
 
@@ -121,10 +114,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="--°C"
-                android:textColor="@color/text_primary"
-                android:textSize="42sp"
-                android:fontFamily="sans-serif-light"
-                android:letterSpacing="-0.02"
+                style="@style/WeatherTemperature"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -145,8 +135,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="로딩 중..."
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
+                style="@style/WeatherCondition"
                 app:layout_constraintBottom_toBottomOf="@id/weather_icon"
                 app:layout_constraintStart_toEndOf="@id/weather_icon"
                 app:layout_constraintTop_toTopOf="@id/weather_icon" />
@@ -168,8 +157,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="강수: --"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
+                style="@style/TextBody"
                 app:layout_constraintBottom_toBottomOf="@id/precipitation_icon"
                 app:layout_constraintStart_toEndOf="@id/precipitation_icon"
                 app:layout_constraintTop_toTopOf="@id/precipitation_icon" />
@@ -191,8 +179,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="습도: --%"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
+                style="@style/TextBody"
                 app:layout_constraintBottom_toBottomOf="@id/humidity_icon"
                 app:layout_constraintStart_toEndOf="@id/humidity_icon"
                 app:layout_constraintTop_toTopOf="@id/humidity_icon" />
@@ -235,10 +222,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:text="날씨 정보를 확인 중이다냥!"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="-0.01"
+                style="@style/UmbrellaMessage"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/umbrella_icon"
@@ -270,10 +254,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="기상청 API 선택"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="-0.01" />
+                style="@style/TextSubheader" />
 
             <RadioGroup
                 android:id="@+id/api_type_radio_group"
@@ -332,10 +313,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="예보 정보"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="-0.01" />
+                style="@style/TextSubheader" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/forecast_recycler_view"
@@ -367,7 +345,7 @@
             android:text="장소 설정"
             android:textColor="@android:color/white"
             android:textSize="15sp"
-            android:fontFamily="sans-serif-medium" />
+            android:fontFamily="@font/pretendard_font_family" />
 
         <Button
             android:id="@+id/btn_settings"
@@ -379,7 +357,7 @@
             android:text="알림 설정"
             android:textColor="@android:color/white"
             android:textSize="15sp"
-            android:fontFamily="sans-serif-medium" />
+            android:fontFamily="@font/pretendard_font_family" />
     </LinearLayout>
 
     <!-- 로딩 인디케이터 -->

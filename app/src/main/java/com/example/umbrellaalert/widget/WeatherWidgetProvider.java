@@ -1,12 +1,18 @@
 package com.example.umbrellaalert.widget;
 
+import android.Manifest;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.widget.RemoteViews;
+
+import androidx.core.content.ContextCompat;
 
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.manager.WeatherManager;
@@ -14,8 +20,6 @@ import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.ui.home.HomeActivity;
 
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * 날씨 위젯 프로바이더 클래스
@@ -66,59 +70,104 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
         views.setTextViewText(R.id.widget_condition, "");
         appWidgetManager.updateAppWidget(appWidgetId, views);
 
-        // 날씨 데이터 비동기 로드
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.execute(() -> {
+        // 위치 권한 확인 후 날씨 데이터 로드
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            // 현재 위치 가져오기
+            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+            Location currentLocation = null;
+            
             try {
-                // 날씨 데이터 가져오기
-                WeatherManager weatherManager = WeatherManager.getInstance(context);
-                // 서울 좌표 (위도, 경도) 기본값 사용
-                Weather weather = weatherManager.getCurrentWeather(37.5665, 126.9780);
-
-                if (weather != null) {
-                    // 위젯 UI 업데이트
-                    views.setTextViewText(R.id.widget_temperature,
-                            String.format(Locale.getDefault(), "%.1f°C", weather.getTemperature()));
-                    views.setTextViewText(R.id.widget_condition, getWeatherConditionText(weather.getWeatherCondition()));
-
-                    // 우산 필요 여부에 따라 아이콘 변경
-                    if (weather.isNeedUmbrella()) {
-                        views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella);
-                        views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요해요!");
-                    } else {
-                        views.setImageViewResource(R.id.widget_icon, R.drawable.ic_weather_sunny);
-                        views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요 없어요");
-                    }
-                } else {
-                    // 날씨 데이터를 가져오지 못한 경우
-                    views.setTextViewText(R.id.widget_temperature, "--°C");
-                    views.setTextViewText(R.id.widget_condition, "날씨 정보 없음");
-                    views.setTextViewText(R.id.widget_umbrella_text, "날씨 정보를 확인할 수 없습니다");
+                Location gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                Location networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                
+                if (gpsLocation != null) {
+                    currentLocation = gpsLocation;
+                } else if (networkLocation != null) {
+                    currentLocation = networkLocation;
                 }
-
-                // 위젯 업데이트
-                appWidgetManager.updateAppWidget(appWidgetId, views);
-            } catch (Exception e) {
-                e.printStackTrace();
-                // 오류 발생 시 위젯 업데이트
-                views.setTextViewText(R.id.widget_temperature, "--°C");
-                views.setTextViewText(R.id.widget_condition, "오류 발생");
-                views.setTextViewText(R.id.widget_umbrella_text, "날씨 정보를 가져오는 중 오류가 발생했습니다");
-                appWidgetManager.updateAppWidget(appWidgetId, views);
-            } finally {
-                executorService.shutdown();
+            } catch (SecurityException e) {
+                // 권한 오류 무시
             }
-        });
+            
+            if (currentLocation != null) {
+                // 현재 위치로 날씨 데이터 가져오기
+                WeatherManager weatherManager = WeatherManager.getInstance(context);
+                final Location finalLocation = currentLocation;
+                
+                weatherManager.getCurrentWeather(finalLocation.getLatitude(), finalLocation.getLongitude(), new WeatherManager.WeatherCallback() {
+                    @Override
+                    public void onSuccess(Weather weather) {
+                        if (weather != null) {
+                            // 위젯 UI 업데이트
+                            views.setTextViewText(R.id.widget_temperature,
+                                    String.format(Locale.getDefault(), "%.1f°C", weather.getTemperature()));
+                            views.setTextViewText(R.id.widget_condition, getWeatherConditionText(weather.getWeatherCondition()));
+
+                            // 우산 필요 여부에 따라 아이콘 변경
+                            if (weather.isNeedUmbrella()) {
+                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella);
+                                views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요해요!");
+                            } else {
+                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_weather_sunny);
+                                views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요 없어요");
+                            }
+                        } else {
+                            // 날씨 데이터를 가져오지 못한 경우
+                            views.setTextViewText(R.id.widget_temperature, "--°C");
+                            views.setTextViewText(R.id.widget_condition, "날씨 정보 없음");
+                            views.setTextViewText(R.id.widget_umbrella_text, "날씨 정보를 확인할 수 없습니다");
+                        }
+
+                        // 위젯 업데이트
+                        appWidgetManager.updateAppWidget(appWidgetId, views);
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        // 오류 발생 시 위젯 업데이트
+                        views.setTextViewText(R.id.widget_temperature, "--°C");
+                        views.setTextViewText(R.id.widget_condition, "오류 발생");
+                        views.setTextViewText(R.id.widget_umbrella_text, "날씨 정보를 가져오는 중 오류가 발생했습니다");
+                        appWidgetManager.updateAppWidget(appWidgetId, views);
+                    }
+                });
+            } else {
+                // 위치 정보가 없는 경우
+                views.setTextViewText(R.id.widget_temperature, "--°C");
+                views.setTextViewText(R.id.widget_condition, "위치 정보 없음");
+                views.setTextViewText(R.id.widget_umbrella_text, "현재 위치를 확인할 수 없습니다");
+                appWidgetManager.updateAppWidget(appWidgetId, views);
+            }
+        } else {
+            // 위치 권한이 없는 경우
+            views.setTextViewText(R.id.widget_temperature, "--°C");
+            views.setTextViewText(R.id.widget_condition, "권한 필요");
+            views.setTextViewText(R.id.widget_umbrella_text, "위치 권한이 필요합니다");
+            appWidgetManager.updateAppWidget(appWidgetId, views);
+        }
     }
 
     /**
      * 날씨 상태 텍스트 변환
      */
     private String getWeatherConditionText(String condition) {
+        if (condition == null) {
+            return "알 수 없음";
+        }
+        
+        // 이미 한글인 경우 그대로 반환
+        if (condition.equals("맑음") || condition.equals("구름많음") || condition.equals("흐림") ||
+            condition.equals("비") || condition.equals("눈") || condition.equals("소나기")) {
+            return condition;
+        }
+        
+        // 영어인 경우 한글로 변환
         if (condition.equalsIgnoreCase("Clear")) {
             return "맑음";
         } else if (condition.equalsIgnoreCase("Clouds")) {
-            return "구름";
+            return "구름많음";
+        } else if (condition.equalsIgnoreCase("Overcast")) {
+            return "흐림";
         } else if (condition.equalsIgnoreCase("Rain")) {
             return "비";
         } else if (condition.equalsIgnoreCase("Drizzle")) {

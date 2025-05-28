@@ -105,23 +105,31 @@ public class WeatherUpdateService extends Service {
             public void run() {
                 try {
                     // 날씨 정보 가져오기
-                    Weather weather = weatherManager.getCurrentWeather(
-                            location.getLatitude(), location.getLongitude());
+                    weatherManager.getCurrentWeather(
+                            location.getLatitude(), location.getLongitude(), new WeatherManager.WeatherCallback() {
+                                @Override
+                                public void onSuccess(Weather weather) {
+                                    if (weather != null) {
+                                        // UI 쓰레드에서 알림 업데이트
+                                        handler.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                updateNotification(weather);
 
-                    if (weather != null) {
-                        // UI 쓰레드에서 알림 업데이트
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                updateNotification(weather);
-
-                                // 우산이 필요하면 특별 알림 생성
-                                if (weather.isNeedUmbrella()) {
-                                    sendUmbrellaNotification(weather);
+                                                // 우산이 필요하면 특별 알림 생성
+                                                if (weather.isNeedUmbrella()) {
+                                                    sendUmbrellaNotification(weather);
+                                                }
+                                            }
+                                        });
+                                    }
                                 }
-                            }
-                        });
-                    }
+
+                                @Override
+                                public void onError(String error) {
+                                    Log.e(TAG, "Failed to get weather: " + error);
+                                }
+                            });
                 } catch (Exception e) {
                     Log.e(TAG, "Error updating weather", e);
                 }

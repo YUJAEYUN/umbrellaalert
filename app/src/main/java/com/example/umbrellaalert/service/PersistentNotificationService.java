@@ -1,5 +1,6 @@
 package com.example.umbrellaalert.service;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -8,6 +9,10 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,6 +21,7 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.manager.WeatherManager;
@@ -25,12 +31,13 @@ import com.example.umbrellaalert.ui.home.HomeActivity;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
  * 상태바에 지속적인 날씨 알림을 표시하는 서비스
  */
-public class PersistentNotificationService extends Service {
+public class PersistentNotificationService extends Service implements LocationListener {
 
     private static final String TAG = "PersistentNotifService";
     private static final String CHANNEL_ID = "weather_persistent_channel";
@@ -44,6 +51,8 @@ public class PersistentNotificationService extends Service {
     private ExecutorService executorService;
     private Handler handler;
     private Runnable updateRunnable;
+    private LocationManager locationManager;
+    private Location currentLocation;
 
     @Override
     public void onCreate() {
@@ -51,6 +60,7 @@ public class PersistentNotificationService extends Service {
         weatherManager = WeatherManager.getInstance(this);
         executorService = Executors.newSingleThreadExecutor();
         handler = new Handler(Looper.getMainLooper());
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
         // 업데이트 Runnable 정의
         updateRunnable = new Runnable() {
@@ -64,6 +74,9 @@ public class PersistentNotificationService extends Service {
 
         // 알림 채널 생성
         createNotificationChannel();
+        
+        // 위치 업데이트 시작
+        startLocationUpdates();
     }
 
     @Override
@@ -78,7 +91,6 @@ public class PersistentNotificationService extends Service {
         return START_STICKY;
     }
 
-    @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -89,6 +101,7 @@ public class PersistentNotificationService extends Service {
         super.onDestroy();
         // 업데이트 중지
         handler.removeCallbacks(updateRunnable);
+        stopLocationUpdates();
         executorService.shutdown();
     }
 
@@ -109,17 +122,17 @@ public class PersistentNotificationService extends Service {
         }
     }
 
+
+
     /**
      * 날씨 알림 업데이트
      */
     private void updateWeatherNotification() {
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    // 서울 좌표 (위도, 경도) 기본값 사용
-                    Weather weather = weatherManager.getCurrentWeather(37.5665, 126.9780);
-
+        if (currentLocation != null) {
+            // 현재 위치 사용
+            weatherManager.getCurrentWeather(currentLocation.getLatitude(), currentLocation.getLongitude(), new WeatherManager.WeatherCallback() {
+                @Override
+                public void onSuccess(Weather weather) {
                     if (weather != null) {
                         // 메인 스레드에서 알림 업데이트
                         handler.post(new Runnable() {
@@ -129,11 +142,76 @@ public class PersistentNotificationService extends Service {
                             }
                         });
                     }
-                } catch (Exception e) {
-                    Log.e(TAG, "날씨 정보 업데이트 중 오류 발생", e);
                 }
+
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "Failed to get weather for notification: " + error);
+                }
+            });
+        } else {
+            Log.w(TAG, "Current location not available for weather update");
+        }
+    }
+
+    /**
+     * 위치 업데이트 시작
+     */
+    private void startLocationUpdates() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            try {
+                // GPS 위치 요청
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 300000, 1000, this); // 5분마다, 1km 변경시
+                
+                // 네트워크 위치 요청
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 300000, 1000, this);
+                
+                // 마지막 알려진 위치 가져오기
+                Location lastKnownGps = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                Location lastKnownNetwork = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                
+                if (lastKnownGps != null) {
+                    currentLocation = lastKnownGps;
+                    Log.d(TAG, "Using last known GPS location");
+                } else if (lastKnownNetwork != null) {
+                    currentLocation = lastKnownNetwork;
+                    Log.d(TAG, "Using last known network location");
+                }
+                
+                Log.d(TAG, "Location updates started");
+            } catch (SecurityException e) {
+                Log.e(TAG, "Location permission denied", e);
             }
-        });
+        }
+    }
+
+    /**
+     * 위치 업데이트 중지
+     */
+    private void stopLocationUpdates() {
+        try {
+            locationManager.removeUpdates(this);
+            Log.d(TAG, "Location updates stopped");
+        } catch (SecurityException e) {
+            Log.e(TAG, "Error stopping location updates", e);
+        }
+    }
+
+    // LocationListener 구현
+    @Override
+    public void onLocationChanged(Location location) {
+        currentLocation = location;
+        Log.d(TAG, "Location updated: " + location.getLatitude() + ", " + location.getLongitude());
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+        Log.d(TAG, "Location provider enabled: " + provider);
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+        Log.d(TAG, "Location provider disabled: " + provider);
     }
 
     /**

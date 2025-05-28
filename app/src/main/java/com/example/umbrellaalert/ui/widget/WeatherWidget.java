@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 import com.example.umbrellaalert.R;
@@ -18,6 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class WeatherWidget extends AppWidgetProvider {
+    private static final String TAG = "WeatherWidget";
 
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -52,11 +54,19 @@ public class WeatherWidget extends AppWidgetProvider {
                     WeatherManager weatherManager = WeatherManager.getInstance(context);
 
                     // 마지막 알려진 위치 또는 기본 위치(서울) 사용
-                    Weather weather = weatherManager.getCurrentWeather(37.5665, 126.9780); // 기본 서울 위치
+                    weatherManager.getCurrentWeather(37.5665, 126.9780, new WeatherManager.WeatherCallback() {
+                        @Override
+                        public void onSuccess(Weather weather) {
+                            if (weather != null) {
+                                updateWidgetWithWeather(context, appWidgetManager, appWidgetId, weather);
+                            }
+                        }
 
-                    if (weather != null) {
-                        updateWidgetWithWeather(context, appWidgetManager, appWidgetId, weather);
-                    }
+                        @Override
+                        public void onError(String error) {
+                            Log.e(TAG, "Failed to get weather for widget: " + error);
+                        }
+                    });
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
