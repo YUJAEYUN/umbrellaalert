@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 기본 앱 테마 (iOS 스타일) -->
+    <!-- 기본 앱 테마 (iOS 17 스타일) -->
     <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/ios_blue</item>
         <item name="colorPrimaryDark">@color/ios_blue</item>
         <item name="colorAccent">@color/ios_blue</item>
+        <item name="colorSurface">@color/ios_card_background</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOnPrimary">@android:color/white</item>
 
-        <!-- 상태 표시줄 설정 (iOS 스타일) -->
+        <!-- 상태 표시줄 설정 (iOS 17 스타일) -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentStatus">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightNavigationBar">true</item>
 
         <!-- 배경 설정 -->
         <item name="android:windowBackground">@color/ios_background</item>
@@ -26,6 +31,9 @@
 
         <!-- 다이얼로그 스타일 -->
         <item name="materialAlertDialogTheme">@style/iOSDialog</item>
+
+        <!-- 스위치 스타일 -->
+        <item name="switchStyle">@style/iOSSwitch</item>
     </style>
 
     <!-- 버튼 스타일 -->
@@ -128,29 +136,46 @@
         <item name="android:fontFamily">@font/pretendard_font_family</item>
     </style>
 
-    <!-- iOS 스타일 버튼 -->
+    <!-- iOS 17 스타일 버튼 -->
     <style name="iOSButton" parent="Widget.MaterialComponents.Button.UnelevatedButton">
-        <item name="cornerRadius">12dp</item>
-        <item name="android:paddingStart">16dp</item>
-        <item name="android:paddingEnd">16dp</item>
-        <item name="android:paddingTop">10dp</item>
-        <item name="android:paddingBottom">10dp</item>
-        <item name="android:textSize">15sp</item>
+        <item name="cornerRadius">@dimen/ios_button_corner_radius</item>
+        <item name="android:paddingStart">@dimen/ios_button_padding_horizontal</item>
+        <item name="android:paddingEnd">@dimen/ios_button_padding_horizontal</item>
+        <item name="android:paddingTop">@dimen/ios_button_padding_vertical</item>
+        <item name="android:paddingBottom">@dimen/ios_button_padding_vertical</item>
+        <item name="android:minHeight">@dimen/ios_button_height</item>
+        <item name="android:textSize">@dimen/ios_text_body</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:fontFamily">@font/pretendard_font_family</item>
         <item name="android:letterSpacing">-0.01</item>
-        <item name="backgroundTint">@color/ios_card_background</item>
+        <item name="backgroundTint">@color/ios_blue</item>
         <item name="rippleColor">@color/ios_blue</item>
-        <item name="android:textColor">@color/ios_blue</item>
+        <item name="android:textColor">@android:color/white</item>
         <item name="android:stateListAnimator">@null</item>
+        <item name="android:fontWeight">500</item>
     </style>
 
-    <!-- iOS 스타일 카드 -->
+    <!-- iOS 17 스타일 보조 버튼 -->
+    <style name="iOSButtonSecondary" parent="iOSButton">
+        <item name="backgroundTint">@color/ios_secondary_fill</item>
+        <item name="android:textColor">@color/ios_blue</item>
+        <item name="strokeColor">@color/ios_separator</item>
+        <item name="strokeWidth">0.5dp</item>
+    </style>
+
+    <!-- iOS 17 스타일 카드 -->
     <style name="iOSCard" parent="Widget.MaterialComponents.CardView">
-        <item name="cardCornerRadius">16dp</item>
-        <item name="cardElevation">0dp</item>
+        <item name="cardCornerRadius">@dimen/ios_card_corner_radius</item>
+        <item name="cardElevation">@dimen/ios_card_elevation</item>
         <item name="contentPadding">0dp</item>
-        <item name="cardBackgroundColor">@color/widget_bg_translucent</item>
+        <item name="cardBackgroundColor">@color/ios_card_background</item>
+        <item name="android:layout_margin">@dimen/ios_spacing_xs</item>
+    </style>
+
+    <!-- iOS 17 스타일 대형 카드 -->
+    <style name="iOSCardLarge" parent="iOSCard">
+        <item name="cardCornerRadius">@dimen/ios_card_large_corner_radius</item>
+        <item name="android:layout_margin">@dimen/ios_spacing_sm</item>
     </style>
 
     <!-- iOS 스타일 다이얼로그 -->
@@ -186,7 +211,7 @@
     </style>
 
     <!-- Pretendard 폰트 전용 스타일들 -->
-    
+
     <!-- 날씨 온도 표시용 스타일 -->
     <style name="WeatherTemperature">
         <item name="android:textColor">@color/text_primary</item>
@@ -230,5 +255,52 @@
         <item name="android:fontFamily">@font/pretendard_font_family</item>
         <item name="android:fontWeight">600</item>
         <item name="android:letterSpacing">-0.005</item>
+    </style>
+
+    <!-- iOS 17 스타일 스위치 -->
+    <style name="iOSSwitch" parent="Widget.MaterialComponents.CompoundButton.Switch">
+        <item name="thumbTint">@android:color/white</item>
+        <item name="trackTint">@color/ios_green</item>
+        <item name="trackTintMode">src_in</item>
+        <item name="android:thumb">@drawable/ios_switch_thumb</item>
+        <item name="android:track">@drawable/ios_switch_track</item>
+    </style>
+
+    <!-- iOS 17 스타일 네비게이션 바 -->
+    <style name="iOSNavigationBar">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/ios_navbar_height</item>
+        <item name="android:background">@color/ios_card_background</item>
+        <item name="android:elevation">0dp</item>
+        <item name="android:paddingStart">@dimen/ios_spacing_md</item>
+        <item name="android:paddingEnd">@dimen/ios_spacing_md</item>
+    </style>
+
+    <!-- iOS 17 스타일 네비게이션 바 제목 -->
+    <style name="iOSNavigationTitle">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/ios_text_headline</item>
+        <item name="android:fontFamily">@font/pretendard_font_family</item>
+        <item name="android:fontWeight">600</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <!-- iOS 17 스타일 리스트 아이템 -->
+    <style name="iOSListItem">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/ios_list_item_height</item>
+        <item name="android:background">@color/ios_card_background</item>
+        <item name="android:paddingStart">@dimen/ios_spacing_md</item>
+        <item name="android:paddingEnd">@dimen/ios_spacing_md</item>
+        <item name="android:gravity">center_vertical</item>
+    </style>
+
+    <!-- iOS 17 스타일 구분선 -->
+    <style name="iOSSeparator">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/ios_list_separator_height</item>
+        <item name="android:background">@color/ios_separator</item>
+        <item name="android:layout_marginStart">@dimen/ios_spacing_md</item>
     </style>
 </resources>

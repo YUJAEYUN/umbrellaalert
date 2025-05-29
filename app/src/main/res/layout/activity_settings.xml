@@ -4,23 +4,22 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/sunny_bg"
+    android:background="@color/ios_background"
     tools:context=".ui.settings.SettingsActivity">
 
-    <!-- 상단 바 -->
+    <!-- iOS 17 스타일 네비게이션 바 -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/top_bar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/colorPrimary"
+        style="@style/iOSNavigationBar"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
             android:id="@+id/btn_back"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="@dimen/ios_navbar_button_size"
+            android:layout_height="@dimen/ios_navbar_button_size"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
+            android:tint="@color/ios_blue"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -29,9 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="알림 설정"
-            android:textColor="@color/widget_bg"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            style="@style/iOSNavigationTitle"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -39,14 +36,14 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- 설정 컨테이너 -->
+    <!-- iOS 17 스타일 설정 컨테이너 -->
     <androidx.cardview.widget.CardView
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardBackgroundColor="@color/widget_bg"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="4dp"
+        android:layout_margin="@dimen/ios_card_margin"
+        app:cardBackgroundColor="@color/ios_card_background"
+        app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+        app:cardElevation="@dimen/ios_card_elevation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/top_bar">
@@ -55,241 +52,269 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="@dimen/ios_spacing_xs">
 
-            <!-- 아침 날씨 알림 설정 -->
+            <!-- 아침 날씨 알림 설정 섹션 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/ios_spacing_md"
+                android:layout_marginTop="@dimen/ios_spacing_md"
+                android:layout_marginBottom="@dimen/ios_spacing_sm"
                 android:text="아침 날씨 알림"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/ios_text_footnote"
+                android:textAllCaps="true"
+                android:fontFamily="@font/pretendard_font_family" />
 
+            <!-- 아침 알림 활성화 -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                style="@style/iOSListItem"
+                android:background="?attr/selectableItemBackground">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="아침 날씨 알림 활성화"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/ios_text_body"
+                    android:fontFamily="@font/pretendard_font_family" />
 
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switch_morning_alert"
+                    style="@style/iOSSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
+            <!-- 구분선 -->
+            <View style="@style/iOSSeparator" />
+
             <!-- 아침 알림 시간 설정 -->
             <LinearLayout
                 android:id="@+id/time_picker_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                style="@style/iOSListItem"
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="8dp">
+                android:focusable="true">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="알림 시간"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/ios_text_body"
+                    android:fontFamily="@font/pretendard_font_family" />
 
                 <TextView
                     android:id="@+id/time_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="오전 7:00"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp" />
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/ios_text_body"
+                    android:fontFamily="@font/pretendard_font_family" />
             </LinearLayout>
 
-            <!-- 구분선 -->
+            <!-- 섹션 구분 공간 -->
             <View
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:background="#E0E0E0" />
+                android:layout_height="@dimen/ios_spacing_lg"
+                android:background="@color/ios_background" />
 
-            <!-- 비소식 알림 설정 -->
+            <!-- 비소식 알림 설정 섹션 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/ios_spacing_md"
+                android:layout_marginTop="@dimen/ios_spacing_md"
+                android:layout_marginBottom="@dimen/ios_spacing_sm"
                 android:text="비소식 알림"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/ios_text_footnote"
+                android:textAllCaps="true"
+                android:fontFamily="@font/pretendard_font_family" />
 
+            <!-- 비 예보 알림 활성화 -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                style="@style/iOSListItem"
+                android:background="?attr/selectableItemBackground">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="비 예보 시 알림 활성화"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/ios_text_body"
+                    android:fontFamily="@font/pretendard_font_family" />
 
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switch_rain_alert"
+                    style="@style/iOSSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
-            <!-- 구분선 -->
+            <!-- 섹션 구분 공간 -->
             <View
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:background="#E0E0E0" />
+                android:layout_height="@dimen/ios_spacing_lg"
+                android:background="@color/ios_background" />
 
-            <!-- 알림 방식 설정 -->
+            <!-- 알림 방식 설정 섹션 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/ios_spacing_md"
+                android:layout_marginTop="@dimen/ios_spacing_md"
+                android:layout_marginBottom="@dimen/ios_spacing_sm"
                 android:text="알림 방식"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/ios_text_footnote"
+                android:textAllCaps="true"
+                android:fontFamily="@font/pretendard_font_family" />
 
             <!-- 진동 설정 -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                style="@style/iOSListItem"
+                android:background="?attr/selectableItemBackground">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="진동"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/ios_text_body"
+                    android:fontFamily="@font/pretendard_font_family" />
 
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switch_vibration"
+                    style="@style/iOSSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
+            <!-- 구분선 -->
+            <View style="@style/iOSSeparator" />
+
             <!-- 소리 설정 -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                style="@style/iOSListItem"
+                android:background="?attr/selectableItemBackground">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="소리"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/ios_text_body"
+                    android:fontFamily="@font/pretendard_font_family" />
 
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switch_sound"
+                    style="@style/iOSSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
-            <!-- 구분선 -->
+            <!-- 섹션 구분 공간 -->
             <View
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:background="#E0E0E0" />
+                android:layout_height="@dimen/ios_spacing_lg"
+                android:background="@color/ios_background" />
 
-            <!-- 위젯 설정 -->
+            <!-- 위젯 설정 섹션 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/ios_spacing_md"
+                android:layout_marginTop="@dimen/ios_spacing_md"
+                android:layout_marginBottom="@dimen/ios_spacing_sm"
                 android:text="위젯 설정"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/ios_text_footnote"
+                android:textAllCaps="true"
+                android:fontFamily="@font/pretendard_font_family" />
 
             <!-- 위젯 활성화 설정 -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                style="@style/iOSListItem"
+                android:background="?attr/selectableItemBackground">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="날씨 위젯 활성화"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/ios_text_body"
+                    android:fontFamily="@font/pretendard_font_family" />
 
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switch_widget"
+                    style="@style/iOSSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
+            <!-- 구분선 -->
+            <View style="@style/iOSSeparator" />
+
             <!-- 위젯 업데이트 주기 설정 -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                style="@style/iOSListItem"
+                android:background="?attr/selectableItemBackground">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="위젯 자동 업데이트"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/ios_text_body"
+                    android:fontFamily="@font/pretendard_font_family" />
 
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switch_widget_auto_update"
+                    style="@style/iOSSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
+            <!-- 구분선 -->
+            <View style="@style/iOSSeparator" />
+
             <!-- 상태바 알림 설정 -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                style="@style/iOSListItem"
+                android:background="?attr/selectableItemBackground">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="상태바에 날씨 알림 표시"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/ios_text_body"
+                    android:fontFamily="@font/pretendard_font_family" />
 
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switch_persistent_notification"
+                    style="@style/iOSSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
+
+            <!-- 하단 여백 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/ios_spacing_md" />
+
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

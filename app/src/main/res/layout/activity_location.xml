@@ -4,23 +4,22 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/sunny_bg"
+    android:background="@color/ios_background"
     tools:context=".ui.location.LocationActivity">
 
-    <!-- 상단 바 -->
+    <!-- iOS 17 스타일 네비게이션 바 -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/top_bar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/colorPrimary"
+        style="@style/iOSNavigationBar"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
             android:id="@+id/btn_back"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="@dimen/ios_navbar_button_size"
+            android:layout_height="@dimen/ios_navbar_button_size"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
+            android:tint="@color/ios_blue"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -29,9 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="장소 설정"
-            android:textColor="@color/widget_bg"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            style="@style/iOSNavigationTitle"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -39,14 +36,14 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- 장소 목록 카드 -->
+    <!-- iOS 17 스타일 장소 목록 카드 -->
     <androidx.cardview.widget.CardView
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_margin="16dp"
-        app:cardBackgroundColor="@color/widget_bg"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="4dp"
+        android:layout_margin="@dimen/ios_card_margin"
+        app:cardBackgroundColor="@color/ios_card_background"
+        app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+        app:cardElevation="@dimen/ios_card_elevation"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -58,58 +55,64 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:padding="16dp" />
+            android:scrollbars="none"
+            android:overScrollMode="never"
+            android:padding="@dimen/ios_spacing_xs" />
     </androidx.cardview.widget.CardView>
 
-    <!-- 빈 상태 메시지 -->
+    <!-- iOS 17 스타일 빈 상태 메시지 -->
     <androidx.cardview.widget.CardView
         android:id="@+id/empty_view"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardBackgroundColor="@color/widget_bg"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="4dp"
+        android:layout_margin="@dimen/ios_card_margin"
+        app:cardBackgroundColor="@color/ios_card_background"
+        app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+        app:cardElevation="@dimen/ios_card_elevation"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/top_bar"
-        app:layout_constraintWidth_percent="0.8">
+        app:layout_constraintWidth_percent="0.85">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="vertical"
-            android:padding="32dp">
+            android:padding="@dimen/ios_spacing_xxl">
 
             <!-- 고양이 이미지 -->
             <ImageView
-                android:layout_width="120dp"
-                android:layout_height="120dp"
+                android:layout_width="@dimen/cat_image_size"
+                android:layout_height="@dimen/cat_image_size"
                 android:src="@drawable/cat_sunny" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="@dimen/ios_spacing_md"
                 android:gravity="center"
                 android:text="등록된 장소가 없다냥!\n장소를 추가해보자냥~"
                 android:textColor="@color/text_primary"
-                android:textSize="16sp" />
+                android:textSize="@dimen/ios_text_body"
+                android:fontFamily="@font/pretendard_font_family"
+                android:lineSpacingExtra="4dp" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- 장소 추가 버튼 -->
+    <!-- iOS 17 스타일 장소 추가 버튼 -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add_location"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:backgroundTint="@color/alert_color"
+        android:layout_margin="@dimen/ios_spacing_lg"
+        android:backgroundTint="@color/ios_blue"
         android:src="@android:drawable/ic_input_add"
+        app:borderWidth="0dp"
+        app:elevation="@dimen/ios_shadow_elevation"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:tint="#FFFFFF" />
+        app:tint="@android:color/white" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

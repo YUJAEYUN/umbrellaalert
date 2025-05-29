@@ -5,18 +5,23 @@
     android:id="@+id/main_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/sunny_bg"
+    android:background="@color/ios_background"
     tools:context=".ui.home.HomeActivity">
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:scrollbars="none"
+        android:overScrollMode="never">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="24dp">
+            android:paddingTop="@dimen/ios_spacing_xl"
+            android:paddingBottom="@dimen/ios_spacing_xxl"
+            android:paddingStart="@dimen/ios_spacing_md"
+            android:paddingEnd="@dimen/ios_spacing_md">
 
     <!-- 구름 및 고양이 컨테이너 -->
     <FrameLayout
@@ -45,48 +50,48 @@
             android:src="@drawable/cat_sunny" />
     </FrameLayout>
 
-    <!-- 고양이 말풍선 메시지 (iOS 스타일) -->
+    <!-- 고양이 말풍선 메시지 (iOS 17 스타일) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/message_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/ios_spacing_md"
         app:cardBackgroundColor="@color/ios_card_background"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
+        app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+        app:cardElevation="@dimen/ios_card_elevation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cloud_cat_container"
-        app:layout_constraintWidth_percent="0.9">
+        app:layout_constraintTop_toBottomOf="@id/cloud_cat_container">
 
         <TextView
             android:id="@+id/cat_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp"
+            android:padding="@dimen/ios_card_padding"
             android:text="날씨 정보를 불러오는 중이다냥~"
             android:textAlignment="center"
+            android:gravity="center"
             style="@style/CatMessage" />
     </androidx.cardview.widget.CardView>
 
-    <!-- 날씨 정보 카드 (iOS 스타일) -->
+    <!-- 날씨 정보 카드 (iOS 17 스타일) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/weather_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="@dimen/ios_spacing_lg"
         app:cardBackgroundColor="@color/ios_card_background"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
+        app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+        app:cardElevation="@dimen/ios_card_elevation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/message_card"
-        app:layout_constraintWidth_percent="0.9">
+        app:layout_constraintTop_toBottomOf="@id/message_card">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp">
+            android:padding="@dimen/ios_card_padding"
+            android:minHeight="@dimen/weather_card_min_height">
 
             <!-- 현재 날씨 제목 -->
             <TextView
@@ -186,24 +191,24 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- 우산 알림 카드 (iOS 스타일) -->
+    <!-- 우산 알림 카드 (iOS 17 스타일) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/umbrella_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:cardBackgroundColor="@color/widget_bg"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
+        android:layout_marginTop="@dimen/ios_spacing_md"
+        app:cardBackgroundColor="@color/ios_card_background"
+        app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+        app:cardElevation="@dimen/ios_card_elevation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/weather_card"
-        app:layout_constraintWidth_percent="0.9">
+        app:layout_constraintTop_toBottomOf="@id/weather_card">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp">
+            android:padding="@dimen/ios_card_padding"
+            android:minHeight="@dimen/ios_list_item_large_height">
 
             <!-- 우산 아이콘 -->
             <ImageView
@@ -323,41 +328,40 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- 설정 및 위치 버튼 -->
+    <!-- 설정 및 위치 버튼 (iOS 17 스타일) -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="@dimen/ios_spacing_lg"
         android:gravity="center"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/forecast_card"
-        app:layout_constraintWidth_percent="0.9">
+        app:layout_constraintTop_toBottomOf="@id/forecast_card">
 
         <Button
             android:id="@+id/btn_location"
+            style="@style/iOSButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
+            android:layout_height="@dimen/ios_button_large_height"
+            android:layout_marginEnd="@dimen/ios_spacing_sm"
             android:layout_weight="1"
-            android:backgroundTint="@color/ios_blue"
             android:text="장소 설정"
-            android:textColor="@android:color/white"
-            android:textSize="15sp"
-            android:fontFamily="@font/pretendard_font_family" />
+            android:drawableStart="@drawable/ic_location"
+            android:drawablePadding="@dimen/ios_spacing_sm"
+            android:gravity="center" />
 
         <Button
             android:id="@+id/btn_settings"
+            style="@style/iOSButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_height="@dimen/ios_button_large_height"
+            android:layout_marginStart="@dimen/ios_spacing_sm"
             android:layout_weight="1"
-            android:backgroundTint="@color/ios_blue"
             android:text="알림 설정"
-            android:textColor="@android:color/white"
-            android:textSize="15sp"
-            android:fontFamily="@font/pretendard_font_family" />
+            android:drawableStart="@drawable/ic_settings"
+            android:drawablePadding="@dimen/ios_spacing_sm"
+            android:gravity="center" />
     </LinearLayout>
 
     <!-- 로딩 인디케이터 -->

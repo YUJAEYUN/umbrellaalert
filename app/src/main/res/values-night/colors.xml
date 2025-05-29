@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- iOS 17 다크 모드 색상 팔레트 -->
+    <color name="colorPrimary">#0A84FF</color>
+    <color name="colorPrimaryDark">#0969DA</color>
+    <color name="colorAccent">#FF375F</color>
+
+    <!-- 앱 전용 색상 - iOS 17 다크 모드 -->
+    <color name="sunny_bg">#000000</color>
+    <color name="sunny_bg_start">#1C1C1E</color>
+    <color name="sunny_bg_end">#2C2C2E</color>
+
+    <color name="rainy_bg">#000000</color>
+    <color name="rainy_bg_start">#1C1C1E</color>
+    <color name="rainy_bg_end">#2C2C2E</color>
+
+    <color name="alert_color">#64D2FF</color>
+    <color name="alert_color_light">#1E3A8A</color>
+    <color name="alert_color_dark">#0EA5E9</color>
+
+    <color name="widget_bg">#1C1C1E</color>
+    <color name="widget_bg_translucent">#2C2C2E</color>
+
+    <!-- iOS 17 다크 모드 텍스트 색상 -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#8E8E93</color>
+    <color name="text_tertiary">#48484A</color>
+    <color name="text_on_alert">#FFFFFF</color>
+
+    <!-- iOS 17 다크 모드 시스템 색상 -->
+    <color name="ios_blue">#0A84FF</color>
+    <color name="ios_green">#30D158</color>
+    <color name="ios_indigo">#5E5CE6</color>
+    <color name="ios_orange">#FF9F0A</color>
+    <color name="ios_pink">#FF2D92</color>
+    <color name="ios_purple">#BF5AF2</color>
+    <color name="ios_red">#FF453A</color>
+    <color name="ios_teal">#40C8E0</color>
+    <color name="ios_yellow">#FFD60A</color>
+    <color name="ios_mint">#63E6E2</color>
+    <color name="ios_cyan">#64D2FF</color>
+    <color name="ios_brown">#AC8E68</color>
+
+    <!-- iOS 17 다크 모드 배경 색상 -->
+    <color name="ios_background">#000000</color>
+    <color name="ios_secondary_background">#1C1C1E</color>
+    <color name="ios_tertiary_background">#2C2C2E</color>
+    <color name="ios_card_background">#1C1C1E</color>
+    <color name="ios_grouped_background">#000000</color>
+
+    <!-- iOS 17 다크 모드 구분선 및 테두리 색상 -->
+    <color name="ios_separator">#38383A</color>
+    <color name="ios_opaque_separator">#C6C6C8</color>
+    <color name="divider">#38383A</color>
+
+    <!-- iOS 17 다크 모드 Fill 색상 -->
+    <color name="ios_fill">#7676803D</color>
+    <color name="ios_secondary_fill">#76768033</color>
+    <color name="ios_tertiary_fill">#7676802E</color>
+    <color name="ios_quaternary_fill">#7676801E</color>
+
+    <!-- 고양이 테마 다크 모드 색상 -->
+    <color name="cat_cloud_white">#2C2C2E</color>
+    <color name="cat_cloud_light">#1C1C1E</color>
+    <color name="cat_primary">#FF6B6B</color>
+    <color name="cat_secondary">#4ECDC4</color>
+    <color name="cat_accent">#FFE66D</color>
+</resources>

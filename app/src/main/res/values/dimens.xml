@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- iOS 17 스타일 치수 -->
+    
+    <!-- 기본 간격 -->
+    <dimen name="ios_spacing_xs">4dp</dimen>
+    <dimen name="ios_spacing_sm">8dp</dimen>
+    <dimen name="ios_spacing_md">16dp</dimen>
+    <dimen name="ios_spacing_lg">24dp</dimen>
+    <dimen name="ios_spacing_xl">32dp</dimen>
+    <dimen name="ios_spacing_xxl">48dp</dimen>
+
+    <!-- 카드 및 컨테이너 -->
+    <dimen name="ios_card_corner_radius">12dp</dimen>
+    <dimen name="ios_card_large_corner_radius">16dp</dimen>
+    <dimen name="ios_card_elevation">0dp</dimen>
+    <dimen name="ios_card_padding">16dp</dimen>
+    <dimen name="ios_card_margin">16dp</dimen>
+
+    <!-- 버튼 -->
+    <dimen name="ios_button_corner_radius">10dp</dimen>
+    <dimen name="ios_button_large_corner_radius">14dp</dimen>
+    <dimen name="ios_button_height">44dp</dimen>
+    <dimen name="ios_button_large_height">50dp</dimen>
+    <dimen name="ios_button_padding_horizontal">16dp</dimen>
+    <dimen name="ios_button_padding_vertical">12dp</dimen>
+
+    <!-- 텍스트 크기 -->
+    <dimen name="ios_text_large_title">34sp</dimen>
+    <dimen name="ios_text_title1">28sp</dimen>
+    <dimen name="ios_text_title2">22sp</dimen>
+    <dimen name="ios_text_title3">20sp</dimen>
+    <dimen name="ios_text_headline">17sp</dimen>
+    <dimen name="ios_text_body">17sp</dimen>
+    <dimen name="ios_text_callout">16sp</dimen>
+    <dimen name="ios_text_subhead">15sp</dimen>
+    <dimen name="ios_text_footnote">13sp</dimen>
+    <dimen name="ios_text_caption1">12sp</dimen>
+    <dimen name="ios_text_caption2">11sp</dimen>
+
+    <!-- 아이콘 크기 -->
+    <dimen name="ios_icon_small">16dp</dimen>
+    <dimen name="ios_icon_medium">24dp</dimen>
+    <dimen name="ios_icon_large">32dp</dimen>
+    <dimen name="ios_icon_xlarge">48dp</dimen>
+
+    <!-- 네비게이션 바 -->
+    <dimen name="ios_navbar_height">44dp</dimen>
+    <dimen name="ios_navbar_large_height">96dp</dimen>
+    <dimen name="ios_navbar_button_size">44dp</dimen>
+
+    <!-- 리스트 아이템 -->
+    <dimen name="ios_list_item_height">44dp</dimen>
+    <dimen name="ios_list_item_large_height">60dp</dimen>
+    <dimen name="ios_list_separator_height">0.5dp</dimen>
+
+    <!-- 스위치 및 컨트롤 -->
+    <dimen name="ios_switch_width">51dp</dimen>
+    <dimen name="ios_switch_height">31dp</dimen>
+    <dimen name="ios_switch_thumb_size">27dp</dimen>
+
+    <!-- 그림자 및 elevation -->
+    <dimen name="ios_shadow_elevation">2dp</dimen>
+    <dimen name="ios_shadow_radius">8dp</dimen>
+
+    <!-- 고양이 테마 전용 -->
+    <dimen name="cat_image_size">120dp</dimen>
+    <dimen name="cat_image_large_size">150dp</dimen>
+    <dimen name="cloud_container_height">200dp</dimen>
+    <dimen name="weather_card_min_height">120dp</dimen>
+</resources>
