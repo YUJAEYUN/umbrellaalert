@@ -12,9 +12,9 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.umbrellaalert.R;
-
 import com.example.umbrellaalert.data.model.Weather;
-import com.example.umbrellaalert.data.repository.WeatherRepository;
+import com.example.umbrellaalert.domain.usecase.GetCurrentWeatherUseCase;
+import com.example.umbrellaalert.domain.usecase.GetCatMessageUseCase;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,9 +22,15 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.lifecycle.HiltViewModel;
+
 /**
- * 날씨 정보를 관리하는 ViewModel
+ * 날씨 정보를 관리하는 ViewModel (MVVM + Clean Architecture)
+ * UseCase를 통해 비즈니스 로직을 처리하고 UI 상태를 관리
  */
+@HiltViewModel
 public class WeatherViewModel extends AndroidViewModel {
 
     private static final String TAG = "WeatherViewModel";
@@ -33,7 +39,9 @@ public class WeatherViewModel extends AndroidViewModel {
     private static final double DEFAULT_LATITUDE = 37.5665;
     private static final double DEFAULT_LONGITUDE = 126.9780;
 
-    private final WeatherRepository weatherRepository;
+    // UseCase 의존성
+    private final GetCurrentWeatherUseCase getCurrentWeatherUseCase;
+    private final GetCatMessageUseCase getCatMessageUseCase;
     private final ExecutorService executorService;
 
     // LiveData
@@ -45,18 +53,16 @@ public class WeatherViewModel extends AndroidViewModel {
     private final MutableLiveData<String> catMessage = new MutableLiveData<>();
     private final MutableLiveData<String> umbrellaMessage = new MutableLiveData<>();
     private final MutableLiveData<List<Object>> forecastData = new MutableLiveData<>();
-    private final MutableLiveData<String> currentApiType = new MutableLiveData<>("ULTRA_SRT_NCST");
+    private final MutableLiveData<String> temperatureMessage = new MutableLiveData<>();
 
-    public WeatherViewModel(@NonNull Application application) {
+    @Inject
+    public WeatherViewModel(@NonNull Application application,
+                           GetCurrentWeatherUseCase getCurrentWeatherUseCase,
+                           GetCatMessageUseCase getCatMessageUseCase) {
         super(application);
-        weatherRepository = new WeatherRepository(application);
-        executorService = Executors.newSingleThreadExecutor();
-    }
-
-    // API 타입 설정
-    public void setApiType(String apiType) {
-        currentApiType.setValue(apiType);
-        weatherRepository.setApiType(apiType);
+        this.getCurrentWeatherUseCase = getCurrentWeatherUseCase;
+        this.getCatMessageUseCase = getCatMessageUseCase;
+        this.executorService = Executors.newSingleThreadExecutor();
     }
 
     // 위치 기반 날씨 업데이트
@@ -64,19 +70,33 @@ public class WeatherViewModel extends AndroidViewModel {
         isLoading.setValue(true);
 
         executorService.execute(() -> {
-            // 현재 날씨 가져오기
-            Weather weather = weatherRepository.getCurrentWeather(
-                    location.getLatitude(), location.getLongitude());
+            try {
+                // UseCase를 통해 현재 날씨 가져오기
+                Weather weather = getCurrentWeatherUseCase.execute(
+                        location.getLatitude(), location.getLongitude());
 
-            if (weather != null) {
-                weatherData.postValue(weather);
-                updateWeatherUI(weather);
+                if (weather != null) {
+                    weatherData.postValue(weather);
+                    updateWeatherUI(weather);
+                } else {
+                    // 날씨 정보를 가져올 수 없는 경우 기본값 사용
+                    Weather defaultWeather = createDefaultWeather(location);
+                    weatherData.postValue(defaultWeather);
+                    updateWeatherUI(defaultWeather);
+                }
+
+                // 예보 데이터는 현재 사용하지 않음
+                forecastData.postValue(new java.util.ArrayList<>());
+
+            } catch (Exception e) {
+                Log.e(TAG, "날씨 정보 업데이트 실패", e);
+                // 오류 발생 시 기본 날씨 정보 사용
+                Weather defaultWeather = createDefaultWeather(location);
+                weatherData.postValue(defaultWeather);
+                updateWeatherUI(defaultWeather);
+            } finally {
+                isLoading.postValue(false);
             }
-
-            // 예보 데이터는 현재 사용하지 않음
-            forecastData.postValue(new java.util.ArrayList<>());
-
-            isLoading.postValue(false);
         });
 
         // 위치명 업데이트
@@ -88,19 +108,13 @@ public class WeatherViewModel extends AndroidViewModel {
         // 기본 위치 대신 위치 권한 요청 유도
         isLoading.setValue(false);
         locationName.setValue("위치 권한이 필요합니다");
-        
+
         // 기본 날씨 정보 생성
-        Weather defaultWeather = new Weather(
-                0,
-                20.0f,
-                "Clear",
-                0.0f,
-                50,
-                2.0f,
-                "default",
-                System.currentTimeMillis(),
-                false
-        );
+        android.location.Location defaultLocation = new android.location.Location("default");
+        defaultLocation.setLatitude(DEFAULT_LATITUDE);
+        defaultLocation.setLongitude(DEFAULT_LONGITUDE);
+
+        Weather defaultWeather = createDefaultWeather(defaultLocation);
         weatherData.setValue(defaultWeather);
         updateWeatherUI(defaultWeather);
         forecastData.setValue(new java.util.ArrayList<>());
@@ -144,23 +158,63 @@ public class WeatherViewModel extends AndroidViewModel {
     // UI 업데이트
     private void updateWeatherUI(Weather weather) {
         // 배경 설정 (날씨에 따라)
+        updateBackgroundAndCatImage(weather);
+
+        // UseCase를 통해 고양이 메시지 생성
+        String mainMessage = getCatMessageUseCase.execute(weather);
+        catMessage.postValue(mainMessage);
+
+        // 온도에 따른 추가 메시지
+        String tempMessage = getCatMessageUseCase.getTemperatureMessage(weather.getTemperature());
+        temperatureMessage.postValue(tempMessage);
+
+        // 우산 필요 여부 메시지
+        updateUmbrellaMessage(weather);
+    }
+
+    // 배경과 고양이 이미지 업데이트
+    private void updateBackgroundAndCatImage(Weather weather) {
         if (weather.isNeedUmbrella()) {
             backgroundResource.postValue(R.drawable.ios_background_rainy);
             catImageResource.postValue(R.drawable.cat_rainy);
         } else {
-            backgroundResource.postValue(R.drawable.ios_background_sunny);
-            catImageResource.postValue(R.drawable.cat_sunny);
+            String condition = weather.getWeatherCondition();
+            if (condition != null && condition.equalsIgnoreCase("Clear")) {
+                backgroundResource.postValue(R.drawable.ios_background_sunny);
+                catImageResource.postValue(R.drawable.cat_sunny);
+            } else {
+                backgroundResource.postValue(R.drawable.ios_background_cloudy);
+                catImageResource.postValue(R.drawable.cat_cloudy);
+            }
         }
+    }
 
-        // 고양이 메시지
-        catMessage.postValue(weatherRepository.getCatMessage(weather));
-
-        // 우산 필요 여부
+    // 우산 메시지 업데이트
+    private void updateUmbrellaMessage(Weather weather) {
         if (weather.isNeedUmbrella()) {
-            umbrellaMessage.postValue("오늘은 우산이 필요하다냥!");
+            if (weather.getPrecipitation() > 5) {
+                umbrellaMessage.postValue("비가 많이 올 예정이다냥! 우산을 꼭 챙겨라냥!");
+            } else {
+                umbrellaMessage.postValue("오늘은 우산이 필요하다냥!");
+            }
         } else {
             umbrellaMessage.postValue("오늘은 우산이 필요 없을 것 같다냥~");
         }
+    }
+
+    // 기본 날씨 객체 생성
+    private Weather createDefaultWeather(Location location) {
+        return new Weather(
+                0,
+                20.0f,  // 기본 온도 20도
+                "Clear", // 기본 날씨 상태
+                0.0f,   // 강수량 없음
+                50,     // 습도 50%
+                2.0f,   // 풍속 2m/s
+                location.getLatitude() + "," + location.getLongitude(),
+                System.currentTimeMillis(),
+                false   // 우산 필요 없음
+        );
     }
 
     // 날씨 상태 텍스트 변환
@@ -168,13 +222,13 @@ public class WeatherViewModel extends AndroidViewModel {
         if (condition == null) {
             return "알 수 없음";
         }
-        
+
         // 이미 한글인 경우 그대로 반환
         if (condition.equals("맑음") || condition.equals("구름많음") || condition.equals("흐림") ||
             condition.equals("비") || condition.equals("눈") || condition.equals("소나기")) {
             return condition;
         }
-        
+
         // 영어인 경우 한글로 변환
         if (condition.equalsIgnoreCase("Clear")) {
             return "맑음";
@@ -230,8 +284,8 @@ public class WeatherViewModel extends AndroidViewModel {
         return forecastData;
     }
 
-    public LiveData<String> getCurrentApiType() {
-        return currentApiType;
+    public LiveData<String> getTemperatureMessage() {
+        return temperatureMessage;
     }
 
     @Override

@@ -8,6 +8,9 @@ import android.os.Build;
 import com.example.umbrellaalert.service.PersistentNotificationService;
 import com.example.umbrellaalert.service.WeatherUpdateService;
 
+import dagger.hilt.android.HiltAndroidApp;
+
+@HiltAndroidApp
 public class UmbrellaApplication extends Application {
 
     public static final String CHANNEL_ID = "umbrella_alert_channel";

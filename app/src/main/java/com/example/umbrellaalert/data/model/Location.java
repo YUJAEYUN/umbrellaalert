@@ -7,16 +7,24 @@ public class Location {
     private double longitude;
     private boolean frequent;
     private boolean notificationEnabled;
+    private boolean isDefault;
 
     // 생성자
     public Location(int id, String name, double latitude, double longitude,
                     boolean frequent, boolean notificationEnabled) {
+        this(id, name, latitude, longitude, frequent, notificationEnabled, false);
+    }
+
+    // 전체 생성자
+    public Location(int id, String name, double latitude, double longitude,
+                    boolean frequent, boolean notificationEnabled, boolean isDefault) {
         this.id = id;
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
         this.frequent = frequent;
         this.notificationEnabled = notificationEnabled;
+        this.isDefault = isDefault;
     }
 
     // Getters and Setters
@@ -66,5 +74,13 @@ public class Location {
 
     public void setNotificationEnabled(boolean notificationEnabled) {
         this.notificationEnabled = notificationEnabled;
+    }
+
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(boolean isDefault) {
+        this.isDefault = isDefault;
     }
 }

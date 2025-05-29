@@ -28,6 +28,9 @@ import com.example.umbrellaalert.ui.settings.SettingsActivity;
 
 import java.util.Locale;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint
 public class HomeActivity extends AppCompatActivity implements LocationViewModel.LocationCallback {
 
     private static final String TAG = "HomeActivity";
@@ -92,25 +95,13 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
             startActivity(intent);
         });
 
-        // API 타입 라디오 그룹 리스너
-        binding.apiTypeRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            String apiType;
+        // 예보 카드는 기본적으로 숨김 (현재 예보 기능 미구현)
+        binding.forecastCard.setVisibility(View.GONE);
 
-            if (checkedId == R.id.radio_ultra_srt_fcst) {
-                apiType = "ULTRA_SRT_FCST";
-                binding.forecastCard.setVisibility(View.VISIBLE);
-                binding.forecastTitle.setText("초단기예보 (6시간)");
-            } else if (checkedId == R.id.radio_vilage_fcst) {
-                apiType = "VILAGE_FCST";
-                binding.forecastCard.setVisibility(View.VISIBLE);
-                binding.forecastTitle.setText("단기예보 (3일)");
-            } else {
-                apiType = "ULTRA_SRT_NCST";
-                binding.forecastCard.setVisibility(View.GONE);
-            }
-
-            weatherViewModel.setApiType(apiType);
-        });
+        // API 타입 라디오 그룹도 숨김 (단일 API 사용)
+        if (binding.apiTypeRadioGroup != null) {
+            binding.apiTypeRadioGroup.setVisibility(View.GONE);
+        }
     }
 
     private void observeViewModel() {
@@ -141,26 +132,21 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
         weatherViewModel.getUmbrellaMessage().observe(this, message ->
             binding.umbrellaText.setText(message));
 
-        // 예보 데이터 관찰
-        weatherViewModel.getForecastData().observe(this, forecasts -> {
-            forecastAdapter.setForecasts(forecasts);
-
-            // 예보 데이터가 있으면 카드 표시, 없으면 숨김
-            boolean hasForecasts = forecasts != null && !forecasts.isEmpty();
-            binding.forecastCard.setVisibility(hasForecasts ? View.VISIBLE : View.GONE);
+        // 온도 메시지 관찰
+        weatherViewModel.getTemperatureMessage().observe(this, message -> {
+            // 온도 메시지를 표시할 UI 요소가 있다면 여기에 추가
+            // 현재는 로그로만 출력
+            android.util.Log.d(TAG, "Temperature message: " + message);
         });
 
-        // API 타입 관찰
-        weatherViewModel.getCurrentApiType().observe(this, apiType -> {
-            // 라디오 버튼 상태 업데이트
-            RadioGroup radioGroup = binding.apiTypeRadioGroup;
-            if ("ULTRA_SRT_FCST".equals(apiType)) {
-                radioGroup.check(R.id.radio_ultra_srt_fcst);
-            } else if ("VILAGE_FCST".equals(apiType)) {
-                radioGroup.check(R.id.radio_vilage_fcst);
-            } else {
-                radioGroup.check(R.id.radio_ultra_srt_ncst);
+        // 예보 데이터 관찰 (현재는 사용하지 않음)
+        weatherViewModel.getForecastData().observe(this, forecasts -> {
+            if (forecastAdapter != null) {
+                forecastAdapter.setForecasts(forecasts);
             }
+
+            // 예보 기능은 현재 미구현으로 카드 숨김
+            binding.forecastCard.setVisibility(View.GONE);
         });
     }
 

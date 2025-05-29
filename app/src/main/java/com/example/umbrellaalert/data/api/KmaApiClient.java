@@ -49,8 +49,6 @@ public class KmaApiClient {
     // API 상수 (기상청 API 허브 주소)
     private static final String BASE_URL = "https://apihub.kma.go.kr/api/typ01/cgi-bin/url/nph-url_readtop.cgi";
     private static final String ULTRA_SRT_NCST_URL = BASE_URL + "?rtype=json&mode=current"; // 초단기실황
-    private static final String ULTRA_SRT_FCST_URL = BASE_URL + "?rtype=json&mode=fcst"; // 초단기예보
-    private static final String VILAGE_FCST_URL = BASE_URL + "?rtype=json&mode=fcst3"; // 단기예보
 
     // API 키 (ApiKeyUtil에서 로드)
 
@@ -60,12 +58,7 @@ public class KmaApiClient {
     private final Context context;
     private String apiKey;
 
-    // API 타입 열거형
-    public enum ApiType {
-        ULTRA_SRT_NCST,    // 초단기실황
-        ULTRA_SRT_FCST,    // 초단기예보
-        VILAGE_FCST        // 단기예보
-    }
+
 
     // 싱글톤 패턴
     public static synchronized KmaApiClient getInstance(Context context) {
@@ -124,67 +117,7 @@ public class KmaApiClient {
         });
     }
 
-    /**
-     * 초단기예보 조회 (향후 6시간 예보)
-     * @param nx X 좌표 (기상청 격자 좌표)
-     * @param ny Y 좌표 (기상청 격자 좌표)
-     * @return 예보 목록
-     */
-    public Future<List<KmaForecast>> getUltraSrtFcst(int nx, int ny) {
-        return executorService.submit(new Callable<List<KmaForecast>>() {
-            @Override
-            public List<KmaForecast> call() throws Exception {
-                try {
-                    // 현재 시간 기준 가장 최근 발표 시각 계산
-                    String baseDate = getCurrentDate();
-                    String baseTime = getBaseTimeForUltraSrtFcst();
-
-                    // API 요청 URL 생성
-                    String urlStr = buildApiUrl(ULTRA_SRT_FCST_URL, baseDate, baseTime, nx, ny);
-
-                    // API 호출
-                    String response = requestApi(urlStr);
-
-                    // 응답 파싱
-                    return parseUltraSrtFcstResponse(response);
-                } catch (Exception e) {
-                    Log.e(TAG, "초단기예보 조회 실패", e);
-                    throw e;
-                }
-            }
-        });
-    }
-
-    /**
-     * 단기예보 조회 (3일 예보)
-     * @param nx X 좌표 (기상청 격자 좌표)
-     * @param ny Y 좌표 (기상청 격자 좌표)
-     * @return 예보 목록
-     */
-    public Future<List<KmaForecast>> getVilageFcst(int nx, int ny) {
-        return executorService.submit(new Callable<List<KmaForecast>>() {
-            @Override
-            public List<KmaForecast> call() throws Exception {
-                try {
-                    // 현재 시간 기준 가장 최근 발표 시각 계산
-                    String baseDate = getCurrentDate();
-                    String baseTime = getBaseTimeForVilageFcst();
-
-                    // API 요청 URL 생성
-                    String urlStr = buildApiUrl(VILAGE_FCST_URL, baseDate, baseTime, nx, ny);
-
-                    // API 호출
-                    String response = requestApi(urlStr);
-
-                    // 응답 파싱
-                    return parseVilageFcstResponse(response);
-                } catch (Exception e) {
-                    Log.e(TAG, "단기예보 조회 실패", e);
-                    throw e;
-                }
-            }
-        });
-    }
+    // 예보 메서드들 제거됨 (현재 사용하지 않음)
 
     /**
      * 위도/경도를 기상청 격자 좌표로 변환
