@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -131,8 +132,15 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
             binding.mainContainer.setBackgroundResource(resource));
 
         // 고양이 이미지 관찰
-        weatherViewModel.getCatImageResource().observe(this, resource ->
-            binding.catImage.setImageResource(resource));
+        weatherViewModel.getCatImageResource().observe(this, resource -> {
+            try {
+                binding.catImage.setImageResource(resource);
+            } catch (Exception e) {
+                Log.e("HomeActivity", "Failed to load cat image resource: " + resource, e);
+                // 기본 이미지로 폴백
+                binding.catImage.setImageResource(R.drawable.cat_sunny);
+            }
+        });
 
         // 고양이 메시지 관찰 (애니메이션 효과 추가)
         weatherViewModel.getCatMessage().observe(this, message -> {

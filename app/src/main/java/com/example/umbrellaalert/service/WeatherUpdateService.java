@@ -60,6 +60,13 @@ public class WeatherUpdateService extends Service {
         weatherManager = WeatherManager.getInstance(this);
         isRunning = false;
 
+        // 즉시 포그라운드 서비스로 시작
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForegroundQ(NOTIFICATION_ID, createNotification("날씨 서비스 시작 중..."));
+        } else {
+            startForeground(NOTIFICATION_ID, createNotification("날씨 서비스 시작 중..."));
+        }
+
         Log.d(TAG, "Weather update service created");
     }
 
@@ -69,14 +76,6 @@ public class WeatherUpdateService extends Service {
 
         if (!isRunning) {
             isRunning = true;
-
-            // Android 10(SDK 29) 이상에서는 Foreground Service 타입 지정 필요
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForegroundQ(NOTIFICATION_ID, createNotification("날씨 정보를 가져오는 중..."));
-            } else {
-                startForeground(NOTIFICATION_ID, createNotification("날씨 정보를 가져오는 중..."));
-            }
-
             startWeatherUpdates();
         }
 

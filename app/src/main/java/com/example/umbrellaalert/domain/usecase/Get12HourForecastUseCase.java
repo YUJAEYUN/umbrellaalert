@@ -1,10 +1,16 @@
 package com.example.umbrellaalert.domain.usecase;
 
+import android.util.Log;
+
+import com.example.umbrellaalert.data.api.KmaApiClient;
 import com.example.umbrellaalert.data.model.HourlyForecast;
+import com.example.umbrellaalert.data.model.KmaForecast;
+import com.example.umbrellaalert.util.CoordinateConverter;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Future;
@@ -19,9 +25,12 @@ import javax.inject.Singleton;
 @Singleton
 public class Get12HourForecastUseCase {
 
+    private static final String TAG = "Get12HourForecastUseCase";
+    private final KmaApiClient kmaApiClient;
+
     @Inject
-    public Get12HourForecastUseCase() {
-        // 현재는 모의 데이터만 사용
+    public Get12HourForecastUseCase(KmaApiClient kmaApiClient) {
+        this.kmaApiClient = kmaApiClient;
     }
 
     /**
@@ -32,16 +41,40 @@ public class Get12HourForecastUseCase {
      */
     public List<HourlyForecast> execute(double latitude, double longitude) {
         try {
-            // 현재는 모의 데이터만 사용 (실제 API 연동은 추후 구현)
+            Log.d(TAG, "12시간 예보 조회 시작 - 위도: " + latitude + ", 경도: " + longitude);
+
+            // 위도/경도를 기상청 격자 좌표로 변환
+            CoordinateConverter.GridCoordinate gridCoord = CoordinateConverter.convertToGrid(latitude, longitude);
+            int nx = gridCoord.nx;
+            int ny = gridCoord.ny;
+
+            Log.d(TAG, "격자 좌표 변환 완료 - nx: " + nx + ", ny: " + ny);
+
             List<HourlyForecast> forecasts = new ArrayList<>();
 
-            // 1. 초단기예보 모의 데이터 (6시간)
-            List<HourlyForecast> ultraShortForecasts = createMockUltraShortForecasts();
-            forecasts.addAll(ultraShortForecasts);
+            // 1. 초단기예보 조회 (6시간)
+            try {
+                Future<List<KmaForecast>> ultraShortFuture = kmaApiClient.getUltraSrtFcst(nx, ny);
+                List<KmaForecast> ultraShortForecasts = ultraShortFuture.get();
 
-            // 2. 단기예보 모의 데이터 (추가 6시간)
-            List<HourlyForecast> shortForecasts = createMockShortForecasts(6);
-            forecasts.addAll(shortForecasts);
+                if (ultraShortForecasts != null && !ultraShortForecasts.isEmpty()) {
+                    Log.d(TAG, "초단기예보 데이터 " + ultraShortForecasts.size() + "개 조회 완료");
+                    List<HourlyForecast> hourlyFromUltraShort = convertToHourlyForecasts(ultraShortForecasts, true);
+                    forecasts.addAll(hourlyFromUltraShort);
+                } else {
+                    Log.w(TAG, "초단기예보 데이터가 없음, 목업 데이터 사용");
+                    forecasts.addAll(createMockUltraShortForecasts());
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "초단기예보 조회 실패, 목업 데이터 사용", e);
+                forecasts.addAll(createMockUltraShortForecasts());
+            }
+
+            // 2. 12시간이 부족하면 목업 데이터로 채우기 (단기예보 API 호출 생략으로 속도 향상)
+            if (forecasts.size() < 12) {
+                Log.d(TAG, "초단기예보만으로 부족함 (" + forecasts.size() + "개), 목업 데이터로 보완");
+                forecasts.addAll(createMockShortForecasts(forecasts.size()));
+            }
 
             // 3. 정확히 12시간만 반환
             if (forecasts.size() > 12) {
@@ -51,15 +84,120 @@ public class Get12HourForecastUseCase {
             // 4. 현재 시간 마킹
             markCurrentHour(forecasts);
 
+            Log.d(TAG, "12시간 예보 조회 완료 - 총 " + forecasts.size() + "개");
             return forecasts;
 
         } catch (Exception e) {
-            android.util.Log.e("Get12HourForecastUseCase", "12시간 예보 조회 실패", e);
+            Log.e(TAG, "12시간 예보 조회 실패", e);
             return createDefaultForecasts();
         }
     }
 
+    /**
+     * KmaForecast를 HourlyForecast로 변환
+     */
+    private List<HourlyForecast> convertToHourlyForecasts(List<KmaForecast> kmaForecasts, boolean isUltraShort) {
+        List<HourlyForecast> hourlyForecasts = new ArrayList<>();
 
+        for (KmaForecast kmaForecast : kmaForecasts) {
+            HourlyForecast hourlyForecast = new HourlyForecast();
+
+            // 시간 설정
+            String timeStr = kmaForecast.getForecastTime();
+            if (timeStr != null && timeStr.length() >= 4) {
+                hourlyForecast.setForecastTime(timeStr);
+            } else {
+                // 기본 시간 설정
+                Calendar cal = Calendar.getInstance();
+                cal.add(Calendar.HOUR_OF_DAY, hourlyForecasts.size() + 1);
+                SimpleDateFormat fullTimeFormat = new SimpleDateFormat("HHmm", Locale.KOREA);
+                hourlyForecast.setForecastTime(fullTimeFormat.format(cal.getTime()));
+            }
+
+            // 날짜 설정
+            String dateStr = kmaForecast.getForecastDate();
+            if (dateStr != null) {
+                hourlyForecast.setForecastDate(dateStr);
+            } else {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd", Locale.KOREA);
+                hourlyForecast.setForecastDate(dateFormat.format(new Date()));
+            }
+
+            // 온도
+            hourlyForecast.setTemperature(kmaForecast.getTemperature());
+
+            // 날씨 상태 변환
+            String weatherCondition = convertWeatherConditionToString(kmaForecast.getWeatherCondition(), kmaForecast.getPrecipitationType());
+            hourlyForecast.setWeatherCondition(weatherCondition);
+
+            // 강수확률
+            hourlyForecast.setPrecipitationProbability(kmaForecast.getPrecipitationProbability());
+
+            // 강수량
+            hourlyForecast.setPrecipitation(kmaForecast.getPrecipitation());
+
+            // 습도
+            hourlyForecast.setHumidity(kmaForecast.getHumidity());
+
+            // 풍속
+            hourlyForecast.setWindSpeed(kmaForecast.getWindSpeed());
+
+            // 강수형태
+            hourlyForecast.setPrecipitationType(kmaForecast.getPrecipitationType());
+
+            // 우산 필요 여부
+            hourlyForecast.setNeedUmbrella(kmaForecast.isNeedUmbrella());
+
+            hourlyForecasts.add(hourlyForecast);
+
+            // 초단기예보는 6시간, 단기예보는 필요한 만큼만
+            if (isUltraShort && hourlyForecasts.size() >= 6) {
+                break;
+            } else if (!isUltraShort && hourlyForecasts.size() >= 6) {
+                break;
+            }
+        }
+
+        return hourlyForecasts;
+    }
+
+    /**
+     * 날씨 상태 변환
+     */
+    private String convertWeatherConditionToString(String condition, int precipitationType) {
+        if (condition == null) return "Clear"; // 기본값: 맑음
+
+        if (precipitationType > 0) {
+            switch (precipitationType) {
+                case 1: return "Rain"; // 비
+                case 2: return "Sleet"; // 눈/비
+                case 3: return "Snow"; // 눈
+                case 4: return "Rain"; // 소나기
+                default: return "Rain"; // 비
+            }
+        }
+
+        if (condition.contains("Clear") || condition.contains("맑음")) {
+            return "Clear"; // 맑음
+        } else if (condition.contains("Clouds") || condition.contains("구름")) {
+            return "Clouds"; // 구름많음
+        } else {
+            return "Clear"; // 기본값: 맑음
+        }
+    }
+
+    /**
+     * 중복 시간 체크
+     */
+    private boolean isDuplicateTime(List<HourlyForecast> forecasts, HourlyForecast newForecast) {
+        String newTime = newForecast.getForecastTime();
+        for (HourlyForecast existing : forecasts) {
+            if (existing.getForecastTime().equals(newTime)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * 현재 시간 마킹

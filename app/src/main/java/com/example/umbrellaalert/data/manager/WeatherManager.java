@@ -3,17 +3,21 @@ package com.example.umbrellaalert.data.manager;
 import android.content.Context;
 import android.util.Log;
 
-// 레거시 import 제거됨
+import com.example.umbrellaalert.data.api.KmaApiClient;
 import com.example.umbrellaalert.data.database.DatabaseHelper;
 import com.example.umbrellaalert.data.database.WeatherDao;
+import com.example.umbrellaalert.data.model.KmaWeather;
 import com.example.umbrellaalert.data.model.Location;
 import com.example.umbrellaalert.data.model.Weather;
-// 레거시 import 제거됨
 import com.example.umbrellaalert.util.CoordinateConverter;
 
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class WeatherManager {
 
@@ -22,7 +26,8 @@ public class WeatherManager {
 
     private static WeatherManager instance;
     private WeatherDao weatherDao;
-    // 레거시 필드 제거됨
+    private Context context;
+    private ExecutorService executorService;
 
     // 싱글톤 패턴
     public static synchronized WeatherManager getInstance(Context context) {
@@ -33,9 +38,10 @@ public class WeatherManager {
     }
 
     private WeatherManager(Context context) {
+        this.context = context.getApplicationContext();
         DatabaseHelper dbHelper = DatabaseHelper.getInstance(context);
         weatherDao = new WeatherDao(dbHelper);
-        // 레거시 API 서비스 제거됨
+        executorService = Executors.newCachedThreadPool();
 
         // 오래된 데이터 정리
         cleanupOldData();
@@ -63,10 +69,45 @@ public class WeatherManager {
         int nx = gridCoord.nx;
         int ny = gridCoord.ny;
 
+        Log.d(TAG, "Fetching weather data from KMA API for coordinates: nx=" + nx + ", ny=" + ny);
+
         // KmaApiClient를 사용하여 날씨 정보 조회
-        // TODO: KmaApiClient 통합 필요
-        // 현재는 기본 날씨 정보 반환
-        handleWeatherError(callback, cachedWeather, latitude, longitude);
+        KmaApiClient apiClient = KmaApiClient.getInstance(context);
+        Future<KmaWeather> future = apiClient.getUltraSrtNcst(nx, ny);
+
+        // 백그라운드에서 API 응답 처리
+        executorService.execute(() -> {
+            try {
+                // API 응답 대기 (최대 8초로 단축)
+                KmaWeather kmaWeather = future.get(8, TimeUnit.SECONDS);
+
+                if (kmaWeather != null) {
+                    // KmaWeather를 Weather 객체로 변환
+                    Weather weather = convertKmaWeatherToWeather(kmaWeather, locationStr);
+
+                    // 데이터베이스에 저장
+                    try {
+                        long id = weatherDao.insertWeather(weather);
+                        weather.setId((int) id);
+                        Log.d(TAG, "Weather data saved to database with ID: " + id);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to save weather data to database", e);
+                    }
+
+                    // 성공 콜백 호출
+                    callback.onSuccess(weather);
+                } else {
+                    Log.w(TAG, "KMA API returned null weather data");
+                    handleWeatherError(callback, cachedWeather, latitude, longitude);
+                }
+            } catch (TimeoutException e) {
+                Log.e(TAG, "KMA API request timeout", e);
+                handleWeatherError(callback, cachedWeather, latitude, longitude);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to fetch weather data from KMA API", e);
+                handleWeatherError(callback, cachedWeather, latitude, longitude);
+            }
+        });
     }
 
     // 기본 날씨 정보 생성
@@ -144,11 +185,40 @@ public class WeatherManager {
         // TODO: 모든 위치에 대한 날씨 확인 구현
     }
 
+    // KmaWeather를 Weather 객체로 변환
+    private Weather convertKmaWeatherToWeather(KmaWeather kmaWeather, String locationStr) {
+        long timestamp = System.currentTimeMillis();
+
+        // 우산 필요 여부 판단 (강수량 또는 강수 타입 기준)
+        boolean needUmbrella = kmaWeather.getPrecipitation() > 0 ||
+                              kmaWeather.getPrecipitationType() > 0;
+
+        Weather weather = new Weather(
+                0,  // id (데이터베이스 저장 시 자동 생성)
+                kmaWeather.getTemperature(),
+                kmaWeather.getWeatherCondition(),
+                kmaWeather.getPrecipitation(),
+                kmaWeather.getHumidity(),
+                kmaWeather.getWindSpeed(),
+                locationStr,
+                timestamp,
+                needUmbrella
+        );
+
+        Log.d(TAG, "Converted KmaWeather to Weather: temp=" + weather.getTemperature() +
+                  ", condition=" + weather.getWeatherCondition() +
+                  ", needUmbrella=" + weather.isNeedUmbrella());
+
+        return weather;
+    }
+
     // 에러 처리 헬퍼 메서드
     private void handleWeatherError(WeatherCallback callback, Weather cachedWeather, double latitude, double longitude) {
         if (cachedWeather != null) {
+            Log.d(TAG, "Using cached weather data due to API error");
             callback.onSuccess(cachedWeather);
         } else {
+            Log.d(TAG, "Creating default weather data due to API error");
             callback.onSuccess(createDefaultWeather(latitude, longitude));
         }
     }
