@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="1200"
+    android:interpolator="@android:anim/bounce_interpolator">
+    
+    <!-- 고양이 바운스 효과 -->
+    <scale
+        android:fromXScale="1.0"
+        android:fromYScale="1.0"
+        android:toXScale="1.1"
+        android:toYScale="1.1"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="600"
+        android:repeatCount="1"
+        android:repeatMode="reverse" />
+    
+    <!-- 살짝 회전 효과 -->
+    <rotate
+        android:fromDegrees="0"
+        android:toDegrees="5"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="300"
+        android:repeatCount="3"
+        android:repeatMode="reverse" />
+</set>

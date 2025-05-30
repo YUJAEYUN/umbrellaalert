@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RadioGroup;
 import android.widget.Toast;
@@ -22,6 +24,8 @@ import com.example.umbrellaalert.R;
 
 import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.databinding.ActivityHomeBinding;
+import com.example.umbrellaalert.ui.adapter.HourlyForecastAdapter;
+
 import com.example.umbrellaalert.service.WeatherUpdateService;
 import com.example.umbrellaalert.ui.location.LocationActivity;
 import com.example.umbrellaalert.ui.settings.SettingsActivity;
@@ -39,7 +43,13 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
     private ActivityHomeBinding binding;
     private WeatherViewModel weatherViewModel;
     private LocationViewModel locationViewModel;
-    private ForecastAdapter forecastAdapter;
+    private HourlyForecastAdapter hourlyForecastAdapter;
+
+    // 스와이프 관련 변수들
+    private GestureDetector gestureDetector;
+    private int currentWeatherPage = 0;
+    private static final int WEATHER_PAGE_COUNT = 3;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,10 +67,12 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
         // 날씨 업데이트 서비스 시작
         WeatherUpdateService.startService(this);
 
-        // 예보 어댑터 초기화
-        forecastAdapter = new ForecastAdapter();
+        // 12시간 예보 어댑터 초기화
+        hourlyForecastAdapter = new HourlyForecastAdapter();
         binding.forecastRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        binding.forecastRecyclerView.setAdapter(forecastAdapter);
+        binding.forecastRecyclerView.setAdapter(hourlyForecastAdapter);
+
+
 
         // UI 초기 설정
         setupUI();
@@ -95,13 +107,11 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
             startActivity(intent);
         });
 
-        // 예보 카드는 기본적으로 숨김 (현재 예보 기능 미구현)
-        binding.forecastCard.setVisibility(View.GONE);
+        // 12시간 예보 카드는 항상 표시
+        binding.forecastCard.setVisibility(View.VISIBLE);
 
-        // API 타입 라디오 그룹도 숨김 (단일 API 사용)
-        if (binding.apiTypeRadioGroup != null) {
-            binding.apiTypeRadioGroup.setVisibility(View.GONE);
-        }
+        // 날씨 카드 스와이프 제스처 설정
+        setupWeatherCardGesture();
     }
 
     private void observeViewModel() {
@@ -124,30 +134,88 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
         weatherViewModel.getCatImageResource().observe(this, resource ->
             binding.catImage.setImageResource(resource));
 
-        // 고양이 메시지 관찰
-        weatherViewModel.getCatMessage().observe(this, message ->
-            binding.catMessage.setText(message));
+        // 고양이 메시지 관찰 (애니메이션 효과 추가)
+        weatherViewModel.getCatMessage().observe(this, message -> {
+            binding.catMessage.setText(message);
+            // 메시지 변경 시 페이드 인 애니메이션
+            android.view.animation.Animation fadeIn = android.view.animation.AnimationUtils
+                .loadAnimation(this, R.anim.cat_message_fade_in);
+            binding.messageCard.startAnimation(fadeIn);
 
-        // 우산 메시지 관찰
-        weatherViewModel.getUmbrellaMessage().observe(this, message ->
-            binding.umbrellaText.setText(message));
-
-        // 온도 메시지 관찰
-        weatherViewModel.getTemperatureMessage().observe(this, message -> {
-            // 온도 메시지를 표시할 UI 요소가 있다면 여기에 추가
-            // 현재는 로그로만 출력
-            android.util.Log.d(TAG, "Temperature message: " + message);
+            // 고양이 이미지에 바운스 효과
+            android.view.animation.Animation bounce = android.view.animation.AnimationUtils
+                .loadAnimation(this, R.anim.cat_bounce);
+            binding.catImage.startAnimation(bounce);
         });
 
-        // 예보 데이터 관찰 (현재는 사용하지 않음)
-        weatherViewModel.getForecastData().observe(this, forecasts -> {
-            if (forecastAdapter != null) {
-                forecastAdapter.setForecasts(forecasts);
+        // 우산 메시지 관찰 (애니메이션 효과 추가)
+        weatherViewModel.getUmbrellaMessage().observe(this, message -> {
+            binding.umbrellaText.setText(message);
+
+            // 우산이 필요한 경우 강조 애니메이션
+            if (message.contains("우산을 꼭") || message.contains("폭우") || message.contains("비가")) {
+                android.view.animation.Animation shake = android.view.animation.AnimationUtils
+                    .loadAnimation(this, R.anim.umbrella_shake);
+                binding.umbrellaIcon.startAnimation(shake);
+
+                // 우산 카드 강조 효과
+                binding.umbrellaCard.setCardBackgroundColor(
+                    getResources().getColor(R.color.alert_color_light, getTheme()));
+
+                // 3초 후 원래 색상으로 복원
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    binding.umbrellaCard.setCardBackgroundColor(
+                        getResources().getColor(R.color.ios_card_background, getTheme()));
+                }, 3000);
+            }
+        });
+
+        // 온도 메시지 관찰 (UI에 표시)
+        weatherViewModel.getTemperatureMessage().observe(this, message -> {
+            binding.temperatureMessage.setText(message);
+
+            // 메시지 내용에 따라 이모지 변경
+            String emoji = "🌡️"; // 기본 온도계
+            if (message.contains("🥵") || message.contains("덥다")) {
+                emoji = "🥵";
+            } else if (message.contains("🥶") || message.contains("춥다")) {
+                emoji = "🥶";
+            } else if (message.contains("😊") || message.contains("따뜻")) {
+                emoji = "😊";
+            } else if (message.contains("⏰") || message.contains("러시아워")) {
+                emoji = "⏰";
+            } else if (message.contains("🎉") || message.contains("주말")) {
+                emoji = "🎉";
+            } else if (message.contains("🌙") || message.contains("늦은")) {
+                emoji = "🌙";
             }
 
-            // 예보 기능은 현재 미구현으로 카드 숨김
-            binding.forecastCard.setVisibility(View.GONE);
+            binding.temperatureEmoji.setText(emoji);
+
+            // 온도 카드에 페이드 인 애니메이션
+            android.view.animation.Animation fadeIn = android.view.animation.AnimationUtils
+                .loadAnimation(this, R.anim.cat_message_fade_in);
+            binding.temperatureCard.startAnimation(fadeIn);
         });
+
+        // 12시간 예보 데이터 관찰
+        weatherViewModel.getHourlyForecastData().observe(this, forecasts -> {
+            if (forecasts != null && !forecasts.isEmpty()) {
+                hourlyForecastAdapter.setForecasts(forecasts);
+                binding.forecastCard.setVisibility(View.VISIBLE);
+            } else {
+                binding.forecastCard.setVisibility(View.GONE);
+            }
+        });
+
+        // 예보 업데이트 시간 관찰
+        weatherViewModel.getForecastUpdateTime().observe(this, updateTime -> {
+            if (updateTime != null) {
+                binding.forecastUpdateTime.setText(updateTime);
+            }
+        });
+
+
     }
 
     private void checkLocationPermission() {
@@ -189,10 +257,85 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
         weatherViewModel.updateWeatherWithLocation(location);
     }
 
-    // 날씨 정보 표시 업데이트
-    private void updateWeatherDisplay(Weather weather) {
+    // 날씨 카드 스와이프 제스처 설정
+    private void setupWeatherCardGesture() {
+        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            private static final int SWIPE_THRESHOLD = 100;
+            private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+
+            @Override
+            public boolean onDown(MotionEvent e) {
+                // 터치 시작 시 부모의 터치 이벤트 가로채기 방지
+                return true;
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                if (e1 == null || e2 == null) return false;
+
+                float diffX = e2.getX() - e1.getX();
+                float diffY = e2.getY() - e1.getY();
+
+                // 수평 스와이프가 수직 스와이프보다 더 클 때만 처리
+                if (Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                        if (diffX > 0) {
+                            // 오른쪽 스와이프 (이전 페이지)
+                            currentWeatherPage = (currentWeatherPage - 1 + WEATHER_PAGE_COUNT) % WEATHER_PAGE_COUNT;
+                        } else {
+                            // 왼쪽 스와이프 (다음 페이지)
+                            currentWeatherPage = (currentWeatherPage + 1) % WEATHER_PAGE_COUNT;
+                        }
+                        updateWeatherPageDisplay();
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                // 수직 스크롤이 더 클 때는 부모에게 이벤트 전달
+                if (Math.abs(distanceY) > Math.abs(distanceX)) {
+                    return false;
+                }
+                return true;
+            }
+        });
+
+        binding.weatherCard.setOnTouchListener((v, event) -> {
+            boolean gestureHandled = gestureDetector.onTouchEvent(event);
+            // 제스처가 처리되지 않았거나 수직 스크롤인 경우 부모에게 이벤트 전달
+            if (!gestureHandled) {
+                v.getParent().requestDisallowInterceptTouchEvent(false);
+            }
+            return gestureHandled;
+        });
+    }
+
+    // 날씨 페이지 표시 업데이트
+    private void updateWeatherPageDisplay() {
+        Weather weather = weatherViewModel.getWeatherData().getValue();
         if (weather == null) return;
 
+        switch (currentWeatherPage) {
+            case 0: // 기본 날씨 정보
+                binding.weatherTitle.setText("현재 날씨");
+                updateBasicWeatherDisplay(weather);
+                break;
+            case 1: // 상세 정보
+                binding.weatherTitle.setText("상세 정보");
+                updateDetailedWeatherDisplay(weather);
+                break;
+            case 2: // 추가 정보
+                binding.weatherTitle.setText("추가 정보");
+                updateAdditionalWeatherDisplay(weather);
+                break;
+        }
+    }
+
+    // 기본 날씨 정보 표시
+    private void updateBasicWeatherDisplay(Weather weather) {
         // 온도
         binding.temperatureText.setText(String.format(Locale.getDefault(), "%.1f°C", weather.getTemperature()));
 
@@ -208,6 +351,43 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
 
         // 습도
         binding.humidityText.setText(String.format(Locale.getDefault(), "습도: %d%%", weather.getHumidity()));
+    }
+
+    // 상세 날씨 정보 표시
+    private void updateDetailedWeatherDisplay(Weather weather) {
+        // 체감온도 (간단한 계산)
+        double feelsLike = weather.getTemperature() + (weather.getHumidity() > 70 ? 2 : -1);
+        binding.temperatureText.setText(String.format(Locale.getDefault(), "%.1f°C", feelsLike));
+
+        // 체감온도 설명
+        binding.weatherCondition.setText("체감온도");
+
+        // 바람 정보 (임시 데이터)
+        binding.precipitationText.setText("바람: 2.5m/s");
+
+        // 기압 정보 (임시 데이터)
+        binding.humidityText.setText("기압: 1013hPa");
+    }
+
+    // 추가 날씨 정보 표시
+    private void updateAdditionalWeatherDisplay(Weather weather) {
+        // 일출 시간 (임시 데이터)
+        binding.temperatureText.setText("06:30");
+
+        // 일출 설명
+        binding.weatherCondition.setText("일출 시간");
+
+        // 일몰 시간 (임시 데이터)
+        binding.precipitationText.setText("일몰: 18:45");
+
+        // 가시거리 (임시 데이터)
+        binding.humidityText.setText("가시거리: 10km");
+    }
+
+    // 날씨 정보 표시 업데이트 (기본 호출)
+    private void updateWeatherDisplay(Weather weather) {
+        if (weather == null) return;
+        updateWeatherPageDisplay();
     }
 
     @Override

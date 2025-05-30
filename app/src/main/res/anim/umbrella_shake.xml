@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="1000">
+    
+    <!-- 우산 아이콘 흔들기 효과 -->
+    <rotate
+        android:fromDegrees="0"
+        android:toDegrees="10"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="100"
+        android:repeatCount="5"
+        android:repeatMode="reverse"
+        android:interpolator="@android:anim/linear_interpolator" />
+    
+    <!-- 색상 강조 효과를 위한 스케일 -->
+    <scale
+        android:fromXScale="1.0"
+        android:fromYScale="1.0"
+        android:toXScale="1.2"
+        android:toYScale="1.2"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="200"
+        android:repeatCount="2"
+        android:repeatMode="reverse"
+        android:interpolator="@android:anim/decelerate_interpolator" />
+</set>

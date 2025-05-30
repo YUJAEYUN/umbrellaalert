@@ -12,7 +12,9 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.umbrellaalert.R;
+import com.example.umbrellaalert.data.model.HourlyForecast;
 import com.example.umbrellaalert.data.model.Weather;
+import com.example.umbrellaalert.domain.usecase.Get12HourForecastUseCase;
 import com.example.umbrellaalert.domain.usecase.GetCurrentWeatherUseCase;
 import com.example.umbrellaalert.domain.usecase.GetCatMessageUseCase;
 
@@ -42,6 +44,7 @@ public class WeatherViewModel extends AndroidViewModel {
     // UseCase 의존성
     private final GetCurrentWeatherUseCase getCurrentWeatherUseCase;
     private final GetCatMessageUseCase getCatMessageUseCase;
+    private final Get12HourForecastUseCase get12HourForecastUseCase;
     private final ExecutorService executorService;
 
     // LiveData
@@ -52,16 +55,19 @@ public class WeatherViewModel extends AndroidViewModel {
     private final MutableLiveData<Integer> catImageResource = new MutableLiveData<>();
     private final MutableLiveData<String> catMessage = new MutableLiveData<>();
     private final MutableLiveData<String> umbrellaMessage = new MutableLiveData<>();
-    private final MutableLiveData<List<Object>> forecastData = new MutableLiveData<>();
+    private final MutableLiveData<List<HourlyForecast>> hourlyForecastData = new MutableLiveData<>();
+    private final MutableLiveData<String> forecastUpdateTime = new MutableLiveData<>();
     private final MutableLiveData<String> temperatureMessage = new MutableLiveData<>();
 
     @Inject
     public WeatherViewModel(@NonNull Application application,
                            GetCurrentWeatherUseCase getCurrentWeatherUseCase,
-                           GetCatMessageUseCase getCatMessageUseCase) {
+                           GetCatMessageUseCase getCatMessageUseCase,
+                           Get12HourForecastUseCase get12HourForecastUseCase) {
         super(application);
         this.getCurrentWeatherUseCase = getCurrentWeatherUseCase;
         this.getCatMessageUseCase = getCatMessageUseCase;
+        this.get12HourForecastUseCase = get12HourForecastUseCase;
         this.executorService = Executors.newSingleThreadExecutor();
     }
 
@@ -85,8 +91,15 @@ public class WeatherViewModel extends AndroidViewModel {
                     updateWeatherUI(defaultWeather);
                 }
 
-                // 예보 데이터는 현재 사용하지 않음
-                forecastData.postValue(new java.util.ArrayList<>());
+                // 12시간 예보 데이터 가져오기
+                List<HourlyForecast> hourlyForecasts = get12HourForecastUseCase.execute(
+                        location.getLatitude(), location.getLongitude());
+                hourlyForecastData.postValue(hourlyForecasts);
+
+                // 예보 업데이트 시간 설정
+                java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.KOREA);
+                String updateTime = "업데이트: " + timeFormat.format(new java.util.Date());
+                forecastUpdateTime.postValue(updateTime);
 
             } catch (Exception e) {
                 Log.e(TAG, "날씨 정보 업데이트 실패", e);
@@ -117,7 +130,16 @@ public class WeatherViewModel extends AndroidViewModel {
         Weather defaultWeather = createDefaultWeather(defaultLocation);
         weatherData.setValue(defaultWeather);
         updateWeatherUI(defaultWeather);
-        forecastData.setValue(new java.util.ArrayList<>());
+
+        // 기본 12시간 예보 데이터 생성
+        List<HourlyForecast> defaultForecasts = get12HourForecastUseCase.execute(
+                DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
+        hourlyForecastData.setValue(defaultForecasts);
+
+        // 기본 업데이트 시간 설정
+        java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.KOREA);
+        String updateTime = "업데이트: " + timeFormat.format(new java.util.Date());
+        forecastUpdateTime.setValue(updateTime);
     }
 
     // 위치명 업데이트 (지오코딩)
@@ -155,21 +177,31 @@ public class WeatherViewModel extends AndroidViewModel {
         return "알 수 없는 위치";
     }
 
-    // UI 업데이트
+    // UI 업데이트 (개선된 고양이 메시지 시스템)
     private void updateWeatherUI(Weather weather) {
+        // UseCase를 통해 고양이 메시지 객체 생성
+        com.example.umbrellaalert.data.model.CatMessage catMessageObj =
+            getCatMessageUseCase.getCatMessageObject(weather);
+
+        // 고양이 이미지 업데이트 (메시지 객체에서 가져옴)
+        catImageResource.postValue(catMessageObj.getCatImageResource());
+
         // 배경 설정 (날씨에 따라)
         updateBackgroundAndCatImage(weather);
 
-        // UseCase를 통해 고양이 메시지 생성
+        // 메인 고양이 메시지 (이모지 포함)
         String mainMessage = getCatMessageUseCase.execute(weather);
         catMessage.postValue(mainMessage);
 
-        // 온도에 따른 추가 메시지
+        // 온도에 따른 추가 메시지 (개선된 버전)
         String tempMessage = getCatMessageUseCase.getTemperatureMessage(weather.getTemperature());
         temperatureMessage.postValue(tempMessage);
 
-        // 우산 필요 여부 메시지
-        updateUmbrellaMessage(weather);
+        // 우산 필요 여부 메시지 (개선된 버전)
+        updateUmbrellaMessage(weather, catMessageObj);
+
+        // 특별 상황 메시지 추가
+        updateSpecialMessages();
     }
 
     // 배경과 고양이 이미지 업데이트
@@ -189,16 +221,59 @@ public class WeatherViewModel extends AndroidViewModel {
         }
     }
 
-    // 우산 메시지 업데이트
-    private void updateUmbrellaMessage(Weather weather) {
+    // 우산 메시지 업데이트 (개선된 버전)
+    private void updateUmbrellaMessage(Weather weather, com.example.umbrellaalert.data.model.CatMessage catMessageObj) {
+        String umbrellaMsg;
+
         if (weather.isNeedUmbrella()) {
-            if (weather.getPrecipitation() > 5) {
-                umbrellaMessage.postValue("비가 많이 올 예정이다냥! 우산을 꼭 챙겨라냥!");
+            if (weather.getPrecipitation() > 10) {
+                umbrellaMsg = "폭우 경보다냥! ⛈️ 큰 우산을 준비하고 조심해서 다녀라냥!";
+            } else if (weather.getPrecipitation() > 5) {
+                umbrellaMsg = "비가 제법 올 예정이다냥! ☔ 우산을 꼭 챙겨라냥!";
+            } else if (weather.getPrecipitation() > 0) {
+                umbrellaMsg = "조금 비가 올 것 같다냥~ 🌧️ 작은 우산이라도 챙겨라냥!";
             } else {
-                umbrellaMessage.postValue("오늘은 우산이 필요하다냥!");
+                umbrellaMsg = "혹시 모르니 우산을 챙겨가는 게 좋겠다냥~ ☂️";
             }
         } else {
-            umbrellaMessage.postValue("오늘은 우산이 필요 없을 것 같다냥~");
+            String[] noUmbrellaMessages = {
+                "오늘은 우산이 필요 없을 것 같다냥~ ☀️",
+                "우산 없이도 괜찮을 것 같다냥! 😸",
+                "맑은 하늘이니 우산은 집에 두고 가라냥~ 🌤️",
+                "비 걱정 없는 하루다냥! 🌈"
+            };
+            int randomIndex = (int) (Math.random() * noUmbrellaMessages.length);
+            umbrellaMsg = noUmbrellaMessages[randomIndex];
+        }
+
+        umbrellaMessage.postValue(umbrellaMsg);
+    }
+
+    // 특별 상황 메시지 업데이트
+    private void updateSpecialMessages() {
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        int hour = calendar.get(java.util.Calendar.HOUR_OF_DAY);
+        int dayOfWeek = calendar.get(java.util.Calendar.DAY_OF_WEEK);
+
+        String specialMsg = null;
+
+        // 아침 러시아워 (평일 7-9시)
+        if ((dayOfWeek >= java.util.Calendar.MONDAY && dayOfWeek <= java.util.Calendar.FRIDAY)
+            && (hour >= 7 && hour <= 9)) {
+            specialMsg = getCatMessageUseCase.getSpecialMessage("morning_rush");
+        }
+        // 주말
+        else if (dayOfWeek == java.util.Calendar.SATURDAY || dayOfWeek == java.util.Calendar.SUNDAY) {
+            specialMsg = getCatMessageUseCase.getSpecialMessage("weekend");
+        }
+        // 늦은 시간
+        else if (hour >= 22 || hour <= 5) {
+            specialMsg = getCatMessageUseCase.getSpecialMessage("late_night");
+        }
+
+        // 특별 메시지가 있으면 온도 메시지 대신 사용
+        if (specialMsg != null) {
+            temperatureMessage.postValue(specialMsg);
         }
     }
 
@@ -280,8 +355,12 @@ public class WeatherViewModel extends AndroidViewModel {
         return umbrellaMessage;
     }
 
-    public LiveData<List<Object>> getForecastData() {
-        return forecastData;
+    public LiveData<List<HourlyForecast>> getHourlyForecastData() {
+        return hourlyForecastData;
+    }
+
+    public LiveData<String> getForecastUpdateTime() {
+        return forecastUpdateTime;
     }
 
     public LiveData<String> getTemperatureMessage() {

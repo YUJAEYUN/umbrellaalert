@@ -11,17 +11,21 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
+        android:fillViewport="false"
         android:scrollbars="none"
-        android:overScrollMode="never">
+        android:overScrollMode="ifContentScrolls"
+        android:scrollbarStyle="insideOverlay"
+        android:fadeScrollbars="true"
+        android:scrollbarFadeDuration="300">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="@dimen/ios_spacing_xl"
-            android:paddingBottom="@dimen/ios_spacing_xxl"
+            android:paddingBottom="100dp"
             android:paddingStart="@dimen/ios_spacing_md"
-            android:paddingEnd="@dimen/ios_spacing_md">
+            android:paddingEnd="@dimen/ios_spacing_md"
+            android:clipToPadding="false">
 
     <!-- 구름 및 고양이 컨테이너 -->
     <FrameLayout
@@ -74,7 +78,7 @@
             style="@style/CatMessage" />
     </androidx.cardview.widget.CardView>
 
-    <!-- 날씨 정보 카드 (iOS 17 스타일) -->
+    <!-- 현재 날씨 카드 (iOS 17 스타일) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/weather_card"
         android:layout_width="0dp"
@@ -103,6 +107,17 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            <!-- 슬라이드 힌트 텍스트 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="← 슬라이드하여 더보기 →"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/ios_text_caption1"
+                android:fontFamily="@font/pretendard_font_family"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
             <!-- 현재 위치 텍스트 -->
             <TextView
                 android:id="@+id/location_text"
@@ -121,7 +136,7 @@
                 android:text="--°C"
                 style="@style/WeatherTemperature"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toBottomOf="@id/weather_title" />
 
             <!-- 날씨 상태 아이콘 -->
             <ImageView
@@ -235,96 +250,110 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- API 타입 선택 카드 -->
+    <!-- 온도/특별 상황 메시지 카드 (iOS 17 스타일) -->
     <androidx.cardview.widget.CardView
-        android:id="@+id/api_type_card"
+        android:id="@+id/temperature_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/ios_spacing_md"
         app:cardBackgroundColor="@color/ios_card_background"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
+        app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+        app:cardElevation="@dimen/ios_card_elevation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/umbrella_card"
-        app:layout_constraintWidth_percent="0.9">
+        app:layout_constraintTop_toBottomOf="@id/umbrella_card">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="horizontal"
+            android:padding="@dimen/ios_card_padding"
+            android:gravity="center_vertical">
 
+            <!-- 온도 아이콘 -->
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/temperature_emoji"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="🌡️"
+                android:textSize="32sp"
+                android:gravity="center" />
+
+            <!-- 온도/특별 상황 메시지 -->
+            <TextView
+                android:id="@+id/temperature_message"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="기상청 API 선택"
-                style="@style/TextSubheader" />
-
-            <RadioGroup
-                android:id="@+id/api_type_radio_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
-
-                <RadioButton
-                    android:id="@+id/radio_ultra_srt_ncst"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="초단기실황"
-                    android:checked="true" />
-
-                <RadioButton
-                    android:id="@+id/radio_ultra_srt_fcst"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="초단기예보"
-                    android:layout_marginStart="8dp" />
-
-                <RadioButton
-                    android:id="@+id/radio_vilage_fcst"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="단기예보"
-                    android:layout_marginStart="8dp" />
-            </RadioGroup>
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/ios_spacing_md"
+                android:text="온도 정보를 확인 중이다냥..."
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/ios_text_body"
+                android:fontFamily="@font/pretendard_font_family"
+                android:lineSpacingExtra="2dp" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- 예보 목록 (초단기예보, 단기예보 선택 시 표시) -->
+
+
+    <!-- 12시간 시간별 예보 카드 (iOS 17 스타일) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/forecast_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:visibility="gone"
+        android:layout_marginTop="@dimen/ios_spacing_md"
         app:cardBackgroundColor="@color/ios_card_background"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
+        app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+        app:cardElevation="@dimen/ios_card_elevation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/api_type_card"
-        app:layout_constraintWidth_percent="0.9">
+        app:layout_constraintTop_toBottomOf="@id/temperature_card">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="@dimen/ios_card_padding">
 
-            <TextView
-                android:id="@+id/forecast_title"
-                android:layout_width="wrap_content"
+            <!-- 예보 헤더 -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="예보 정보"
-                style="@style/TextSubheader" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="@dimen/ios_spacing_sm">
 
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="12시간 예보"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/ios_text_headline"
+                    android:fontFamily="@font/pretendard_font_family"
+                    android:fontWeight="600" />
+
+                <TextView
+                    android:id="@+id/forecast_update_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="업데이트: 방금 전"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/ios_text_caption1"
+                    android:fontFamily="@font/pretendard_font_family" />
+            </LinearLayout>
+
+            <!-- 시간별 예보 리스트 -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/forecast_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
+                android:nestedScrollingEnabled="false"
+                android:scrollbars="none"
+                android:overScrollMode="never"
+                android:clipToPadding="false"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
