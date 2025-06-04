@@ -4,9 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="@dimen/ios_spacing_sm"
+    android:padding="@dimen/ios_spacing_md"
     android:gravity="center_vertical"
-    android:background="?attr/selectableItemBackground">
+    android:background="?attr/selectableItemBackground"
+    android:layout_marginBottom="@dimen/ios_spacing_xs">
 
     <!-- 시간 -->
     <TextView
@@ -15,7 +16,7 @@
         android:layout_height="wrap_content"
         android:text="15:00"
         android:textColor="@color/text_primary"
-        android:textSize="@dimen/ios_text_body"
+        android:textSize="14sp"
         android:fontFamily="@font/pretendard_font_family"
         android:fontWeight="500"
         android:gravity="center" />
@@ -44,14 +45,14 @@
             android:layout_height="wrap_content"
             android:text="10%"
             android:textColor="@color/ios_blue"
-            android:textSize="@dimen/ios_text_callout"
+            android:textSize="12sp"
             android:fontFamily="@font/pretendard_font_family"
             android:fontWeight="500" />
 
         <ImageView
             android:id="@+id/rain_icon"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
             android:layout_marginStart="4dp"
             android:src="@drawable/ic_rain_drop"
             android:tint="@color/ios_blue"
@@ -65,7 +66,7 @@
         android:layout_height="wrap_content"
         android:text="23°"
         android:textColor="@color/text_primary"
-        android:textSize="@dimen/ios_text_body"
+        android:textSize="16sp"
         android:fontFamily="@font/pretendard_font_family"
         android:fontWeight="600"
         android:gravity="end" />

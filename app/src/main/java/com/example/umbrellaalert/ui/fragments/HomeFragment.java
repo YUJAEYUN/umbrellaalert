@@ -45,8 +45,8 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        // ViewModel 초기화
-        weatherViewModel = new ViewModelProvider(this).get(WeatherViewModel.class);
+        // Activity의 공유 ViewModel 사용
+        weatherViewModel = ((com.example.umbrellaalert.ui.main.MainActivity) requireActivity()).getSharedWeatherViewModel();
         
         // LocationService 초기화
         locationService = LocationService.getInstance(requireContext());

@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.databinding.ActivityMainBinding;
@@ -12,6 +13,7 @@ import com.example.umbrellaalert.ui.fragments.HomeFragment;
 import com.example.umbrellaalert.ui.fragments.WeatherFragment;
 import com.example.umbrellaalert.ui.fragments.BusFragment;
 import com.example.umbrellaalert.ui.fragments.SettingsFragment;
+import com.example.umbrellaalert.ui.home.WeatherViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -21,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
     private FragmentManager fragmentManager;
+    private WeatherViewModel sharedWeatherViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +32,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         fragmentManager = getSupportFragmentManager();
+
+        // Activity 범위의 공유 ViewModel 초기화
+        sharedWeatherViewModel = new ViewModelProvider(this).get(WeatherViewModel.class);
 
         // 초기 Fragment 설정 (홈)
         if (savedInstanceState == null) {
@@ -66,6 +72,13 @@ public class MainActivity extends AppCompatActivity {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.fragment_container, fragment);
         transaction.commit();
+    }
+
+    /**
+     * Fragment에서 공유 ViewModel에 접근할 수 있도록 제공
+     */
+    public WeatherViewModel getSharedWeatherViewModel() {
+        return sharedWeatherViewModel;
     }
 
     @Override
