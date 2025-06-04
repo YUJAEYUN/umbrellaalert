@@ -296,7 +296,7 @@
 
 
 
-    <!-- 12시간 시간별 예보 카드 (iOS 17 스타일) -->
+    <!-- 6시간 시간별 예보 카드 (iOS 17 스타일) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/forecast_card"
         android:layout_width="0dp"
@@ -327,7 +327,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="12시간 예보"
+                    android:text="6시간 예보"
                     android:textColor="@color/text_primary"
                     android:textSize="@dimen/ios_text_headline"
                     android:fontFamily="@font/pretendard_font_family"

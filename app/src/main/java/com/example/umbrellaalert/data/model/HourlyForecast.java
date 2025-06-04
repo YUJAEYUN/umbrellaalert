@@ -21,6 +21,7 @@ public class HourlyForecast {
     private String weatherCondition; // 날씨 상태 (Clear, Rain, Snow 등)
     private boolean needUmbrella; // 우산 필요 여부
     private boolean isCurrentHour; // 현재 시간 여부
+    private String dataSource; // 데이터 소스 ("API", "MOCK", "DEFAULT")
 
     public HourlyForecast() {
         // 기본 생성자
@@ -78,6 +79,9 @@ public class HourlyForecast {
 
     public boolean isCurrentHour() { return isCurrentHour; }
     public void setCurrentHour(boolean currentHour) { isCurrentHour = currentHour; }
+
+    public String getDataSource() { return dataSource; }
+    public void setDataSource(String dataSource) { this.dataSource = dataSource; }
 
     /**
      * 예보 시간을 가독성 있는 형식으로 변환 (예: "1500" -> "15:00")

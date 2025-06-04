@@ -6,6 +6,7 @@ import android.util.Log;
 import com.example.umbrellaalert.data.api.KmaApiClient;
 import com.example.umbrellaalert.data.database.DatabaseHelper;
 import com.example.umbrellaalert.data.database.WeatherDao;
+import com.example.umbrellaalert.data.model.KmaForecast;
 import com.example.umbrellaalert.data.model.KmaWeather;
 import com.example.umbrellaalert.data.model.Location;
 import com.example.umbrellaalert.data.model.Weather;
@@ -71,19 +72,33 @@ public class WeatherManager {
 
         Log.d(TAG, "Fetching weather data from KMA API for coordinates: nx=" + nx + ", ny=" + ny);
 
-        // KmaApiClient를 사용하여 날씨 정보 조회
+        // KmaApiClient를 사용하여 날씨 정보 조회 (초단기예보에서 현재 온도 가져오기)
         KmaApiClient apiClient = KmaApiClient.getInstance(context);
-        Future<KmaWeather> future = apiClient.getUltraSrtNcst(nx, ny);
+
+        Future<List<KmaForecast>> forecastFuture = apiClient.getUltraSrtFcst(nx, ny);
 
         // 백그라운드에서 API 응답 처리
         executorService.execute(() -> {
             try {
                 // API 응답 대기 (최대 8초로 단축)
-                KmaWeather kmaWeather = future.get(8, TimeUnit.SECONDS);
+                List<KmaForecast> forecasts = forecastFuture.get(8, TimeUnit.SECONDS);
 
-                if (kmaWeather != null) {
-                    // KmaWeather를 Weather 객체로 변환
-                    Weather weather = convertKmaWeatherToWeather(kmaWeather, locationStr);
+                if (forecasts != null && !forecasts.isEmpty()) {
+                    // 온도 정보가 있는 첫 번째 예보 데이터를 현재 날씨로 사용
+                    KmaForecast currentForecast = null;
+                    for (KmaForecast forecast : forecasts) {
+                        if (forecast.getTemperature() > 0) {
+                            currentForecast = forecast;
+                            break;
+                        }
+                    }
+
+                    if (currentForecast == null) {
+                        currentForecast = forecasts.get(0); // 온도 정보가 없으면 첫 번째 사용
+                    }
+
+                    // KmaForecast를 Weather 객체로 변환
+                    Weather weather = convertKmaForecastToWeather(currentForecast, locationStr);
 
                     // 데이터베이스에 저장
                     try {
@@ -207,6 +222,34 @@ public class WeatherManager {
 
         Log.d(TAG, "Converted KmaWeather to Weather: temp=" + weather.getTemperature() +
                   ", condition=" + weather.getWeatherCondition() +
+                  ", needUmbrella=" + weather.isNeedUmbrella());
+
+        return weather;
+    }
+
+    // KmaForecast를 Weather 객체로 변환
+    private Weather convertKmaForecastToWeather(KmaForecast kmaForecast, String locationStr) {
+        long timestamp = System.currentTimeMillis();
+
+        // 우산 필요 여부 판단 (강수량 또는 강수 타입 기준)
+        boolean needUmbrella = kmaForecast.getPrecipitation() > 0 ||
+                              kmaForecast.getPrecipitationType() > 0 ||
+                              kmaForecast.getPrecipitationProbability() >= 40;
+
+        Weather weather = new Weather(
+                0,  // id (데이터베이스 저장 시 자동 생성)
+                kmaForecast.getTemperature(),
+                kmaForecast.getWeatherCondition(),
+                kmaForecast.getPrecipitation(),
+                kmaForecast.getHumidity(),
+                kmaForecast.getWindSpeed(),
+                locationStr,
+                timestamp,
+                needUmbrella
+        );
+
+        Log.d(TAG, "✅ 실제 API 데이터 변환 완료: temp=" + weather.getTemperature() +
+                  "°C, condition=" + weather.getWeatherCondition() +
                   ", needUmbrella=" + weather.isNeedUmbrella());
 
         return weather;

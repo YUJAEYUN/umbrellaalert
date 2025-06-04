@@ -221,6 +221,16 @@
         <item name="android:letterSpacing">-0.02</item>
     </style>
 
+    <!-- 큰 온도 표시용 스타일 -->
+    <style name="TemperatureLarge">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">48sp</item>
+        <item name="android:fontFamily">@font/pretendard_font_family</item>
+        <item name="android:fontWeight">300</item>
+        <item name="android:letterSpacing">-0.02</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
     <!-- 날씨 상태 표시용 스타일 -->
     <style name="WeatherCondition">
         <item name="android:textColor">@color/text_secondary</item>

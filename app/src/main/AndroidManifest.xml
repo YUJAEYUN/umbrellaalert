@@ -23,13 +23,18 @@
 
         <!-- 메인 액티비티 -->
         <activity
-            android:name=".ui.home.HomeActivity"
+            android:name=".ui.main.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 홈 액티비티 (기존) -->
+        <activity
+            android:name=".ui.home.HomeActivity"
+            android:exported="false" />
 
         <!-- 위치 설정 액티비티 -->
         <activity android:name=".ui.location.LocationActivity" />

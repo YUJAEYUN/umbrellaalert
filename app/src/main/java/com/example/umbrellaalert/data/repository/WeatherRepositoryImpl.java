@@ -1,6 +1,7 @@
 package com.example.umbrellaalert.data.repository;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.example.umbrellaalert.data.database.DatabaseHelper;
 import com.example.umbrellaalert.data.database.WeatherDao;
@@ -41,42 +42,43 @@ public class WeatherRepositoryImpl implements WeatherRepository {
      */
     @Override
     public Weather getCurrentWeather(double latitude, double longitude) {
-        // 동기 방식으로 변환하기 위해 임시 저장소 사용
-        final Weather[] result = {null};
-        final boolean[] completed = {false};
+        String locationKey = String.format("%f,%f", latitude, longitude);
 
+        // 1. 먼저 데이터베이스에서 최신 데이터 확인
+        Weather cachedWeather = weatherDao.getLatestWeatherByLocation(locationKey);
+
+        // 2. 캐시된 데이터가 있고 5분 이내 데이터면 바로 반환
+        if (cachedWeather != null) {
+            long currentTime = System.currentTimeMillis();
+            long dataAge = currentTime - cachedWeather.getTimestamp();
+
+            if (dataAge < 5 * 60 * 1000) { // 5분 이내
+                Log.d("WeatherRepositoryImpl", "✅ 캐시된 데이터 사용: " + cachedWeather.getTemperature() + "°C");
+                return cachedWeather;
+            }
+        }
+
+        // 3. 백그라운드에서 새 데이터 요청 (비동기)
         weatherManager.getCurrentWeather(latitude, longitude, new WeatherManager.WeatherCallback() {
             @Override
             public void onSuccess(Weather weather) {
-                result[0] = weather;
-                completed[0] = true;
-                synchronized (result) {
-                    result.notify();
-                }
+                Log.d("WeatherRepositoryImpl", "🔄 새 데이터 백그라운드 업데이트 완료: " + weather.getTemperature() + "°C");
             }
 
             @Override
             public void onError(String error) {
-                result[0] = createDefaultWeather(latitude, longitude);
-                completed[0] = true;
-                synchronized (result) {
-                    result.notify();
-                }
+                Log.e("WeatherRepositoryImpl", "백그라운드 날씨 업데이트 실패: " + error);
             }
         });
 
-        // 결과를 기다림 (최대 10초)
-        synchronized (result) {
-            try {
-                if (!completed[0]) {
-                    result.wait(10000); // 10초 대기
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+        // 4. 캐시된 데이터가 있으면 반환, 없으면 기본값
+        if (cachedWeather != null) {
+            Log.d("WeatherRepositoryImpl", "📦 오래된 캐시 데이터 사용: " + cachedWeather.getTemperature() + "°C");
+            return cachedWeather;
+        } else {
+            Log.d("WeatherRepositoryImpl", "🔧 기본 데이터 생성");
+            return createDefaultWeather(latitude, longitude);
         }
-
-        return result[0] != null ? result[0] : createDefaultWeather(latitude, longitude);
     }
 
     /**

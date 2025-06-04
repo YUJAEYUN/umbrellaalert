@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.umbrellaalert.R;
 
 import com.example.umbrellaalert.data.model.Weather;
+import com.example.umbrellaalert.data.model.HourlyForecast;
 import com.example.umbrellaalert.databinding.ActivityHomeBinding;
 import com.example.umbrellaalert.ui.adapter.HourlyForecastAdapter;
 
@@ -68,7 +69,7 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
         // 날씨 업데이트 서비스 시작
         WeatherUpdateService.startService(this);
 
-        // 12시간 예보 어댑터 초기화
+        // 6시간 예보 어댑터 초기화
         hourlyForecastAdapter = new HourlyForecastAdapter();
         binding.forecastRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         binding.forecastRecyclerView.setAdapter(hourlyForecastAdapter);
@@ -108,7 +109,7 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
             startActivity(intent);
         });
 
-        // 12시간 예보 카드는 항상 표시
+        // 6시간 예보 카드는 항상 표시
         binding.forecastCard.setVisibility(View.VISIBLE);
 
         // 날씨 카드 스와이프 제스처 설정
@@ -206,12 +207,18 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
             binding.temperatureCard.startAnimation(fadeIn);
         });
 
-        // 12시간 예보 데이터 관찰
+        // 6시간 예보 데이터 관찰
         weatherViewModel.getHourlyForecastData().observe(this, forecasts -> {
             if (forecasts != null && !forecasts.isEmpty()) {
+                Log.d("HomeActivity", "🏠 HomeActivity에서 받은 예보 데이터 " + forecasts.size() + "개:");
+                for (int i = 0; i < Math.min(3, forecasts.size()); i++) {
+                    HourlyForecast forecast = forecasts.get(i);
+                    Log.d("HomeActivity", "  " + i + "시간 후: " + forecast.getTemperature() + "°C, 시간: " + forecast.getForecastTime());
+                }
                 hourlyForecastAdapter.setForecasts(forecasts);
                 binding.forecastCard.setVisibility(View.VISIBLE);
             } else {
+                Log.w("HomeActivity", "⚠️ 받은 예보 데이터가 없음");
                 binding.forecastCard.setVisibility(View.GONE);
             }
         });
@@ -394,7 +401,11 @@ public class HomeActivity extends AppCompatActivity implements LocationViewModel
 
     // 날씨 정보 표시 업데이트 (기본 호출)
     private void updateWeatherDisplay(Weather weather) {
-        if (weather == null) return;
+        if (weather == null) {
+            Log.w("HomeActivity", "⚠️ 받은 날씨 데이터가 null");
+            return;
+        }
+        Log.d("HomeActivity", "🏠 HomeActivity에서 받은 날씨 데이터: " + weather.getTemperature() + "°C, 상태: " + weather.getWeatherCondition());
         updateWeatherPageDisplay();
     }
 

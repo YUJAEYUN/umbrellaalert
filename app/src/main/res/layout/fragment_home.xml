@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="false"
+    android:scrollbars="none"
+    android:overScrollMode="ifContentScrolls"
+    android:scrollbarStyle="insideOverlay"
+    android:fadeScrollbars="true"
+    android:scrollbarFadeDuration="300">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/ios_spacing_xl"
+        android:paddingBottom="@dimen/ios_spacing_xl"
+        android:paddingStart="@dimen/ios_spacing_md"
+        android:paddingEnd="@dimen/ios_spacing_md"
+        android:clipToPadding="false">
+
+        <!-- 구름 및 고양이 컨테이너 -->
+        <FrameLayout
+            android:id="@+id/cloud_cat_container"
+            android:layout_width="0dp"
+            android:layout_height="200dp"
+            android:layout_marginTop="32dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_percent="0.8">
+
+            <!-- 구름 이미지 -->
+            <ImageView
+                android:id="@+id/cloud_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/cloud_background" />
+
+            <!-- 고양이 이미지 -->
+            <ImageView
+                android:id="@+id/cat_image"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_gravity="center"
+                android:src="@drawable/cat_sunny" />
+        </FrameLayout>
+
+        <!-- 고양이 말풍선 메시지 -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/message_card"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/ios_spacing_md"
+            app:cardBackgroundColor="@color/ios_card_background"
+            app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+            app:cardElevation="@dimen/ios_card_elevation"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cloud_cat_container">
+
+            <TextView
+                android:id="@+id/cat_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/ios_card_padding"
+                android:text="날씨 정보를 불러오는 중이다냥~"
+                android:textAlignment="center"
+                android:gravity="center"
+                style="@style/CatMessage" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- 현재 날씨 카드 -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/weather_card"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/ios_spacing_lg"
+            app:cardBackgroundColor="@color/ios_card_background"
+            app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+            app:cardElevation="@dimen/ios_card_elevation"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/message_card">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/ios_card_padding"
+                android:minHeight="@dimen/weather_card_min_height">
+
+                <!-- 현재 날씨 제목 -->
+                <TextView
+                    android:id="@+id/weather_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="현재 날씨"
+                    style="@style/TextSubheader"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <!-- 위치 정보 -->
+                <TextView
+                    android:id="@+id/location_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="위치 확인 중..."
+                    style="@style/TextCaption"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <!-- 온도 -->
+                <TextView
+                    android:id="@+id/temperature_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--°C"
+                    android:layout_marginTop="@dimen/ios_spacing_sm"
+                    style="@style/TemperatureLarge"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/weather_title" />
+
+                <!-- 날씨 상태 -->
+                <TextView
+                    android:id="@+id/weather_condition"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="날씨 확인 중..."
+                    style="@style/TextBody"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/temperature_text" />
+
+                <!-- 온도 메시지 -->
+                <TextView
+                    android:id="@+id/temperatureMessage"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/ios_spacing_sm"
+                    android:text=""
+                    android:visibility="gone"
+                    style="@style/TextCaption"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/weather_condition" />
+
+                <!-- 우산 메시지 -->
+                <TextView
+                    android:id="@+id/umbrellaMessage"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/ios_spacing_sm"
+                    android:text=""
+                    android:visibility="gone"
+                    style="@style/TextBody"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/temperatureMessage" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

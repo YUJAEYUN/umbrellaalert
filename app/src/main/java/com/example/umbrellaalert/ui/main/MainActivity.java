@@ -1,0 +1,76 @@
+package com.example.umbrellaalert.ui.main;
+
+import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
+import com.example.umbrellaalert.R;
+import com.example.umbrellaalert.databinding.ActivityMainBinding;
+import com.example.umbrellaalert.ui.fragments.HomeFragment;
+import com.example.umbrellaalert.ui.fragments.WeatherFragment;
+import com.example.umbrellaalert.ui.fragments.BusFragment;
+import com.example.umbrellaalert.ui.fragments.SettingsFragment;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint
+public class MainActivity extends AppCompatActivity {
+
+    private ActivityMainBinding binding;
+    private FragmentManager fragmentManager;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        fragmentManager = getSupportFragmentManager();
+
+        // 초기 Fragment 설정 (홈)
+        if (savedInstanceState == null) {
+            loadFragment(new HomeFragment());
+        }
+
+        // 하단 네비게이션 설정
+        setupBottomNavigation();
+    }
+
+    private void setupBottomNavigation() {
+        binding.bottomNavigation.setOnItemSelectedListener(item -> {
+            Fragment selectedFragment = null;
+            
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                selectedFragment = new HomeFragment();
+            } else if (itemId == R.id.nav_weather) {
+                selectedFragment = new WeatherFragment();
+            } else if (itemId == R.id.nav_bus) {
+                selectedFragment = new BusFragment();
+            } else if (itemId == R.id.nav_settings) {
+                selectedFragment = new SettingsFragment();
+            }
+
+            if (selectedFragment != null) {
+                loadFragment(selectedFragment);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void loadFragment(Fragment fragment) {
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.replace(R.id.fragment_container, fragment);
+        transaction.commit();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        binding = null;
+    }
+}

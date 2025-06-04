@@ -65,4 +65,8 @@
     <color name="cat_primary">#FF6B6B</color>
     <color name="cat_secondary">#4ECDC4</color>
     <color name="cat_accent">#FFE66D</color>
+
+    <!-- 기본 색상 -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
 </resources>
