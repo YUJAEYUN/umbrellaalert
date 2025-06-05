@@ -77,14 +77,40 @@ public class WeatherViewModel extends AndroidViewModel {
 
         executorService.execute(() -> {
             try {
-                // UseCase를 통해 현재 날씨 가져오기
+                // UseCase를 통해 현재 날씨 가져오기 (캐싱된 데이터 우선 사용)
                 Weather weather = getCurrentWeatherUseCase.execute(
                         location.getLatitude(), location.getLongitude());
 
-                if (weather != null) {
-                    Log.d(TAG, "🌡️ WeatherViewModel에서 받은 날씨 데이터: " + weather.getTemperature() + "°C, 상태: " + weather.getWeatherCondition());
+                if (weather != null && weather.getTemperature() > -50 && weather.getTemperature() < 60) {
+                    // 유효한 온도 범위의 실제 데이터인 경우
+                    Log.d(TAG, "🌡️ WeatherViewModel에서 받은 유효한 날씨 데이터: " + weather.getTemperature() + "°C, 상태: " + weather.getWeatherCondition());
                     weatherData.postValue(weather);
                     updateWeatherUI(weather);
+
+                    // 실제 API 데이터를 받았으므로 예보 데이터도 가져오기
+                    List<HourlyForecast> hourlyForecasts = get12HourForecastUseCase.execute(
+                            location.getLatitude(), location.getLongitude());
+
+                    // 6시간만 표시하도록 제한
+                    if (hourlyForecasts != null && hourlyForecasts.size() > 6) {
+                        hourlyForecasts = hourlyForecasts.subList(0, 6);
+                    }
+
+                    if (hourlyForecasts != null && !hourlyForecasts.isEmpty()) {
+                        Log.d(TAG, "📊 WeatherViewModel에서 받은 6시간 예보 데이터:");
+                        for (int i = 0; i < Math.min(3, hourlyForecasts.size()); i++) {
+                            HourlyForecast forecast = hourlyForecasts.get(i);
+                            Log.d(TAG, "  " + (i + 1) + "시간 후: " + forecast.getTemperature() + "°C, 시간: " + forecast.getForecastTime());
+                        }
+
+                        hourlyForecastData.postValue(hourlyForecasts);
+
+                        // 예보 업데이트 시간 설정
+                        java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.KOREA);
+                        String updateTime = "업데이트: " + timeFormat.format(new java.util.Date());
+                        forecastUpdateTime.postValue(updateTime);
+                    }
+
                 } else {
                     Log.w(TAG, "⚠️ 날씨 정보를 가져올 수 없어서 기본값 사용");
                     // 날씨 정보를 가져올 수 없는 경우 기본값 사용
@@ -93,41 +119,7 @@ public class WeatherViewModel extends AndroidViewModel {
                     updateWeatherUI(defaultWeather);
                 }
 
-                // 6시간 예보 데이터 가져오기 (12시간에서 6시간으로 제한)
-                List<HourlyForecast> hourlyForecasts = get12HourForecastUseCase.execute(
-                        location.getLatitude(), location.getLongitude());
 
-                // 6시간만 표시하도록 제한
-                if (hourlyForecasts != null && hourlyForecasts.size() > 6) {
-                    hourlyForecasts = hourlyForecasts.subList(0, 6);
-                }
-
-                // 예보 데이터 로그 출력 및 현재 날씨 업데이트
-                if (hourlyForecasts != null && !hourlyForecasts.isEmpty()) {
-                    Log.d(TAG, "📊 WeatherViewModel에서 받은 6시간 예보 데이터:");
-                    for (int i = 0; i < Math.min(3, hourlyForecasts.size()); i++) {
-                        HourlyForecast forecast = hourlyForecasts.get(i);
-                        Log.d(TAG, "  " + i + "시간 후: " + forecast.getTemperature() + "°C, 시간: " + forecast.getForecastTime());
-                    }
-
-                    // 첫 번째 예보 데이터를 현재 날씨로 업데이트
-                    HourlyForecast firstForecast = hourlyForecasts.get(0);
-                    Log.d(TAG, "🔄 첫 번째 예보를 현재 날씨로 업데이트: " + firstForecast.getTemperature() + "°C");
-
-                    // HourlyForecast를 Weather 객체로 변환하여 현재 날씨 업데이트
-                    Weather updatedWeather = convertHourlyForecastToWeather(firstForecast, location);
-                    weatherData.postValue(updatedWeather);
-                    updateWeatherUI(updatedWeather);
-                } else {
-                    Log.w(TAG, "⚠️ 예보 데이터가 없음");
-                }
-
-                hourlyForecastData.postValue(hourlyForecasts);
-
-                // 예보 업데이트 시간 설정
-                java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.KOREA);
-                String updateTime = "업데이트: " + timeFormat.format(new java.util.Date());
-                forecastUpdateTime.postValue(updateTime);
 
             } catch (Exception e) {
                 Log.e(TAG, "날씨 정보 업데이트 실패", e);

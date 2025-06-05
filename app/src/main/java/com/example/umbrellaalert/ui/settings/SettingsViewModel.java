@@ -11,6 +11,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -86,7 +87,7 @@ public class SettingsViewModel extends AndroidViewModel {
         widgetEnabled.setValue(preferences.getBoolean(KEY_WIDGET_ENABLED, false));
         widgetAutoUpdateEnabled.setValue(preferences.getBoolean(KEY_WIDGET_AUTO_UPDATE, true));
         persistentNotificationEnabled.setValue(preferences.getBoolean(KEY_PERSISTENT_NOTIFICATION, false));
-        
+
         // 아침 알림 시간 로드 및 표시
         int hour = preferences.getInt(KEY_MORNING_HOUR, 7);
         int minute = preferences.getInt(KEY_MORNING_MINUTE, 0);

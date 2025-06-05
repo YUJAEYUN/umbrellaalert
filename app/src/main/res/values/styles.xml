@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 기본 앱 테마 (iOS 17 스타일) -->
+    <!-- 기본 앱 테마 (iOS 17 스타일) - 항상 라이트 모드 -->
     <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/ios_blue</item>
         <item name="colorPrimaryDark">@color/ios_blue</item>
