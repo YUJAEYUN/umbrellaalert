@@ -35,23 +35,7 @@ public class ApiKeyUtil {
         }
     }
     
-    /**
-     * 기상청 공공데이터포털 API 키 가져오기
-     * @param context 애플리케이션 컨텍스트
-     * @return 기상청 API 키
-     */
-    public static String getKmaApiKey(Context context) {
-        loadProperties(context);
-        String apiKey = properties.getProperty("kma_api_key");
 
-        // 키가 없는 경우 기본값 반환 (개발용)
-        if (apiKey == null || apiKey.isEmpty()) {
-            Log.w(TAG, "기상청 API 키가 없습니다. 기본값을 사용합니다.");
-            return "SAMPLE_API_KEY";
-        }
-
-        return apiKey;
-    }
 
     /**
      * 기상청 API허브 키 가져오기
@@ -65,7 +49,7 @@ public class ApiKeyUtil {
         // 키가 없는 경우 기본값 반환 (개발용)
         if (apiKey == null || apiKey.isEmpty()) {
             Log.w(TAG, "기상청 API허브 키가 없습니다. 기본값을 사용합니다.");
-            return "BVWR_jjSSSb0f44o8kqQ"; // 화면에서 보인 키
+            return "BVvR_jijSSSb0f44o8kkqQ"; // 올바른 API 키
         }
 
         return apiKey;

@@ -2,7 +2,7 @@ package com.example.umbrellaalert.di;
 
 import android.content.Context;
 
-import com.example.umbrellaalert.data.api.KmaApiClient;
+
 import com.example.umbrellaalert.data.repository.LocationRepositoryImpl;
 import com.example.umbrellaalert.data.repository.WeatherRepositoryImpl;
 import com.example.umbrellaalert.domain.repository.LocationRepository;
@@ -35,9 +35,5 @@ public class RepositoryModule {
         return new LocationRepositoryImpl(context);
     }
 
-    @Provides
-    @Singleton
-    public KmaApiClient provideKmaApiClient(@ApplicationContext Context context) {
-        return KmaApiClient.getInstance(context);
-    }
+
 }

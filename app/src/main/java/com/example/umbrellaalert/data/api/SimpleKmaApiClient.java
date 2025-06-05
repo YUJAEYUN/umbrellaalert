@@ -108,16 +108,28 @@ public class SimpleKmaApiClient {
                     // 1. 가장 가까운 관측소 찾기
                     int stationId = findNearestStation(latitude, longitude);
                     Log.d(TAG, "🎯 선택된 관측소: " + stationId + " (위치: " + latitude + ", " + longitude + ")");
-                    
-                    // 2. API 호출
-                    String response = requestWeatherData(stationId);
-                    
-                    // 3. 응답 파싱
-                    Weather weather = parseWeatherResponse(response, latitude, longitude);
-                    
-                    Log.d(TAG, "✅ 날씨 데이터 수신 완료: " + weather.getTemperature() + "°C");
-                    return weather;
-                    
+
+                    // 2. 현재 날짜의 최신 데이터 요청 (필요시 과거 날짜도 시도)
+                    Weather weather = null;
+                    for (int dayOffset = 0; dayOffset <= 2; dayOffset++) {
+                        try {
+                            String response = requestWeatherDataWithOffset(stationId, dayOffset);
+                            weather = parseWeatherResponse(response, latitude, longitude);
+
+                            // 유효한 데이터를 받았으면 중단
+                            if (weather != null && weather.getTemperature() > -50 && weather.getTemperature() < 60) {
+                                Log.d(TAG, "✅ 날씨 데이터 수신 완료 (" + dayOffset + "일 전 최신 데이터): " + weather.getTemperature() + "°C");
+                                return weather;
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "⚠️ " + dayOffset + "일 전 데이터 요청 실패: " + e.getMessage());
+                        }
+                    }
+
+                    // 모든 시도가 실패한 경우
+                    Log.w(TAG, "⚠️ 모든 시간대에서 데이터 수신 실패, 기본값 사용");
+                    return createDefaultWeather(latitude, longitude);
+
                 } catch (Exception e) {
                     Log.e(TAG, "날씨 데이터 요청 실패", e);
                     return createDefaultWeather(latitude, longitude);
@@ -182,18 +194,90 @@ public class SimpleKmaApiClient {
     }
     
     /**
-     * 현재 날씨 데이터 요청
+     * 현재 날씨 데이터 요청 (여러 시간대 시도)
      */
     private String requestWeatherData(int stationId) throws IOException {
-        // 현재 시간 (KST)
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmm", Locale.KOREA);
-        String currentTime = dateFormat.format(new Date());
-        
-        String urlStr = BASE_URL + "?tm=" + currentTime + "&stn=" + stationId + "&help=0&authKey=" + apiKey;
-        
-        Log.d(TAG, "🌐 API 요청: " + urlStr);
-        
+        // 여러 시간대를 시도해서 데이터가 있는 시간 찾기
+        for (int hourOffset = 0; hourOffset <= 6; hourOffset++) {
+            try {
+                Calendar calendar = Calendar.getInstance();
+                calendar.add(Calendar.HOUR_OF_DAY, -hourOffset); // 과거 시간으로 이동
+                calendar.set(Calendar.MINUTE, 0);
+                calendar.set(Calendar.SECOND, 0);
+                calendar.set(Calendar.MILLISECOND, 0);
+
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHH00", Locale.KOREA);
+                String requestTime = dateFormat.format(calendar.getTime());
+
+                String urlStr = BASE_URL + "?tm=" + requestTime + "&stn=" + stationId + "&authKey=" + apiKey;
+
+                Log.d(TAG, "🌐 API 요청 (" + hourOffset + "시간 전): " + urlStr);
+                Log.d(TAG, "🕐 요청 시간: " + requestTime);
+
+                String response = executeHttpRequest(urlStr);
+
+                // 응답에 실제 데이터가 있는지 확인
+                if (hasActualData(response)) {
+                    Log.d(TAG, "✅ " + hourOffset + "시간 전 데이터 발견!");
+                    return response;
+                } else {
+                    Log.d(TAG, "⚠️ " + hourOffset + "시간 전 데이터 없음, 다음 시간 시도");
+                }
+
+            } catch (Exception e) {
+                Log.w(TAG, "⚠️ " + hourOffset + "시간 전 요청 실패: " + e.getMessage());
+            }
+        }
+
+        // 모든 시간대에서 실패한 경우 가장 최근 응답 반환
+        Log.w(TAG, "⚠️ 모든 시간대에서 데이터 없음, 마지막 응답 반환");
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHH00", Locale.KOREA);
+        String requestTime = dateFormat.format(calendar.getTime());
+        String urlStr = BASE_URL + "?tm=" + requestTime + "&stn=" + stationId + "&authKey=" + apiKey;
+
         return executeHttpRequest(urlStr);
+    }
+
+    /**
+     * 시간 오프셋을 적용한 날씨 데이터 요청
+     */
+    private String requestWeatherDataWithOffset(int stationId, int hourOffset) throws IOException {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, -hourOffset); // 일 단위로 과거로 이동 (현재 시간 데이터를 위해)
+
+        // 현재 시간의 최신 데이터를 받기 위해 날짜만 지정
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd", Locale.KOREA);
+        String requestDate = dateFormat.format(calendar.getTime());
+
+        String urlStr = BASE_URL + "?tm=" + requestDate + "&stn=" + stationId + "&authKey=" + apiKey;
+
+        Log.d(TAG, "🌐 API 요청 (" + hourOffset + "일 전 최신 데이터): " + urlStr);
+
+        return executeHttpRequest(urlStr);
+    }
+
+    /**
+     * 응답에 실제 데이터가 있는지 확인
+     */
+    private boolean hasActualData(String response) {
+        if (response == null || response.trim().isEmpty()) {
+            return false;
+        }
+
+        String[] lines = response.split("\n");
+        for (String line : lines) {
+            line = line.trim();
+            // 숫자로 시작하는 데이터 라인이 있는지 확인
+            if (line.matches("^\\d{12}\\s+.*")) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
@@ -208,8 +292,8 @@ public class SimpleKmaApiClient {
         now.add(Calendar.HOUR_OF_DAY, 6);
         String endTime = dateFormat.format(now.getTime());
         
-        String urlStr = "https://apihub.kma.go.kr/api/typ01/url/kma_sfctm3.php?tm1=" + startTime + 
-                       "&tm2=" + endTime + "&stn=" + stationId + "&help=0&authKey=" + apiKey;
+        String urlStr = "https://apihub.kma.go.kr/api/typ01/url/kma_sfctm3.php?tm1=" + startTime +
+                       "&tm2=" + endTime + "&stn=" + stationId + "&authKey=" + apiKey;
         
         Log.d(TAG, "🌐 예보 API 요청: " + urlStr);
         
@@ -251,71 +335,167 @@ public class SimpleKmaApiClient {
     }
     
     /**
-     * 날씨 응답 파싱 (CSV 형식)
+     * 날씨 응답 파싱 (기상청 API허브 고정폭 텍스트 형식)
      */
     private Weather parseWeatherResponse(String response, double latitude, double longitude) {
-        // 기상청 API허브는 CSV 형식으로 응답
-        // 첫 번째 줄은 헤더, 두 번째 줄부터 데이터
-        
-        String[] lines = response.split("\n");
-        if (lines.length < 2) {
-            return createDefaultWeather(latitude, longitude);
-        }
-        
         try {
-            String[] headers = lines[0].split(",");
-            String[] values = lines[1].split(",");
-            
+            Log.d(TAG, "📡 파싱할 응답 데이터: " + (response.length() > 500 ? response.substring(0, 500) + "..." : response));
+
+            // 기상청 API허브는 고정폭 텍스트 형식
+            // 한 줄에 모든 데이터가 들어있으므로 정규식으로 데이터 부분 추출
+            String dataLine = null;
+
+            Log.d(TAG, "📋 응답 데이터 분석 (길이: " + response.length() + ")");
+
+            // 정규식으로 10자리 숫자로 시작하는 데이터 패턴 찾기
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d{10}\\s+[\\d\\s\\-\\.]+)");
+            java.util.regex.Matcher matcher = pattern.matcher(response);
+
+            if (matcher.find()) {
+                String fullMatch = matcher.group(1);
+                // #7777END 전까지만 추출
+                int endIndex = fullMatch.indexOf("#7777END");
+                if (endIndex != -1) {
+                    dataLine = fullMatch.substring(0, endIndex).trim();
+                } else {
+                    dataLine = fullMatch.trim();
+                }
+                Log.d(TAG, "✅ 정규식으로 데이터 라인 발견: " + dataLine);
+            } else {
+                Log.w(TAG, "정규식으로 데이터 라인을 찾을 수 없음");
+
+                // 대안: 응답을 줄 단위로 분리해서 찾기
+                String[] lines = response.split("\n");
+                Log.d(TAG, "대안 방법: 총 " + lines.length + "개 라인에서 검색");
+
+                for (int i = 0; i < lines.length; i++) {
+                    String line = lines[i].trim();
+                    Log.d(TAG, "라인 " + i + ": [" + line.substring(0, Math.min(100, line.length())) + "...]");
+
+                    // #으로 시작하는 헤더 라인은 건너뛰기
+                    if (line.startsWith("#") || line.isEmpty()) {
+                        continue;
+                    }
+
+                    // 10자리 숫자로 시작하는 데이터 라인 찾기
+                    if (line.matches(".*\\d{10}\\s+.*")) {
+                        // 10자리 숫자 부분부터 추출
+                        java.util.regex.Pattern linePattern = java.util.regex.Pattern.compile("(\\d{10}\\s+[\\d\\s\\-\\.]+)");
+                        java.util.regex.Matcher lineMatcher = linePattern.matcher(line);
+                        if (lineMatcher.find()) {
+                            dataLine = lineMatcher.group(1).trim();
+                            Log.d(TAG, "✅ 대안 방법으로 데이터 라인 발견: " + dataLine);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (dataLine == null) {
+                Log.w(TAG, "⚠️ 데이터 라인을 찾을 수 없음 - 해당 시간/지점에 데이터가 없을 수 있음");
+
+                // 전체 응답 내용을 로그로 출력 (디버깅용)
+                Log.w(TAG, "=== 전체 API 응답 내용 ===");
+                String[] debugLines = response.split("\n");
+                Log.w(TAG, "응답 라인 수: " + debugLines.length);
+                for (int i = 0; i < Math.min(debugLines.length, 10); i++) {
+                    Log.w(TAG, "라인 " + i + ": " + debugLines[i]);
+                }
+                Log.w(TAG, "========================");
+
+                if (response.contains("#START7777") && response.contains("#7777END")) {
+                    Log.w(TAG, "정상적인 API 응답이지만 실제 관측 데이터가 없음");
+                } else {
+                    Log.w(TAG, "비정상적인 API 응답: " + response.substring(0, Math.min(200, response.length())));
+                }
+                return createDefaultWeather(latitude, longitude);
+            }
+
+            Log.d(TAG, "📊 데이터 라인: " + dataLine);
+
+            // 공백으로 분리하여 파싱
+            String[] parts = dataLine.trim().split("\\s+");
+
+            if (parts.length < 15) {
+                Log.w(TAG, "⚠️ 데이터 필드 부족: " + parts.length + "개");
+                return createDefaultWeather(latitude, longitude);
+            }
+
             // 기본값 설정
             float temperature = 20.0f;
             int humidity = 50;
             float windSpeed = 2.0f;
+            float precipitation = 0.0f;
             String weatherCondition = "Clear";
             boolean needUmbrella = false;
-            
-            // 데이터 파싱 (헤더와 값 매칭)
-            for (int i = 0; i < Math.min(headers.length, values.length); i++) {
-                String header = headers[i].trim();
-                String value = values[i].trim();
-                
-                if (value.isEmpty() || value.equals("-")) continue;
-                
-                try {
-                    switch (header) {
-                        case "TA": // 기온
-                            temperature = Float.parseFloat(value);
-                            break;
-                        case "HM": // 습도
-                            humidity = Integer.parseInt(value);
-                            break;
-                        case "WS": // 풍속
-                            windSpeed = Float.parseFloat(value);
-                            break;
-                        case "RN": // 강수량
-                            float precipitation = Float.parseFloat(value);
-                            if (precipitation > 0) {
-                                needUmbrella = true;
-                                weatherCondition = "Rain";
-                            }
-                            break;
-                        case "WW": // 날씨 현상
-                            if (value.contains("비") || value.contains("눈")) {
-                                needUmbrella = true;
-                                weatherCondition = value.contains("비") ? "Rain" : "Snow";
-                            }
-                            break;
+
+            try {
+                // 필드 위치에 따른 파싱 (API 문서 기준)
+                // parts[0] = 시간 (YYMMDDHHMI)
+                // parts[1] = 지점번호 (STN)
+                // parts[2] = 풍향 (WD)
+                // parts[3] = 풍속 (WS)
+                // parts[11] = 기온 (TA)
+                // parts[13] = 습도 (HM)
+                // parts[15] = 강수량 (RN)
+
+                // 풍속 파싱 (parts[3])
+                if (parts.length > 3 && !parts[3].equals("-9") && !parts[3].equals("-9.0")) {
+                    try {
+                        windSpeed = Float.parseFloat(parts[3]);
+                    } catch (NumberFormatException e) {
+                        Log.w(TAG, "풍속 파싱 실패: " + parts[3]);
                     }
-                } catch (NumberFormatException e) {
-                    Log.w(TAG, "데이터 파싱 오류: " + header + "=" + value);
                 }
+
+                // 기온 파싱 (parts[11])
+                if (parts.length > 11 && !parts[11].equals("-9") && !parts[11].equals("-9.0")) {
+                    try {
+                        temperature = Float.parseFloat(parts[11]);
+                        Log.d(TAG, "🌡️ 기온 파싱 성공: " + temperature + "°C");
+                    } catch (NumberFormatException e) {
+                        Log.w(TAG, "기온 파싱 실패: " + parts[11]);
+                    }
+                }
+
+                // 습도 파싱 (parts[13])
+                if (parts.length > 13 && !parts[13].equals("-9") && !parts[13].equals("-9.0")) {
+                    try {
+                        humidity = (int) Float.parseFloat(parts[13]);
+                        Log.d(TAG, "💧 습도 파싱 성공: " + humidity + "%");
+                    } catch (NumberFormatException e) {
+                        Log.w(TAG, "습도 파싱 실패: " + parts[13]);
+                    }
+                }
+
+                // 강수량 파싱 (parts[15])
+                if (parts.length > 15 && !parts[15].equals("-9") && !parts[15].equals("-9.0")) {
+                    try {
+                        precipitation = Float.parseFloat(parts[15]);
+                        if (precipitation > 0) {
+                            needUmbrella = true;
+                            weatherCondition = "Rain";
+                            Log.d(TAG, "🌧️ 강수량 감지: " + precipitation + "mm");
+                        }
+                    } catch (NumberFormatException e) {
+                        Log.w(TAG, "강수량 파싱 실패: " + parts[15]);
+                    }
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "데이터 필드 파싱 중 오류", e);
             }
-            
+
             String locationStr = latitude + "," + longitude;
             long timestamp = System.currentTimeMillis();
-            
-            return new Weather(0, temperature, weatherCondition, 0.0f, humidity, windSpeed, 
-                             locationStr, timestamp, needUmbrella);
-            
+
+            Weather weather = new Weather(0, temperature, weatherCondition, precipitation,
+                                        humidity, windSpeed, locationStr, timestamp, needUmbrella);
+
+            Log.d(TAG, "✅ 날씨 파싱 완료: " + temperature + "°C, 습도: " + humidity + "%, 풍속: " + windSpeed + "m/s");
+
+            return weather;
+
         } catch (Exception e) {
             Log.e(TAG, "날씨 응답 파싱 실패", e);
             return createDefaultWeather(latitude, longitude);
@@ -323,30 +503,79 @@ public class SimpleKmaApiClient {
     }
     
     /**
-     * 예보 응답 파싱
+     * 예보 응답 파싱 (현재 날씨 기반으로 6시간 예보 생성)
      */
     private List<HourlyForecast> parseForecastResponse(String response) {
         List<HourlyForecast> forecasts = new ArrayList<>();
-        
-        // 간단한 6시간 예보 생성 (실제 구현에서는 응답 데이터 파싱)
+
+        // 현재 날씨 데이터에서 기준 온도 추출
+        float baseTemperature = 20.0f;
+        int baseHumidity = 60;
+        float baseWindSpeed = 2.0f;
+
+        try {
+            // 현재 날씨 응답에서 기준값 추출
+            String[] lines = response.split("\n");
+            for (String line : lines) {
+                line = line.trim();
+                if (line.matches("^\\d{12}\\s+.*")) {
+                    String[] parts = line.split("\\s+");
+                    if (parts.length > 13) {
+                        try {
+                            if (!parts[11].equals("-9") && !parts[11].equals("-9.0")) {
+                                baseTemperature = Float.parseFloat(parts[11]);
+                            }
+                            if (!parts[13].equals("-9") && !parts[13].equals("-9.0")) {
+                                baseHumidity = (int) Float.parseFloat(parts[13]);
+                            }
+                            if (!parts[3].equals("-9") && !parts[3].equals("-9.0")) {
+                                baseWindSpeed = Float.parseFloat(parts[3]);
+                            }
+                        } catch (NumberFormatException e) {
+                            Log.w(TAG, "예보 기준값 파싱 실패");
+                        }
+                    }
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "예보 기준값 추출 실패, 기본값 사용");
+        }
+
+        Log.d(TAG, "📊 예보 기준값: 온도=" + baseTemperature + "°C, 습도=" + baseHumidity + "%, 풍속=" + baseWindSpeed + "m/s");
+
+        // 6시간 예보 생성
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat timeFormat = new SimpleDateFormat("HHmm", Locale.KOREA);
-        
+
         for (int i = 1; i <= 6; i++) {
             calendar.add(Calendar.HOUR_OF_DAY, 1);
-            
+
             HourlyForecast forecast = new HourlyForecast();
             forecast.setForecastTime(timeFormat.format(calendar.getTime()));
-            forecast.setTemperature(20.0f + (float)(Math.random() * 10 - 5)); // 임시 데이터
+
+            // 시간별 온도 변화 (기준 온도에서 ±3도 변화)
+            float temperature = baseTemperature + (float)(Math.random() * 6 - 3);
+            forecast.setTemperature(temperature);
+
+            // 기본 날씨 상태
             forecast.setWeatherCondition("Clear");
             forecast.setPrecipitationProbability(10);
-            forecast.setHumidity(60);
-            forecast.setWindSpeed(2.0f);
+            forecast.setPrecipitation(0.0f);
+            forecast.setHumidity(baseHumidity + (int)(Math.random() * 20 - 10)); // ±10% 변화
+            forecast.setWindSpeed(baseWindSpeed + (float)(Math.random() * 2 - 1)); // ±1m/s 변화
+            forecast.setPrecipitationType(0);
             forecast.setNeedUmbrella(false);
-            
+
+            if (i == 1) {
+                forecast.setCurrentHour(true);
+            }
+
             forecasts.add(forecast);
+
+            Log.d(TAG, "🕐 " + i + "시간 후 예보: " + temperature + "°C (시간: " + forecast.getForecastTime() + ")");
         }
-        
+
         return forecasts;
     }
     

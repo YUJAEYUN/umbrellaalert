@@ -1,6 +1,6 @@
 package com.example.umbrellaalert.domain.repository;
 
-import com.example.umbrellaalert.data.model.KmaForecast;
+
 import com.example.umbrellaalert.data.model.Weather;
 
 import java.util.List;
@@ -26,13 +26,7 @@ public interface WeatherRepository {
      */
     Weather getCachedWeather(String locationStr);
 
-    /**
-     * 날씨 예보 정보 조회
-     * @param latitude 위도
-     * @param longitude 경도
-     * @return 예보 목록
-     */
-    List<KmaForecast> getWeatherForecast(double latitude, double longitude);
+
 
     /**
      * 날씨 정보 저장

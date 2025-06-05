@@ -7,7 +7,7 @@ import android.util.Log;
 import com.example.umbrellaalert.data.database.DatabaseHelper;
 import com.example.umbrellaalert.data.database.WeatherDao;
 import com.example.umbrellaalert.data.manager.WeatherManager;
-import com.example.umbrellaalert.data.model.KmaForecast;
+
 import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.domain.repository.WeatherRepository;
 
@@ -165,14 +165,7 @@ public class WeatherRepositoryImpl implements WeatherRepository {
         return weatherDao.getLatestWeatherByLocation(locationStr);
     }
 
-    /**
-     * 날씨 예보 정보 조회
-     */
-    @Override
-    public List<KmaForecast> getWeatherForecast(double latitude, double longitude) {
-        // TODO: 예보 API 구현 필요
-        return new java.util.ArrayList<>();
-    }
+
 
     /**
      * 날씨 정보 저장
