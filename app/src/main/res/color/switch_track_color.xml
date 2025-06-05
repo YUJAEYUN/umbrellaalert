@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 체크된 상태 (ON) -->
+    <item android:state_checked="true" android:color="@color/ios_green" />
+    <!-- 체크되지 않은 상태 (OFF) -->
+    <item android:color="@color/switch_track_off" />
+</selector>

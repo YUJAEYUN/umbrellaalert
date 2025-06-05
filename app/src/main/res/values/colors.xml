@@ -69,4 +69,11 @@
     <!-- 기본 색상 -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+
+    <!-- 스위치 색상 (라이트 모드) -->
+    <color name="switch_thumb_off">#FFFFFF</color>
+    <color name="switch_track_off">#E5E5EA</color>
+
+    <!-- 라디오 버튼 색상 (라이트 모드) -->
+    <color name="radio_button_unchecked">#C7C7CC</color>
 </resources>

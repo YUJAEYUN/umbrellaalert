@@ -42,6 +42,9 @@
         <!-- 설정 액티비티 -->
         <activity android:name=".ui.settings.SettingsActivity" />
 
+        <!-- 테마 설정 액티비티 -->
+        <activity android:name=".ui.settings.ThemeActivity" />
+
         <!-- 위치 및 날씨 모니터링 서비스 -->
         <service
             android:name=".service.WeatherUpdateService"

@@ -7,6 +7,7 @@ import android.os.Build;
 
 import com.example.umbrellaalert.service.PersistentNotificationService;
 import com.example.umbrellaalert.service.WeatherUpdateService;
+import com.example.umbrellaalert.ui.settings.ThemeActivity;
 
 import dagger.hilt.android.HiltAndroidApp;
 
@@ -18,6 +19,9 @@ public class UmbrellaApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        // 저장된 테마 적용
+        ThemeActivity.applyTheme(this);
 
         // 알림 채널 생성
         createNotificationChannel();

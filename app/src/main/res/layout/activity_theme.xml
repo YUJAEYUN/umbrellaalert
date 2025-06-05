@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ios_background"
+    tools:context=".ui.settings.ThemeActivity">
+
+    <!-- 헤더 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/ios_card_background"
+        android:elevation="4dp"
+        android:paddingStart="@dimen/ios_spacing_md"
+        android:paddingTop="@dimen/ios_spacing_lg"
+        android:paddingEnd="@dimen/ios_spacing_md"
+        android:paddingBottom="@dimen/ios_spacing_md"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- 뒤로가기 버튼 -->
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="뒤로가기"
+            android:src="@drawable/ic_arrow_back"
+            android:tint="@color/ios_blue"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 제목 -->
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/ios_spacing_md"
+            android:fontFamily="@font/pretendard_font_family"
+            android:text="테마 설정"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/btn_back"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- 스크롤 뷰 -->
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/ios_spacing_md">
+
+            <!-- 테마 선택 카드 -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/theme_card"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/ios_spacing_md"
+                app:cardBackgroundColor="@color/ios_card_background"
+                app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+                app:cardElevation="@dimen/ios_card_elevation"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/ios_card_padding">
+
+                    <!-- 섹션 제목 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="@dimen/ios_spacing_md"
+                        android:fontFamily="@font/pretendard_font_family"
+                        android:text="테마 모드"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <!-- 라디오 그룹 -->
+                    <RadioGroup
+                        android:id="@+id/theme_radio_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <!-- 라이트 모드 -->
+                        <RadioButton
+                            android:id="@+id/radio_light"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="@dimen/ios_spacing_sm"
+                            android:fontFamily="@font/pretendard_font_family"
+                            android:padding="@dimen/ios_spacing_sm"
+                            android:text="라이트 모드"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:buttonTint="@color/radio_button_color" />
+
+                        <!-- 다크 모드 -->
+                        <RadioButton
+                            android:id="@+id/radio_dark"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="@dimen/ios_spacing_sm"
+                            android:fontFamily="@font/pretendard_font_family"
+                            android:padding="@dimen/ios_spacing_sm"
+                            android:text="다크 모드"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:buttonTint="@color/radio_button_color" />
+
+                        <!-- 시스템 설정 따르기 -->
+                        <RadioButton
+                            android:id="@+id/radio_system"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/pretendard_font_family"
+                            android:padding="@dimen/ios_spacing_sm"
+                            android:text="시스템 설정 따르기"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:buttonTint="@color/radio_button_color" />
+
+                    </RadioGroup>
+
+                    <!-- 설명 텍스트 -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/ios_spacing_md"
+                        android:fontFamily="@font/pretendard_font_family"
+                        android:text="시스템 설정 따르기를 선택하면 기기의 다크모드 설정에 따라 자동으로 변경됩니다."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:lineSpacingExtra="2dp" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -269,8 +269,8 @@
 
     <!-- iOS 17 스타일 스위치 -->
     <style name="iOSSwitch" parent="Widget.MaterialComponents.CompoundButton.Switch">
-        <item name="thumbTint">@android:color/white</item>
-        <item name="trackTint">@color/ios_green</item>
+        <item name="thumbTint">@color/switch_thumb_color</item>
+        <item name="trackTint">@color/switch_track_color</item>
         <item name="trackTintMode">src_in</item>
         <item name="android:thumb">@drawable/ios_switch_thumb</item>
         <item name="android:track">@drawable/ios_switch_track</item>

@@ -65,4 +65,11 @@
     <color name="cat_primary">#FF6B6B</color>
     <color name="cat_secondary">#4ECDC4</color>
     <color name="cat_accent">#FFE66D</color>
+
+    <!-- 스위치 색상 (다크 모드) -->
+    <color name="switch_thumb_off">#FFFFFF</color>
+    <color name="switch_track_off">#39393D</color>
+
+    <!-- 라디오 버튼 색상 (다크 모드) -->
+    <color name="radio_button_unchecked">#8E8E93</color>
 </resources>

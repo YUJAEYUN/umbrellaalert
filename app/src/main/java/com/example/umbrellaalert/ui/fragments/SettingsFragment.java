@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment;
 import com.example.umbrellaalert.databinding.FragmentSettingsBinding;
 import com.example.umbrellaalert.ui.location.LocationActivity;
 import com.example.umbrellaalert.ui.settings.SettingsActivity;
+import com.example.umbrellaalert.ui.settings.ThemeActivity;
 
 public class SettingsFragment extends Fragment {
 
@@ -35,6 +36,12 @@ public class SettingsFragment extends Fragment {
         // 장소 설정 카드 클릭
         binding.locationSettingsCard.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), LocationActivity.class);
+            startActivity(intent);
+        });
+
+        // 테마 설정 카드 클릭
+        binding.themeSettingsCard.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), ThemeActivity.class);
             startActivity(intent);
         });
 

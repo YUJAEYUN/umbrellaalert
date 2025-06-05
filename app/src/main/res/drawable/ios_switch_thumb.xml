@@ -6,6 +6,6 @@
         android:width="@dimen/ios_switch_thumb_size"
         android:height="@dimen/ios_switch_thumb_size" />
     <stroke
-        android:width="0.5dp"
+        android:width="1dp"
         android:color="@color/ios_separator" />
 </shape>
