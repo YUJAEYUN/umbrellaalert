@@ -31,6 +31,7 @@ import com.example.umbrellaalert.data.model.BusArrival;
 import com.example.umbrellaalert.data.api.BusApiClient;
 import com.example.umbrellaalert.data.database.BusDao;
 import com.example.umbrellaalert.data.database.DatabaseHelper;
+import com.example.umbrellaalert.receiver.NotificationDismissReceiver;
 import com.example.umbrellaalert.ui.main.MainActivity;
 
 import java.util.List;
@@ -141,6 +142,13 @@ public class PersistentNotificationService extends Service implements LocationLi
      * 날씨 + 버스 알림 업데이트
      */
     private void updateNotification() {
+        // 사용자가 알림을 지웠는지 확인
+        if (NotificationDismissReceiver.isPersistentNotificationDismissed(this)) {
+            Log.d(TAG, "지속적 알림이 사용자에 의해 비활성화됨");
+            stopSelf(); // 서비스 종료
+            return;
+        }
+
         executorService.execute(() -> {
             try {
                 // 1. 날씨 정보 가져오기
@@ -205,8 +213,8 @@ public class PersistentNotificationService extends Service implements LocationLi
     private String getBusInfo() {
         try {
             List<RegisteredBus> buses = busDao.getAllRegisteredBuses();
-            if (buses.isEmpty()) {
-                return "등록된 버스 없음";
+            if (buses == null || buses.isEmpty()) {
+                return "등록된 버스가 없습니다";
             }
 
             StringBuilder busInfo = new StringBuilder();
@@ -220,24 +228,41 @@ public class PersistentNotificationService extends Service implements LocationLi
                     List<BusArrival> arrivals = future.get(3, TimeUnit.SECONDS); // 3초 타임아웃
 
                     // 해당 버스 찾기
+                    boolean found = false;
                     for (BusArrival arrival : arrivals) {
                         if (bus.getRouteNo().equals(arrival.getRouteNo())) {
                             if (count > 0) busInfo.append(" | ");
                             busInfo.append(bus.getRouteNo()).append("번: ").append(arrival.getFormattedArrTime());
                             count++;
+                            found = true;
                             break;
                         }
                     }
+
+                    // 해당 버스를 찾지 못한 경우
+                    if (!found) {
+                        if (count > 0) busInfo.append(" | ");
+                        busInfo.append(bus.getRouteNo()).append("번: 운행정보 없음");
+                        count++;
+                    }
+
                 } catch (Exception e) {
                     Log.e(TAG, "버스 정보 가져오기 실패: " + bus.getRouteNo(), e);
+                    if (count > 0) busInfo.append(" | ");
+                    busInfo.append(bus.getRouteNo()).append("번: 정보 오류");
+                    count++;
                 }
             }
 
-            return busInfo.length() > 0 ? busInfo.toString() : "버스 정보 없음";
+            if (busInfo.length() == 0) {
+                return "버스 도착 정보를 가져올 수 없습니다";
+            }
+
+            return busInfo.toString();
 
         } catch (Exception e) {
             Log.e(TAG, "버스 정보 조회 오류", e);
-            return "버스 정보 오류";
+            return "버스 정보 조회 중 오류가 발생했습니다";
         }
     }
 
@@ -310,6 +335,12 @@ public class PersistentNotificationService extends Service implements LocationLi
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
+        // 알림 지우기 인텐트
+        Intent dismissIntent = new Intent(this, NotificationDismissReceiver.class);
+        dismissIntent.setAction(NotificationDismissReceiver.ACTION_DISMISS_PERSISTENT);
+        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(
+                this, 0, dismissIntent, PendingIntent.FLAG_IMMUTABLE);
+
         // 알림 내용 구성
         String title;
         String content;
@@ -342,6 +373,7 @@ public class PersistentNotificationService extends Service implements LocationLi
                     .setBigContentTitle(title))
                 .setOngoing(true) // 사용자가 스와이프로 제거할 수 없음
                 .setContentIntent(pendingIntent)
+                .addAction(R.drawable.ic_close, "알림 끄기", dismissPendingIntent) // 알림 끄기 액션 추가
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .build();
 

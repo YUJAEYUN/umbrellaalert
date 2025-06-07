@@ -37,15 +37,35 @@ public class UmbrellaApplication extends Application {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+
+            // 기본 우산 알림 채널
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
                     "우산 알림",
                     NotificationManager.IMPORTANCE_HIGH
             );
             channel.setDescription("날씨 상태에 따른 우산 필요 여부 알림");
-
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
+
+            // 상태바 지속 알림 채널
+            NotificationChannel persistentChannel = new NotificationChannel(
+                    "weather_persistent_channel",
+                    "날씨 알림",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            persistentChannel.setDescription("현재 날씨 정보를 표시합니다");
+            persistentChannel.setShowBadge(false);
+            notificationManager.createNotificationChannel(persistentChannel);
+
+            // 버스 알림 채널
+            NotificationChannel busChannel = new NotificationChannel(
+                    "bus_notification_channel",
+                    "버스 알림",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            busChannel.setDescription("등록된 버스 도착 알림");
+            notificationManager.createNotificationChannel(busChannel);
         }
     }
 }

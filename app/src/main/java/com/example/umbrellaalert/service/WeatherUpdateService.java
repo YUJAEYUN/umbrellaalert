@@ -20,6 +20,7 @@ import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.UmbrellaApplication;
 import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.Weather;
+import com.example.umbrellaalert.receiver.NotificationDismissReceiver;
 import com.example.umbrellaalert.ui.home.HomeActivity;
 
 import java.util.concurrent.ExecutorService;
@@ -163,9 +164,21 @@ public class WeatherUpdateService extends Service {
 
     // 우산 필요 알림 전송
     private void sendUmbrellaNotification(Weather weather) {
+        // 사용자가 날씨 알림을 일시 중지했는지 확인
+        if (NotificationDismissReceiver.isWeatherNotificationDismissed(this)) {
+            Log.d(TAG, "날씨 알림이 일시 중지되어 있습니다");
+            return;
+        }
+
         Intent notificationIntent = new Intent(this, HomeActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
+
+        // 알림 지우기 인텐트
+        Intent dismissIntent = new Intent(this, NotificationDismissReceiver.class);
+        dismissIntent.setAction(NotificationDismissReceiver.ACTION_DISMISS_WEATHER);
+        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(
+                this, 0, dismissIntent, PendingIntent.FLAG_IMMUTABLE);
 
         String message = "비가 올 예정이다냥! 우산을 챙겨라냥~";
 
@@ -175,6 +188,7 @@ public class WeatherUpdateService extends Service {
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
                 .setSmallIcon(R.drawable.ic_umbrella_small)
                 .setContentIntent(pendingIntent)
+                .addAction(R.drawable.ic_close, "1시간 중지", dismissPendingIntent) // 1시간 중지 액션 추가
                 .setColor(getResources().getColor(R.color.alert_color, null))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)

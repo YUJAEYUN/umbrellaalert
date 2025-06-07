@@ -19,6 +19,7 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.umbrellaalert.receiver.AlarmReceiver;
 import com.example.umbrellaalert.service.BusNotificationService;
+import com.example.umbrellaalert.receiver.NotificationDismissReceiver;
 import com.example.umbrellaalert.service.PersistentNotificationService;
 import com.example.umbrellaalert.widget.WeatherWidgetProvider;
 
@@ -156,6 +157,12 @@ public class SettingsViewModel extends AndroidViewModel {
     public void setPersistentNotificationEnabled(boolean enabled) {
         preferences.edit().putBoolean(KEY_PERSISTENT_NOTIFICATION, enabled).apply();
         persistentNotificationEnabled.setValue(enabled);
+
+        if (enabled) {
+            // 알림을 다시 활성화할 때 dismiss 상태 초기화
+            NotificationDismissReceiver.resetPersistentDismiss(getApplication());
+        }
+
         PersistentNotificationService.setEnabled(getApplication(), enabled);
     }
 

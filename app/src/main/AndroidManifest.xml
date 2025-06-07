@@ -11,6 +11,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
+    <!-- 알림 권한 (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".UmbrellaApplication"
         android:allowBackup="true"
@@ -90,6 +93,12 @@
         <!-- 알람 리시버 -->
         <receiver
             android:name=".receiver.AlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- 알림 지우기 리시버 -->
+        <receiver
+            android:name=".receiver.NotificationDismissReceiver"
             android:enabled="true"
             android:exported="false" />
 

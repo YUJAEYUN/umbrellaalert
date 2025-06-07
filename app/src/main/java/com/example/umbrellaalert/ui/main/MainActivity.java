@@ -1,7 +1,12 @@
 package com.example.umbrellaalert.ui.main;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -15,12 +20,15 @@ import com.example.umbrellaalert.ui.fragments.BusFragment;
 import com.example.umbrellaalert.ui.fragments.SettingsFragment;
 import com.example.umbrellaalert.ui.home.WeatherViewModel;
 import com.example.umbrellaalert.widget.WeatherWidgetProvider;
+import com.example.umbrellaalert.service.PersistentNotificationService;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
+
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 1001;
 
     private ActivityMainBinding binding;
     private FragmentManager fragmentManager;
@@ -47,6 +55,14 @@ public class MainActivity extends AppCompatActivity {
 
         // 위젯 업데이트 (앱 시작 시)
         WeatherWidgetProvider.forceUpdateAllWidgets(this);
+
+        // 알림 권한 요청 (Android 13+)
+        requestNotificationPermission();
+
+        // 알림 서비스 시작 (설정이 활성화되어 있다면)
+        if (PersistentNotificationService.isEnabled(this)) {
+            PersistentNotificationService.setEnabled(this, true);
+        }
     }
 
     private void setupBottomNavigation() {
@@ -76,6 +92,39 @@ public class MainActivity extends AppCompatActivity {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.fragment_container, fragment);
         transaction.commit();
+    }
+
+    /**
+     * 알림 권한 요청 (Android 13+)
+     */
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    NOTIFICATION_PERMISSION_REQUEST_CODE);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // 알림 권한이 허용됨
+                // 필요한 경우 알림 서비스 재시작
+                if (PersistentNotificationService.isEnabled(this)) {
+                    PersistentNotificationService.setEnabled(this, true);
+                }
+            } else {
+                // 알림 권한이 거부됨
+                // 사용자에게 알림 기능이 제한됨을 알릴 수 있음
+            }
+        }
     }
 
     /**

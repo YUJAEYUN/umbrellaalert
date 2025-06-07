@@ -57,5 +57,17 @@
             android:text="날씨 정보를 확인 중입니다"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
+
+        <!-- 버스 정보 -->
+        <TextView
+            android:id="@+id/widget_bus_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="🚌 버스 정보 로딩 중..."
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
     </LinearLayout>
 </LinearLayout>

@@ -20,31 +20,41 @@
         android:paddingEnd="@dimen/ios_spacing_md"
         android:clipToPadding="false">
 
-        <!-- 구름 및 고양이 컨테이너 -->
+        <!-- 구름 및 고양이 컨테이너 (날씨별 프레임 포함) -->
         <FrameLayout
-            android:id="@+id/cloud_cat_container"
+            android:id="@+id/weather_frame_container"
             android:layout_width="0dp"
-            android:layout_height="200dp"
+            android:layout_height="220dp"
             android:layout_marginTop="32dp"
+            android:background="@drawable/weather_frame_default"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintWidth_percent="0.8">
+            app:layout_constraintWidth_percent="0.85">
 
-            <!-- 구름 이미지 -->
-            <ImageView
-                android:id="@+id/cloud_image"
+            <!-- 내부 컨테이너 -->
+            <FrameLayout
+                android:id="@+id/cloud_cat_container"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/cloud_background" />
+                android:layout_margin="12dp">
 
-            <!-- 고양이 이미지 -->
-            <ImageView
-                android:id="@+id/cat_image"
-                android:layout_width="150dp"
-                android:layout_height="150dp"
-                android:layout_gravity="center"
-                android:src="@drawable/cat_sunny" />
+                <!-- 구름 이미지 -->
+                <ImageView
+                    android:id="@+id/cloud_image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/cloud_background"
+                    android:scaleType="centerCrop" />
+
+                <!-- 고양이 이미지 -->
+                <ImageView
+                    android:id="@+id/cat_image"
+                    android:layout_width="140dp"
+                    android:layout_height="140dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/cat_sunny" />
+            </FrameLayout>
         </FrameLayout>
 
         <!-- 고양이 말풍선 메시지 -->
@@ -58,7 +68,7 @@
             app:cardElevation="@dimen/ios_card_elevation"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/cloud_cat_container">
+            app:layout_constraintTop_toBottomOf="@id/weather_frame_container">
 
             <TextView
                 android:id="@+id/cat_message"

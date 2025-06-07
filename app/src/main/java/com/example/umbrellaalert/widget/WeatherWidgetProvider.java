@@ -19,7 +19,16 @@ import androidx.core.content.ContextCompat;
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.Weather;
+import com.example.umbrellaalert.data.model.RegisteredBus;
+import com.example.umbrellaalert.data.model.BusArrival;
+import com.example.umbrellaalert.data.api.BusApiClient;
+import com.example.umbrellaalert.data.database.BusDao;
+import com.example.umbrellaalert.data.database.DatabaseHelper;
 import com.example.umbrellaalert.service.LocationService;
+
+import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import com.example.umbrellaalert.ui.home.HomeActivity;
 
 import java.util.Locale;
@@ -43,17 +52,13 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
 
         Log.d(TAG, "위젯 활성화 상태: " + isWidgetEnabled);
 
-        if (!isWidgetEnabled) {
-            // 비활성화되어 있어도 기본 메시지는 표시
-            for (int appWidgetId : appWidgetIds) {
+        // 각 위젯 ID에 대해 업데이트 수행 (활성화 여부와 관계없이)
+        for (int appWidgetId : appWidgetIds) {
+            if (isWidgetEnabled) {
+                updateAppWidget(context, appWidgetManager, appWidgetId);
+            } else {
                 showDisabledWidget(context, appWidgetManager, appWidgetId);
             }
-            return;
-        }
-
-        // 각 위젯 ID에 대해 업데이트 수행
-        for (int appWidgetId : appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId);
         }
     }
 
@@ -72,6 +77,7 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
         views.setTextViewText(R.id.widget_temperature, "--°C");
         views.setTextViewText(R.id.widget_condition, "위젯 비활성화");
         views.setTextViewText(R.id.widget_umbrella_text, "설정에서 위젯을 활성화해주세요");
+        views.setTextViewText(R.id.widget_bus_info, "위젯이 비활성화되어 있습니다");
         views.setImageViewResource(R.id.widget_icon, R.drawable.ic_settings);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
@@ -102,6 +108,7 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
         // 로딩 상태 표시
         views.setTextViewText(R.id.widget_temperature, "로딩 중...");
         views.setTextViewText(R.id.widget_condition, "");
+        views.setTextViewText(R.id.widget_bus_info, "버스 정보 확인 중...");
         appWidgetManager.updateAppWidget(appWidgetId, views);
 
         // 위치 권한 확인 후 날씨 데이터 로드
@@ -135,89 +142,167 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
                 WeatherManager weatherManager = WeatherManager.getInstance(context);
                 final Location finalLocation = currentLocation;
 
-                weatherManager.getCurrentWeather(finalLocation.getLatitude(), finalLocation.getLongitude(), new WeatherManager.WeatherCallback() {
-                    @Override
-                    public void onSuccess(Weather weather) {
-                        Log.d(TAG, "날씨 데이터 성공적으로 가져옴");
-                        if (weather != null) {
-                            // 위젯 UI 업데이트
-                            views.setTextViewText(R.id.widget_temperature,
-                                    String.format(Locale.getDefault(), "%.1f°C", weather.getTemperature()));
-                            views.setTextViewText(R.id.widget_condition, getWeatherConditionText(weather.getWeatherCondition()));
-
-                            // 우산 필요 여부에 따라 아이콘 변경
-                            if (weather.isNeedUmbrella()) {
-                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella_small);
-                                views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요해요!");
-                            } else {
-                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_weather_sunny);
-                                views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요 없어요");
-                            }
-                        } else {
-                            Log.w(TAG, "날씨 데이터가 null입니다");
-                            // 날씨 데이터를 가져오지 못한 경우
-                            views.setTextViewText(R.id.widget_temperature, "--°C");
-                            views.setTextViewText(R.id.widget_condition, "날씨 정보 없음");
-                            views.setTextViewText(R.id.widget_umbrella_text, "날씨 정보를 확인할 수 없습니다");
-                        }
-
-                        // 위젯 업데이트
-                        appWidgetManager.updateAppWidget(appWidgetId, views);
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        Log.e(TAG, "날씨 데이터 가져오기 실패: " + error);
-                        // 오류 발생 시 위젯 업데이트
-                        views.setTextViewText(R.id.widget_temperature, "--°C");
-                        views.setTextViewText(R.id.widget_condition, "오류 발생");
-                        views.setTextViewText(R.id.widget_umbrella_text, "날씨 정보를 가져오는 중 오류가 발생했습니다");
-                        appWidgetManager.updateAppWidget(appWidgetId, views);
-                    }
-                });
+                // 날씨 정보와 버스 정보를 동시에 가져오기
+                loadWeatherAndBusData(context, weatherManager, finalLocation, views, appWidgetManager, appWidgetId);
             } else {
                 Log.w(TAG, "위치 정보를 가져올 수 없습니다");
                 // 위치 정보가 없는 경우 - 기본 위치(세종시) 사용
                 WeatherManager weatherManager = WeatherManager.getInstance(context);
-                weatherManager.getCurrentWeather(36.4800, 127.2890, new WeatherManager.WeatherCallback() {
-                    @Override
-                    public void onSuccess(Weather weather) {
-                        if (weather != null) {
-                            views.setTextViewText(R.id.widget_temperature,
-                                    String.format(Locale.getDefault(), "%.1f°C", weather.getTemperature()));
-                            views.setTextViewText(R.id.widget_condition, getWeatherConditionText(weather.getWeatherCondition()) + " (세종시)");
+                Location defaultLocation = new Location("default");
+                defaultLocation.setLatitude(36.4800);
+                defaultLocation.setLongitude(127.2890);
 
-                            if (weather.isNeedUmbrella()) {
-                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella_small);
-                                views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요해요!");
-                            } else {
-                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_weather_sunny);
-                                views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요 없어요");
-                            }
-                        } else {
-                            views.setTextViewText(R.id.widget_temperature, "--°C");
-                            views.setTextViewText(R.id.widget_condition, "날씨 정보 없음");
-                            views.setTextViewText(R.id.widget_umbrella_text, "날씨 정보를 확인할 수 없습니다");
-                        }
-                        appWidgetManager.updateAppWidget(appWidgetId, views);
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        views.setTextViewText(R.id.widget_temperature, "--°C");
-                        views.setTextViewText(R.id.widget_condition, "위치 정보 없음");
-                        views.setTextViewText(R.id.widget_umbrella_text, "현재 위치를 확인할 수 없습니다");
-                        appWidgetManager.updateAppWidget(appWidgetId, views);
-                    }
-                });
+                loadWeatherAndBusData(context, weatherManager, defaultLocation, views, appWidgetManager, appWidgetId);
             }
         } else {
             // 위치 권한이 없는 경우
             views.setTextViewText(R.id.widget_temperature, "--°C");
             views.setTextViewText(R.id.widget_condition, "권한 필요");
             views.setTextViewText(R.id.widget_umbrella_text, "위치 권한이 필요합니다");
+            views.setTextViewText(R.id.widget_bus_info, "위치 권한이 필요합니다");
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
+    }
+
+    /**
+     * 날씨와 버스 정보를 함께 로드
+     */
+    private void loadWeatherAndBusData(Context context, WeatherManager weatherManager, Location location,
+                                     RemoteViews views, AppWidgetManager appWidgetManager, int appWidgetId) {
+
+        // 날씨 정보 가져오기
+        weatherManager.getCurrentWeather(location.getLatitude(), location.getLongitude(), new WeatherManager.WeatherCallback() {
+            @Override
+            public void onSuccess(Weather weather) {
+                Log.d(TAG, "날씨 데이터 성공적으로 가져옴");
+                updateWeatherInfo(weather, views, location);
+
+                // 버스 정보 가져오기
+                loadBusInfo(context, views, appWidgetManager, appWidgetId);
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "날씨 데이터 가져오기 실패: " + error);
+                updateWeatherInfo(null, views, location);
+
+                // 버스 정보는 여전히 시도
+                loadBusInfo(context, views, appWidgetManager, appWidgetId);
+            }
+        });
+    }
+
+    /**
+     * 날씨 정보 업데이트
+     */
+    private void updateWeatherInfo(Weather weather, RemoteViews views, Location location) {
+        if (weather != null) {
+            // 위젯 UI 업데이트
+            views.setTextViewText(R.id.widget_temperature,
+                    String.format(Locale.getDefault(), "%.1f°C", weather.getTemperature()));
+
+            String conditionText = getWeatherConditionText(weather.getWeatherCondition());
+            if (location.getProvider().equals("default")) {
+                conditionText += " (세종시)";
+            }
+            views.setTextViewText(R.id.widget_condition, conditionText);
+
+            // 우산 필요 여부에 따라 아이콘 변경
+            if (weather.isNeedUmbrella()) {
+                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella_small);
+                views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요해요!");
+            } else {
+                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_weather_sunny);
+                views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요 없어요");
+            }
+        } else {
+            Log.w(TAG, "날씨 데이터가 null입니다");
+            // 날씨 데이터를 가져오지 못한 경우
+            views.setTextViewText(R.id.widget_temperature, "--°C");
+            views.setTextViewText(R.id.widget_condition, "날씨 정보 없음");
+            views.setTextViewText(R.id.widget_umbrella_text, "날씨 정보를 확인할 수 없습니다");
+        }
+    }
+
+    /**
+     * 버스 정보 로드
+     */
+    private void loadBusInfo(Context context, RemoteViews views, AppWidgetManager appWidgetManager, int appWidgetId) {
+        new Thread(() -> {
+            try {
+                DatabaseHelper dbHelper = DatabaseHelper.getInstance(context);
+                BusDao busDao = new BusDao(dbHelper);
+                BusApiClient busApiClient = new BusApiClient(context);
+
+                List<RegisteredBus> buses = busDao.getAllRegisteredBuses();
+                String busInfo = getBusInfoText(buses, busApiClient);
+
+                // UI 스레드에서 업데이트
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    views.setTextViewText(R.id.widget_bus_info, busInfo);
+                    appWidgetManager.updateAppWidget(appWidgetId, views);
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "버스 정보 로드 실패", e);
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    views.setTextViewText(R.id.widget_bus_info, "버스 정보를 가져올 수 없습니다");
+                    appWidgetManager.updateAppWidget(appWidgetId, views);
+                });
+            }
+        }).start();
+    }
+
+    /**
+     * 버스 정보 텍스트 생성
+     */
+    private String getBusInfoText(List<RegisteredBus> buses, BusApiClient busApiClient) {
+        if (buses == null || buses.isEmpty()) {
+            return "등록된 버스가 없습니다";
+        }
+
+        StringBuilder busInfo = new StringBuilder();
+        int count = 0;
+
+        for (RegisteredBus bus : buses) {
+            if (count >= 2) break; // 최대 2개만 표시
+
+            try {
+                Future<List<BusArrival>> future = busApiClient.getBusArrivalInfo(bus.getNodeId(), bus.getCityCode());
+                List<BusArrival> arrivals = future.get(3, TimeUnit.SECONDS); // 3초 타임아웃
+
+                // 해당 버스 찾기
+                boolean found = false;
+                for (BusArrival arrival : arrivals) {
+                    if (bus.getRouteNo().equals(arrival.getRouteNo())) {
+                        if (count > 0) busInfo.append(" | ");
+                        busInfo.append(bus.getRouteNo()).append("번: ").append(arrival.getFormattedArrTime());
+                        count++;
+                        found = true;
+                        break;
+                    }
+                }
+
+                // 해당 버스를 찾지 못한 경우
+                if (!found) {
+                    if (count > 0) busInfo.append(" | ");
+                    busInfo.append(bus.getRouteNo()).append("번: 운행정보 없음");
+                    count++;
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "버스 정보 가져오기 실패: " + bus.getRouteNo(), e);
+                if (count > 0) busInfo.append(" | ");
+                busInfo.append(bus.getRouteNo()).append("번: 정보 오류");
+                count++;
+            }
+        }
+
+        if (busInfo.length() == 0) {
+            return "버스 도착 정보를 가져올 수 없습니다";
+        }
+
+        return busInfo.toString();
     }
 
     /**
