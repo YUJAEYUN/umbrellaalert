@@ -26,6 +26,17 @@ android {
         }
         val weatherApiKey = localProperties.getProperty("weather.api.service.key") ?: ""
         buildConfigField("String", "WEATHER_API_SERVICE_KEY", "\"$weatherApiKey\"")
+
+        // Bus API Service Key
+        val busApiKey = localProperties.getProperty("bus.api.service.key") ?: "VJ9IZb8N%2BRRUt%2Bl%2FtdMwuR2gO2W%2FyER8etH1%2FlCcR3q0c4AvOiXSItNi9hcNAfyrQOMTVvOkE0wJwTxnXZ0PDA%3D%3D"
+        buildConfigField("String", "BUS_API_SERVICE_KEY", "\"$busApiKey\"")
+
+        // Naver Map API Key
+        val naverMapClientId = localProperties.getProperty("naver.map.client.id") ?: ""
+        buildConfigField("String", "NAVER_MAP_CLIENT_ID", "\"$naverMapClientId\"")
+
+        // AndroidManifest.xml에 네이버 지도 클라이언트 ID 추가
+        manifestPlaceholders["NAVER_MAP_CLIENT_ID"] = naverMapClientId
     }
 
     buildTypes {
@@ -91,4 +102,10 @@ dependencies {
 
     // Gson for JSON parsing (KmaApiClient에서 사용)
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // 네이버클라우드 플랫폼 지도 SDK
+    implementation("com.naver.maps:map-sdk:3.21.0")
+
+    // Google Play Services Location (위치 서비스)
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 }

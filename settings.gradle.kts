@@ -16,6 +16,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // 네이버클라우드 플랫폼 지도 SDK
+        maven {
+            url = uri("https://repository.map.naver.com/archive/maven")
+        }
     }
 }
 

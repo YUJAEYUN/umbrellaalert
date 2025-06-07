@@ -39,6 +39,12 @@ public class SettingsFragment extends Fragment {
             startActivity(intent);
         });
 
+        // 버스 설정 카드 클릭
+        binding.busSettingsCard.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), com.example.umbrellaalert.ui.bus.BusSettingsActivity.class);
+            startActivity(intent);
+        });
+
         // 테마 설정 카드 클릭
         binding.themeSettingsCard.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), ThemeActivity.class);

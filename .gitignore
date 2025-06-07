@@ -14,5 +14,12 @@
 .cxx
 local.properties
 
-# API Keys
+# API Keys and Sensitive Information
 /app/src/main/assets/api_keys.properties
+*.properties
+secrets.properties
+config.properties
+
+# 네이버 지도 API 키 관련
+naver_map_key.txt
+api_keys.txt

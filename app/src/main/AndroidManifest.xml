@@ -21,6 +21,11 @@
         android:theme="@style/AppTheme"
         android:networkSecurityConfig="@xml/network_security_config">
 
+        <!-- 네이버클라우드 플랫폼 지도 API 클라이언트 ID -->
+        <meta-data
+            android:name="com.naver.maps.map.NCP_KEY_ID"
+            android:value="${NAVER_MAP_CLIENT_ID}" />
+
         <!-- 메인 액티비티 -->
         <activity
             android:name=".ui.main.MainActivity"
@@ -44,6 +49,9 @@
 
         <!-- 테마 설정 액티비티 -->
         <activity android:name=".ui.settings.ThemeActivity" />
+
+        <!-- 버스 설정 액티비티 -->
+        <activity android:name=".ui.bus.BusSettingsActivity" />
 
         <!-- 위치 및 날씨 모니터링 서비스 -->
         <service

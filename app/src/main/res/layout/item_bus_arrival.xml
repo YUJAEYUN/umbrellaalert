@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/ios_spacing_sm"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    app:cardBackgroundColor="@color/ios_card_background"
+    app:cardCornerRadius="@dimen/ios_card_corner_radius"
+    app:cardElevation="@dimen/ios_card_elevation">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/ios_card_padding">
+
+        <!-- 버스 아이콘 -->
+        <ImageView
+            android:id="@+id/bus_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_bus"
+            android:tint="@color/ios_blue"
+            android:background="@drawable/circle_background"
+            android:backgroundTint="@color/ios_blue_light"
+            android:padding="6dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 버스 번호 -->
+        <TextView
+            android:id="@+id/tv_route_no"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/ios_spacing_md"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            app:layout_constraintStart_toEndOf="@id/bus_icon"
+            app:layout_constraintTop_toTopOf="@id/bus_icon"
+            tools:text="370번" />
+
+        <!-- 방향 정보 -->
+        <TextView
+            android:id="@+id/tv_direction"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="@dimen/ios_spacing_sm"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:ellipsize="end"
+            android:maxLines="1"
+            app:layout_constraintStart_toStartOf="@id/tv_route_no"
+            app:layout_constraintTop_toBottomOf="@id/tv_route_no"
+            app:layout_constraintEnd_toStartOf="@id/tv_arrival_time"
+            tools:text="→ 대전역 방면" />
+
+        <!-- 노선 유형 -->
+        <TextView
+            android:id="@+id/tv_route_type"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:background="@drawable/route_type_background"
+            android:paddingStart="6dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="6dp"
+            android:paddingBottom="2dp"
+            android:textSize="10sp"
+            android:textColor="@color/ios_blue"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="@id/tv_route_no"
+            app:layout_constraintTop_toBottomOf="@id/tv_direction"
+            tools:text="일반" />
+
+        <!-- 도착 시간 -->
+        <TextView
+            android:id="@+id/tv_arrival_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/ios_blue"
+            app:layout_constraintEnd_toStartOf="@id/btn_register"
+            app:layout_constraintTop_toTopOf="@id/tv_route_no"
+            tools:text="5분 후" />
+
+        <!-- 정류장 수 정보 -->
+        <TextView
+            android:id="@+id/tv_station_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            app:layout_constraintEnd_toEndOf="@id/tv_arrival_time"
+            app:layout_constraintTop_toBottomOf="@id/tv_arrival_time"
+            tools:text="3정거장 전" />
+
+        <!-- 등록 버튼 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_register"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_marginStart="@dimen/ios_spacing_sm"
+            android:text="등록"
+            android:textSize="12sp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/ios_blue"
+            android:minWidth="60dp"
+            style="@style/Widget.Material3.Button"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tv_route_no"
+            app:layout_constraintBottom_toBottomOf="@id/tv_station_count" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

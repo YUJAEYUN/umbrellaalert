@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/ios_spacing_sm"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    app:cardBackgroundColor="@color/ios_card_background"
+    app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+    app:cardElevation="@dimen/ios_card_elevation">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/ios_card_padding">
+
+        <!-- 버스 아이콘 -->
+        <ImageView
+            android:id="@+id/bus_icon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_bus"
+            android:tint="@color/ios_blue"
+            android:background="@drawable/circle_background"
+            android:backgroundTint="@color/ios_blue_light"
+            android:padding="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 버스 번호 -->
+        <TextView
+            android:id="@+id/tv_route_no"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/ios_spacing_md"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            app:layout_constraintStart_toEndOf="@id/bus_icon"
+            app:layout_constraintTop_toTopOf="@id/bus_icon"
+            tools:text="370번" />
+
+        <!-- 정류장명 -->
+        <TextView
+            android:id="@+id/tv_node_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="@dimen/ios_spacing_sm"
+            android:textSize="14sp"
+            android:textColor="@color/text_secondary"
+            android:ellipsize="end"
+            android:maxLines="1"
+            app:layout_constraintStart_toStartOf="@id/tv_route_no"
+            app:layout_constraintTop_toBottomOf="@id/tv_route_no"
+            app:layout_constraintEnd_toStartOf="@id/tv_arrival_time"
+            tools:text="세종시청 정류장" />
+
+        <!-- 방향 정보 -->
+        <TextView
+            android:id="@+id/tv_direction"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="@dimen/ios_spacing_sm"
+            android:textSize="12sp"
+            android:textColor="@color/text_tertiary"
+            android:ellipsize="end"
+            android:maxLines="1"
+            app:layout_constraintStart_toStartOf="@id/tv_route_no"
+            app:layout_constraintTop_toBottomOf="@id/tv_node_name"
+            app:layout_constraintEnd_toStartOf="@id/tv_arrival_time"
+            tools:text="→ 대전역 방면" />
+
+        <!-- 도착 시간 -->
+        <TextView
+            android:id="@+id/tv_arrival_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/ios_blue"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tv_route_no"
+            tools:text="5분 후" />
+
+        <!-- 정류장 수 정보 -->
+        <TextView
+            android:id="@+id/tv_station_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_arrival_time"
+            tools:text="3정거장 전" />
+
+        <!-- 로딩 상태 -->
+        <ProgressBar
+            android:id="@+id/progress_bar_item"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tv_route_no"
+            app:layout_constraintBottom_toBottomOf="@id/tv_station_count" />
+
+        <!-- 오류 상태 -->
+        <TextView
+            android:id="@+id/tv_error_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="정보 없음"
+            android:textSize="12sp"
+            android:textColor="@color/text_tertiary"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tv_route_no"
+            app:layout_constraintBottom_toBottomOf="@id/tv_direction" />
+
+        <!-- 삭제 버튼 (스와이프 시 표시) -->
+        <ImageButton
+            android:id="@+id/btn_delete"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_delete"
+            android:tint="@color/text_tertiary"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

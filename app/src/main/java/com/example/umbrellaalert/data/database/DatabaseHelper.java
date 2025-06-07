@@ -8,7 +8,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // 데이터베이스 정보
     private static final String DATABASE_NAME = "umbrella_alert.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     // 날씨 테이블
     public static final String TABLE_WEATHER = "weather";
@@ -30,6 +30,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_LONGITUDE = "longitude";
     public static final String COLUMN_FREQUENT = "frequent";
     public static final String COLUMN_NOTIFICATION_ENABLED = "notification_enabled";
+
+    // 등록된 버스 테이블
+    public static final String TABLE_REGISTERED_BUS = "registered_bus";
+    public static final String COLUMN_BUS_ID = "id";
+    public static final String COLUMN_NODE_ID = "node_id";
+    public static final String COLUMN_NODE_NAME = "node_name";
+    public static final String COLUMN_ROUTE_ID = "route_id";
+    public static final String COLUMN_ROUTE_NO = "route_no";
+    public static final String COLUMN_ROUTE_TYPE = "route_type";
+    public static final String COLUMN_DIRECTION_NAME = "direction_name";
+    public static final String COLUMN_CITY_CODE = "city_code";
+    public static final String COLUMN_CREATED_AT = "created_at";
+    public static final String COLUMN_IS_ACTIVE = "is_active";
+    public static final String COLUMN_ALIAS = "alias";
 
     // 싱글톤 인스턴스
     private static DatabaseHelper instance;
@@ -72,13 +86,42 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_NOTIFICATION_ENABLED + " INTEGER"
                 + ")";
         db.execSQL(CREATE_LOCATION_TABLE);
+
+        // 등록된 버스 테이블 생성
+        String CREATE_REGISTERED_BUS_TABLE = "CREATE TABLE " + TABLE_REGISTERED_BUS + "("
+                + COLUMN_BUS_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_NODE_ID + " TEXT NOT NULL,"
+                + COLUMN_NODE_NAME + " TEXT,"
+                + COLUMN_ROUTE_ID + " TEXT,"
+                + COLUMN_ROUTE_NO + " TEXT,"
+                + COLUMN_ROUTE_TYPE + " TEXT,"
+                + COLUMN_DIRECTION_NAME + " TEXT,"
+                + COLUMN_CITY_CODE + " INTEGER,"
+                + COLUMN_CREATED_AT + " INTEGER,"
+                + COLUMN_IS_ACTIVE + " INTEGER DEFAULT 1,"
+                + COLUMN_ALIAS + " TEXT"
+                + ")";
+        db.execSQL(CREATE_REGISTERED_BUS_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // 데이터베이스 업그레이드 시 테이블 삭제 후 재생성
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_WEATHER);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_LOCATION);
-        onCreate(db);
+        if (oldVersion < 2) {
+            // 버전 2: 등록된 버스 테이블 추가
+            String CREATE_REGISTERED_BUS_TABLE = "CREATE TABLE " + TABLE_REGISTERED_BUS + "("
+                    + COLUMN_BUS_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    + COLUMN_NODE_ID + " TEXT NOT NULL,"
+                    + COLUMN_NODE_NAME + " TEXT,"
+                    + COLUMN_ROUTE_ID + " TEXT,"
+                    + COLUMN_ROUTE_NO + " TEXT,"
+                    + COLUMN_ROUTE_TYPE + " TEXT,"
+                    + COLUMN_DIRECTION_NAME + " TEXT,"
+                    + COLUMN_CITY_CODE + " INTEGER,"
+                    + COLUMN_CREATED_AT + " INTEGER,"
+                    + COLUMN_IS_ACTIVE + " INTEGER DEFAULT 1,"
+                    + COLUMN_ALIAS + " TEXT"
+                    + ")";
+            db.execSQL(CREATE_REGISTERED_BUS_TABLE);
+        }
     }
 }

@@ -29,6 +29,7 @@
 
     <!-- iOS 17 시스템 색상 -->
     <color name="ios_blue">#007AFF</color>
+    <color name="ios_blue_light">#E5F2FF</color>
     <color name="ios_green">#30D158</color>
     <color name="ios_indigo">#5856D6</color>
     <color name="ios_orange">#FF9F0A</color>
