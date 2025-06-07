@@ -19,6 +19,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- 새로고침 버튼 -->
+    <ImageButton
+        android:id="@+id/btn_refresh"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="@dimen/ios_spacing_sm"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_refresh"
+        android:tint="@color/ios_blue"
+        android:contentDescription="새로고침"
+        app:layout_constraintEnd_toStartOf="@id/btn_bus_settings"
+        app:layout_constraintTop_toTopOf="@id/header_title"
+        app:layout_constraintBottom_toBottomOf="@id/header_title" />
+
     <!-- 버스 설정 버튼 -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_bus_settings"
@@ -89,7 +103,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/ios_spacing_sm"
-            android:text="버스 추가 버튼을 눌러\n자주 이용하는 버스를 등록해보세요"
+            android:text="버스 번호 + 정류장을 등록하면:\n\n• 해당 정류장에 그 버스가 몇 분 후 도착하는지 실시간 확인\n• 도보 시간을 고려한 스마트 출발 알림\n• 놓치지 않는 타이밍 조언 제공\n• 자동 새로고침으로 최신 정보 유지"
             android:textSize="14sp"
             android:textColor="@color/text_secondary"
             android:gravity="center"

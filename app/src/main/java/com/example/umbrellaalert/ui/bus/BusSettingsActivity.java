@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.umbrellaalert.databinding.ActivityBusSettingsBinding;
+import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.model.BusStop;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -25,6 +26,7 @@ import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.Marker;
+import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 
 import java.util.ArrayList;
@@ -132,6 +134,21 @@ public class BusSettingsActivity extends AppCompatActivity implements OnMapReady
                 finish(); // 등록 후 화면 닫기
             }
         });
+
+        // 버스 번호 직접 등록 버튼 클릭 리스너
+        binding.btnRegisterByNumber.setOnClickListener(v -> {
+            BusStop selectedStop = viewModel.getSelectedBusStop().getValue();
+            String busNumber = binding.etBusNumber.getText().toString().trim();
+
+            if (selectedStop != null && !busNumber.isEmpty()) {
+                viewModel.registerBusByNumber(selectedStop, busNumber);
+                Toast.makeText(this, busNumber + "번 버스가 등록되었습니다", Toast.LENGTH_SHORT).show();
+                binding.etBusNumber.setText(""); // 입력 필드 초기화
+                finish(); // 등록 후 화면 닫기
+            } else if (busNumber.isEmpty()) {
+                Toast.makeText(this, "버스 번호를 입력해주세요", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void observeData() {
@@ -210,6 +227,11 @@ public class BusSettingsActivity extends AppCompatActivity implements OnMapReady
             viewModel.clearSelectedBusStop();
             hideBusStopBottomSheet();
         });
+
+        // 줌 변경 리스너 - 마커 크기 동적 조정
+        naverMap.addOnCameraChangeListener((reason, animated) -> {
+            updateMarkerSizes();
+        });
         
         // 현재 위치로 이동
         moveToCurrentLocation();
@@ -286,36 +308,139 @@ public class BusSettingsActivity extends AppCompatActivity implements OnMapReady
         }
         busStopMarkers.clear();
         
-        // 새 마커 추가
+        // 새 마커 추가 - 버스 정류장 아이콘 사용 (반응형)
         for (BusStop busStop : busStops) {
             Marker marker = new Marker();
             marker.setPosition(new LatLng(busStop.getGpsLati(), busStop.getGpsLong()));
-            // 텍스트 제거 - 마커만 표시
-            marker.setWidth(25);  // 마커 크기 더 줄임
-            marker.setHeight(25); // 마커 크기 더 줄임
+
+            // 버스 정류장 아이콘 설정 - 줌 레벨에 따라 크기 조정
+            try {
+                marker.setIcon(OverlayImage.fromResource(R.drawable.ic_bus_stop_marker));
+
+                // 현재 줌 레벨에 따른 마커 크기 계산
+                double zoom = naverMap.getCameraPosition().zoom;
+                int baseSize = calculateMarkerSize(zoom);
+
+                marker.setWidth(baseSize);
+                marker.setHeight(baseSize);
+            } catch (Exception e) {
+                Log.e(TAG, "마커 아이콘 설정 실패", e);
+                // 아이콘 로드 실패 시 기본 마커 사용 (더 큰 크기)
+                marker.setWidth(60);
+                marker.setHeight(60);
+            }
+
             marker.setMap(naverMap);
-            
+
             // 마커 클릭 리스너
             marker.setOnClickListener(overlay -> {
                 viewModel.selectBusStop(busStop);
                 viewModel.loadBusArrivals(busStop); // 버스 도착 정보 로드
                 return true;
             });
-            
+
             busStopMarkers.add(marker);
         }
     }
 
     private void showBusStopBottomSheet(BusStop busStop) {
-        // TODO: 하단 시트에서 버스 목록 표시
         binding.bottomSheetLayout.setVisibility(View.VISIBLE);
-        binding.tvSelectedStopName.setText(busStop.getNodeName());
-        
+
+        // 정류장명과 방향 정보를 함께 표시
+        String stopInfo = busStop.getNodeName();
+        String direction = getDirectionFromCoordinates(busStop.getGpsLati(), busStop.getGpsLong());
+        if (!direction.isEmpty()) {
+            stopInfo += "\n🚌 " + direction + " 방향";
+        }
+        binding.tvSelectedStopName.setText(stopInfo);
+
         // 해당 정류장의 버스 도착 정보 로드
         viewModel.loadBusArrivals(busStop);
     }
 
+    /**
+     * 좌표를 기반으로 대략적인 방향 정보 생성
+     */
+    private String getDirectionFromCoordinates(double lat, double lng) {
+        // 세종시와 대전시의 주요 도로 방향을 고려한 방향 정보
+        double sejongCenterLat = 36.4800;
+        double sejongCenterLng = 127.2890;
+        double daejeonCenterLat = 36.3504;
+        double daejeonCenterLng = 127.3845;
+
+        // 가장 가까운 도심과의 상대적 위치로 방향 결정
+        double sejongDistance = Math.sqrt(Math.pow(lat - sejongCenterLat, 2) + Math.pow(lng - sejongCenterLng, 2));
+        double daejeonDistance = Math.sqrt(Math.pow(lat - daejeonCenterLat, 2) + Math.pow(lng - daejeonCenterLng, 2));
+
+        double centerLat, centerLng;
+        if (sejongDistance < daejeonDistance) {
+            centerLat = sejongCenterLat;
+            centerLng = sejongCenterLng;
+        } else {
+            centerLat = daejeonCenterLat;
+            centerLng = daejeonCenterLng;
+        }
+
+        // 중심점 대비 상대적 위치로 방향 결정
+        double latDiff = lat - centerLat;
+        double lngDiff = lng - centerLng;
+
+        // 8방향으로 구분
+        double angle = Math.atan2(latDiff, lngDiff) * 180 / Math.PI;
+        if (angle < 0) angle += 360;
+
+        if (angle >= 337.5 || angle < 22.5) {
+            return "동쪽";
+        } else if (angle >= 22.5 && angle < 67.5) {
+            return "북동쪽";
+        } else if (angle >= 67.5 && angle < 112.5) {
+            return "북쪽";
+        } else if (angle >= 112.5 && angle < 157.5) {
+            return "북서쪽";
+        } else if (angle >= 157.5 && angle < 202.5) {
+            return "서쪽";
+        } else if (angle >= 202.5 && angle < 247.5) {
+            return "남서쪽";
+        } else if (angle >= 247.5 && angle < 292.5) {
+            return "남쪽";
+        } else {
+            return "남동쪽";
+        }
+    }
+
     private void hideBusStopBottomSheet() {
         binding.bottomSheetLayout.setVisibility(View.GONE);
+    }
+
+    /**
+     * 줌 레벨에 따른 마커 크기 계산
+     */
+    private int calculateMarkerSize(double zoom) {
+        // 줌 레벨 5-20 범위에서 마커 크기 40-100 사이로 조정 (더 크게)
+        int minSize = 40;  // 최소 크기 증가
+        int maxSize = 100; // 최대 크기 증가
+        double minZoom = 5.0;
+        double maxZoom = 20.0;
+
+        // 줌이 클수록 마커가 작아지도록 역비례 계산
+        double normalizedZoom = Math.max(minZoom, Math.min(maxZoom, zoom));
+        double ratio = (maxZoom - normalizedZoom) / (maxZoom - minZoom);
+
+        return (int) (minSize + (maxSize - minSize) * ratio);
+    }
+
+    /**
+     * 모든 마커의 크기를 현재 줌 레벨에 맞게 업데이트
+     */
+    private void updateMarkerSizes() {
+        if (naverMap == null || busStopMarkers.isEmpty()) return;
+
+        double zoom = naverMap.getCameraPosition().zoom;
+        int newSize = calculateMarkerSize(zoom);
+
+        for (Marker marker : busStopMarkers) {
+            marker.setWidth(newSize);
+            marker.setHeight(newSize);
+        }
     }
 }

@@ -182,10 +182,56 @@
             android:textColor="@color/text_primary"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:maxLines="2"
+            android:lineSpacingExtra="4dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/bottom_sheet_handle"
-            tools:text="세종시청 정류장" />
+            tools:text="세종시청 정류장\n🚌 북쪽 방향" />
+
+        <!-- 버스 번호 직접 입력 영역 -->
+        <LinearLayout
+            android:id="@+id/bus_number_input_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/ios_spacing_md"
+            android:layout_marginTop="@dimen/ios_spacing_sm"
+            android:layout_marginEnd="@dimen/ios_spacing_md"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/input_container_background"
+            android:padding="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_selected_stop_name">
+
+            <EditText
+                android:id="@+id/et_bus_number"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:background="@drawable/edit_text_background"
+                android:hint="버스 번호 입력 (예: 370)"
+                android:inputType="number"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textSize="14sp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_tertiary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_register_by_number"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
+                android:text="등록"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="@color/ios_blue"
+                android:minWidth="60dp"
+                style="@style/Widget.Material3.Button" />
+
+        </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view_bus_arrivals"
@@ -199,7 +245,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_selected_stop_name"
+            app:layout_constraintTop_toBottomOf="@id/bus_number_input_container"
             tools:listitem="@layout/item_bus_arrival" />
 
         <!-- 버스 정보 없음 메시지 -->
@@ -207,14 +253,16 @@
             android:id="@+id/tv_no_bus_message"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="이 정류장에 운행하는 버스가 없습니다"
+            android:text="이 정류장에 운행하는 버스가 없습니다\n버스 번호를 직접 입력해서 등록해보세요"
             android:textColor="@android:color/darker_gray"
-            android:textSize="16sp"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_selected_stop_name" />
+            app:layout_constraintTop_toBottomOf="@id/bus_number_input_container" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -88,7 +88,7 @@ public class SettingsViewModel extends AndroidViewModel {
         rainAlertEnabled.setValue(preferences.getBoolean(KEY_RAIN_ALERT, true));
         vibrationEnabled.setValue(preferences.getBoolean(KEY_VIBRATION, true));
         soundEnabled.setValue(preferences.getBoolean(KEY_SOUND, true));
-        widgetEnabled.setValue(preferences.getBoolean(KEY_WIDGET_ENABLED, false));
+        widgetEnabled.setValue(preferences.getBoolean(KEY_WIDGET_ENABLED, true)); // 기본값을 true로 변경
         widgetAutoUpdateEnabled.setValue(preferences.getBoolean(KEY_WIDGET_AUTO_UPDATE, true));
         persistentNotificationEnabled.setValue(preferences.getBoolean(KEY_PERSISTENT_NOTIFICATION, false));
         busNotificationEnabled.setValue(preferences.getBoolean(KEY_BUS_NOTIFICATION, false));
@@ -243,22 +243,12 @@ public class SettingsViewModel extends AndroidViewModel {
      */
     private void updateWidgetSettings(boolean isEnabled) {
         if (isEnabled) {
-            // 위젯 활성화 로직 - 모든 위젯 인스턴스 업데이트
-            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(getApplication());
-            ComponentName componentName = new ComponentName(getApplication(), WeatherWidgetProvider.class);
-            int[] appWidgetIds = appWidgetManager.getAppWidgetIds(componentName);
-
-            if (appWidgetIds.length > 0) {
-                Intent intent = new Intent(getApplication(), WeatherWidgetProvider.class);
-                intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
-                getApplication().sendBroadcast(intent);
-                toastMessage.setValue("날씨 위젯이 활성화되었습니다. 홈 화면에서 위젯을 추가해주세요.");
-            } else {
-                toastMessage.setValue("날씨 위젯이 활성화되었습니다. 홈 화면에서 위젯을 추가해주세요.");
-            }
+            // 위젯 활성화 로직 - 강제 업데이트 실행
+            WeatherWidgetProvider.forceUpdateAllWidgets(getApplication());
+            toastMessage.setValue("날씨 위젯이 활성화되었습니다. 기존 위젯이 업데이트됩니다.");
         } else {
-            // 위젯 비활성화 로직
+            // 위젯 비활성화 로직 - 비활성화 메시지 표시
+            WeatherWidgetProvider.forceUpdateAllWidgets(getApplication());
             toastMessage.setValue("날씨 위젯이 비활성화되었습니다");
         }
     }

@@ -12,6 +12,8 @@ import android.widget.RemoteViews;
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.Weather;
+
+import java.util.Locale;
 import com.example.umbrellaalert.ui.home.HomeActivity;
 
 import java.util.Locale;
@@ -33,15 +35,17 @@ public class WeatherWidget extends AppWidgetProvider {
 
     private static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         // 위젯 레이아웃 가져오기
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_weather);
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.weather_widget);
 
         // 위젯 클릭 시 앱 실행 인텐트
-        Intent intent = new Intent(context, HomeActivity.class);
+        Intent intent = new Intent(context, com.example.umbrellaalert.ui.main.MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
 
         // 초기 상태 설정
-        views.setTextViewText(R.id.widget_message, "날씨 정보를 가져오는 중이다냥~");
+        views.setTextViewText(R.id.widget_temperature, "로딩 중...");
+        views.setTextViewText(R.id.widget_condition, "");
+        views.setTextViewText(R.id.widget_umbrella_text, "날씨 정보를 가져오는 중입니다");
 
         // 앱 위젯 업데이트
         appWidgetManager.updateAppWidget(appWidgetId, views);
@@ -82,23 +86,47 @@ public class WeatherWidget extends AppWidgetProvider {
         views.setTextViewText(R.id.widget_temperature,
                 String.format(Locale.getDefault(), "%.1f°C", weather.getTemperature()));
 
-        // 메시지 및 배경색 업데이트 (iOS 스타일)
+        // 온도 및 날씨 상태 업데이트
+        views.setTextViewText(R.id.widget_temperature,
+            String.format(Locale.getDefault(), "%.1f°C", weather.getTemperature()));
+        views.setTextViewText(R.id.widget_condition, getWeatherConditionText(weather.getWeatherCondition()));
+
+        // 우산 필요 여부에 따라 메시지와 아이콘 변경
         if (weather.isNeedUmbrella()) {
-            views.setTextViewText(R.id.widget_message, "우산이 필요하다냥!");
-            views.setInt(R.id.widget_container, "setBackgroundResource", R.drawable.widget_bg_rainy);
+            views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요해요!");
             views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella_small);
-            // RemoteViews에서는 setShadowLayer 직접 호출 불가능
-            // 그림자 효과는 XML에서 정의해야 함
         } else {
-            views.setTextViewText(R.id.widget_message, "오늘은 맑은 하루다냥~");
-            views.setInt(R.id.widget_container, "setBackgroundResource", R.drawable.widget_bg_sunny);
+            views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요 없어요");
             views.setImageViewResource(R.id.widget_icon, R.drawable.ic_weather_sunny);
-            // RemoteViews에서는 setShadowLayer 직접 호출 불가능
-            // 그림자 효과는 XML에서 정의해야 함
         }
 
         // 위젯 업데이트
         appWidgetManager.updateAppWidget(appWidgetId, views);
+    }
+
+    /**
+     * 날씨 상태 텍스트 변환
+     */
+    private static String getWeatherConditionText(String condition) {
+        if (condition == null) return "알 수 없음";
+
+        switch (condition.toLowerCase()) {
+            case "clear":
+            case "sunny":
+                return "맑음";
+            case "partly_cloudy":
+                return "구름 조금";
+            case "cloudy":
+                return "흐림";
+            case "rain":
+                return "비";
+            case "snow":
+                return "눈";
+            case "thunderstorm":
+                return "천둥번개";
+            default:
+                return condition;
+        }
     }
 
     @Override

@@ -14,6 +14,7 @@ import com.example.umbrellaalert.ui.fragments.WeatherFragment;
 import com.example.umbrellaalert.ui.fragments.BusFragment;
 import com.example.umbrellaalert.ui.fragments.SettingsFragment;
 import com.example.umbrellaalert.ui.home.WeatherViewModel;
+import com.example.umbrellaalert.widget.WeatherWidgetProvider;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -43,6 +44,9 @@ public class MainActivity extends AppCompatActivity {
 
         // 하단 네비게이션 설정
         setupBottomNavigation();
+
+        // 위젯 업데이트 (앱 시작 시)
+        WeatherWidgetProvider.forceUpdateAllWidgets(this);
     }
 
     private void setupBottomNavigation() {

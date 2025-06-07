@@ -36,14 +36,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/ios_spacing_md"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/ios_blue"
             app:layout_constraintStart_toEndOf="@id/bus_icon"
             app:layout_constraintTop_toTopOf="@id/bus_icon"
             tools:text="370번" />
 
-        <!-- 정류장명 -->
+        <!-- 정류장명과 방향 정보 -->
         <TextView
             android:id="@+id/tv_node_name"
             android:layout_width="0dp"
@@ -53,11 +53,12 @@
             android:textSize="14sp"
             android:textColor="@color/text_secondary"
             android:ellipsize="end"
-            android:maxLines="1"
+            android:maxLines="2"
+            android:lineSpacingExtra="2dp"
             app:layout_constraintStart_toStartOf="@id/tv_route_no"
             app:layout_constraintTop_toBottomOf="@id/tv_route_no"
             app:layout_constraintEnd_toStartOf="@id/tv_arrival_time"
-            tools:text="세종시청 정류장" />
+            tools:text="세종시청 정류장\n🚌 대전역 방면" />
 
         <!-- 방향 정보 -->
         <TextView
@@ -75,17 +76,22 @@
             app:layout_constraintEnd_toStartOf="@id/tv_arrival_time"
             tools:text="→ 대전역 방면" />
 
-        <!-- 도착 시간 -->
+        <!-- 도착 시간 - 메인 정보 -->
         <TextView
             android:id="@+id/tv_arrival_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="16sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@color/ios_blue"
+            android:background="@drawable/arrival_time_background"
+            android:paddingStart="8dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="4dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/tv_route_no"
-            tools:text="5분 후" />
+            tools:text="⏰ 5분 후 도착" />
 
         <!-- 정류장 수 정보 -->
         <TextView

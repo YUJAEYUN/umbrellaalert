@@ -11,6 +11,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.app.AlertDialog;
 
 import com.example.umbrellaalert.databinding.FragmentBusBinding;
 import com.example.umbrellaalert.ui.bus.BusViewModel;
@@ -37,6 +40,13 @@ public class BusFragment extends Fragment {
 
         // RecyclerView 설정
         setupRecyclerView();
+
+        // 새로고침 버튼 클릭 리스너
+        binding.btnRefresh.setOnClickListener(v -> {
+            busViewModel.refreshAllArrivalInfo();
+            // 새로고침 애니메이션
+            v.animate().rotation(360f).setDuration(500).start();
+        });
 
         // 버스 설정 버튼 클릭 리스너
         binding.btnBusSettings.setOnClickListener(v -> {
@@ -70,9 +80,65 @@ public class BusFragment extends Fragment {
 
         adapter.setOnBusDeleteListener(bus -> {
             // 버스 삭제 확인 다이얼로그 표시
-            // TODO: 삭제 확인 다이얼로그 구현
-            busViewModel.deleteBus(bus.getId());
+            showDeleteConfirmDialog(bus);
         });
+
+        // 스와이프 삭제 기능 추가
+        setupSwipeToDelete();
+    }
+
+    /**
+     * 스와이프로 삭제하는 기능 설정
+     */
+    private void setupSwipeToDelete() {
+        ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false; // 드래그 이동은 사용하지 않음
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION) {
+                    // 삭제할 버스 정보 가져오기
+                    var buses = busViewModel.getRegisteredBuses().getValue();
+                    if (buses != null && position < buses.size()) {
+                        var busToDelete = buses.get(position);
+
+                        // 스와이프 삭제 시에도 확인 다이얼로그 표시
+                        showDeleteConfirmDialog(busToDelete);
+                    }
+                }
+            }
+        };
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
+        itemTouchHelper.attachToRecyclerView(binding.recyclerViewBuses);
+    }
+
+    /**
+     * 버스 삭제 확인 다이얼로그 표시
+     */
+    private void showDeleteConfirmDialog(com.example.umbrellaalert.data.model.RegisteredBus bus) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("버스 삭제")
+                .setMessage(bus.getRouteNo() + "번 버스를 삭제하시겠습니까?\n\n정류장: " + bus.getNodeName())
+                .setPositiveButton("삭제", (dialog, which) -> {
+                    // 삭제 실행
+                    busViewModel.deleteBus(bus.getId());
+
+                    // 사용자에게 피드백
+                    if (getView() != null) {
+                        com.google.android.material.snackbar.Snackbar.make(
+                            getView(),
+                            bus.getRouteNo() + "번 버스가 삭제되었습니다",
+                            com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                        ).show();
+                    }
+                })
+                .setNegativeButton("취소", null)
+                .show();
     }
 
     private void observeData() {

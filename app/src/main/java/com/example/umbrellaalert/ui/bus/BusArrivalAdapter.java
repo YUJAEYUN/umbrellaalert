@@ -70,28 +70,40 @@ public class BusArrivalAdapter extends RecyclerView.Adapter<BusArrivalAdapter.Bu
         }
 
         public void bind(BusArrival busArrival) {
-            // 버스 번호
-            binding.tvRouteNo.setText(busArrival.getRouteNo() + "번");
-            
-            // 방향 정보
-            if (busArrival.getDirectionName() != null && !busArrival.getDirectionName().isEmpty()) {
-                binding.tvDirection.setText("→ " + busArrival.getDirectionName());
-            } else {
-                binding.tvDirection.setText("방향 정보 없음");
-            }
-            
-            // 도착 시간
-            binding.tvArrivalTime.setText(busArrival.getFormattedArrTime());
-            
-            // 정류장 수
-            binding.tvStationCount.setText(busArrival.getFormattedStationCount());
-            
-            // 노선 유형
+            // 버스 번호와 노선 유형을 함께 표시
+            String routeInfo = busArrival.getRouteNo() + "번";
             if (busArrival.getRouteTypeName() != null && !busArrival.getRouteTypeName().isEmpty()) {
-                binding.tvRouteType.setText(busArrival.getRouteTypeName());
-            } else {
-                binding.tvRouteType.setText("일반");
+                routeInfo += " (" + busArrival.getRouteTypeName() + ")";
             }
+            binding.tvRouteNo.setText(routeInfo);
+
+            // 방향 정보를 더 명확하게 표시
+            if (busArrival.getDirectionName() != null && !busArrival.getDirectionName().isEmpty()) {
+                // 방향 정보에 화살표와 함께 더 명확한 표시
+                String directionText = "🚌 " + busArrival.getDirectionName() + " 방면";
+                binding.tvDirection.setText(directionText);
+            } else {
+                binding.tvDirection.setText("🚌 방향 정보 확인 중");
+            }
+
+            // 도착 시간을 더 직관적으로 표시
+            String arrivalText = busArrival.getFormattedArrTime();
+            if (arrivalText.contains("분")) {
+                binding.tvArrivalTime.setText("⏰ " + arrivalText);
+            } else {
+                binding.tvArrivalTime.setText("⏰ " + arrivalText);
+            }
+
+            // 정류장 수를 더 명확하게 표시
+            String stationText = busArrival.getFormattedStationCount();
+            if (stationText != null && !stationText.isEmpty()) {
+                binding.tvStationCount.setText("📍 " + stationText);
+            } else {
+                binding.tvStationCount.setText("📍 정류장 정보 없음");
+            }
+
+            // 노선 유형은 이미 버스 번호와 함께 표시했으므로 제거하거나 다른 정보로 활용
+            binding.tvRouteType.setText(""); // 또는 다른 유용한 정보로 대체
 
             // 클릭 리스너
             binding.getRoot().setOnClickListener(v -> {
@@ -99,7 +111,7 @@ public class BusArrivalAdapter extends RecyclerView.Adapter<BusArrivalAdapter.Bu
                     onBusArrivalClickListener.onBusArrivalClick(busArrival);
                 }
             });
-            
+
             // 등록 버튼 클릭 리스너
             binding.btnRegister.setOnClickListener(v -> {
                 if (onBusArrivalClickListener != null) {

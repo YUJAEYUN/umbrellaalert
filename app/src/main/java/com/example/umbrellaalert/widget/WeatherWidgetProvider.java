@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -34,18 +35,46 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        Log.d(TAG, "위젯 업데이트 요청됨. 위젯 개수: " + appWidgetIds.length);
+
         // 위젯이 활성화되어 있는지 확인
         SharedPreferences preferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        boolean isWidgetEnabled = preferences.getBoolean(KEY_WIDGET_ENABLED, false);
+        boolean isWidgetEnabled = preferences.getBoolean(KEY_WIDGET_ENABLED, true); // 기본값을 true로 변경
+
+        Log.d(TAG, "위젯 활성화 상태: " + isWidgetEnabled);
 
         if (!isWidgetEnabled) {
-            return; // 위젯이 비활성화되어 있으면 업데이트하지 않음
+            // 비활성화되어 있어도 기본 메시지는 표시
+            for (int appWidgetId : appWidgetIds) {
+                showDisabledWidget(context, appWidgetManager, appWidgetId);
+            }
+            return;
         }
 
         // 각 위젯 ID에 대해 업데이트 수행
         for (int appWidgetId : appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId);
         }
+    }
+
+    /**
+     * 비활성화된 위젯 표시
+     */
+    private void showDisabledWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.weather_widget);
+
+        // 앱 실행 인텐트 설정
+        Intent intent = new Intent(context, com.example.umbrellaalert.ui.main.MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
+
+        // 비활성화 메시지 표시
+        views.setTextViewText(R.id.widget_temperature, "--°C");
+        views.setTextViewText(R.id.widget_condition, "위젯 비활성화");
+        views.setTextViewText(R.id.widget_umbrella_text, "설정에서 위젯을 활성화해주세요");
+        views.setImageViewResource(R.id.widget_icon, R.drawable.ic_settings);
+
+        appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 
     /**
@@ -56,7 +85,7 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.weather_widget);
 
         // 앱 실행 인텐트 설정
-        Intent intent = new Intent(context, HomeActivity.class);
+        Intent intent = new Intent(context, com.example.umbrellaalert.ui.main.MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
 
@@ -224,6 +253,24 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
             return "안개";
         } else {
             return condition;
+        }
+    }
+
+    /**
+     * 모든 위젯을 강제로 업데이트
+     */
+    public static void forceUpdateAllWidgets(Context context) {
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+        ComponentName componentName = new ComponentName(context, WeatherWidgetProvider.class);
+        int[] appWidgetIds = appWidgetManager.getAppWidgetIds(componentName);
+
+        Log.d("WeatherWidgetProvider", "강제 업데이트 요청. 위젯 개수: " + appWidgetIds.length);
+
+        if (appWidgetIds.length > 0) {
+            Intent intent = new Intent(context, WeatherWidgetProvider.class);
+            intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
+            context.sendBroadcast(intent);
         }
     }
 }

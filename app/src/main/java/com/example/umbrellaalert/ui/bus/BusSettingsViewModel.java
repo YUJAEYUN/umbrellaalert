@@ -136,7 +136,7 @@ public class BusSettingsViewModel extends AndroidViewModel {
      */
     public void registerBus(BusStop busStop, BusArrival busArrival) {
         if (busStop == null || busArrival == null) return;
-        
+
         executorService.execute(() -> {
             try {
                 // 중복 확인
@@ -144,7 +144,7 @@ public class BusSettingsViewModel extends AndroidViewModel {
                     errorMessage.postValue("이미 등록된 버스입니다.");
                     return;
                 }
-                
+
                 // RegisteredBus 객체 생성 (위치 정보 포함)
                 RegisteredBus registeredBus = new RegisteredBus(
                     busStop.getNodeId(),
@@ -156,7 +156,7 @@ public class BusSettingsViewModel extends AndroidViewModel {
                     busStop.getGpsLati(),
                     busStop.getGpsLong()
                 );
-                
+
                 long id = busDao.insertRegisteredBus(registeredBus);
                 if (id > 0) {
                     Log.d(TAG, "버스 등록 완료: " + busArrival.getRouteNo());
@@ -164,9 +164,75 @@ public class BusSettingsViewModel extends AndroidViewModel {
                 } else {
                     errorMessage.postValue("버스 등록에 실패했습니다.");
                 }
-                
+
             } catch (Exception e) {
                 Log.e(TAG, "버스 등록 실패", e);
+                errorMessage.postValue("버스 등록 중 오류가 발생했습니다.");
+            }
+        });
+    }
+
+    /**
+     * 버스 번호로 직접 등록
+     */
+    public void registerBusByNumber(BusStop busStop, String busNumber) {
+        if (busStop == null || busNumber == null || busNumber.trim().isEmpty()) {
+            errorMessage.postValue("버스 번호를 입력해주세요.");
+            return;
+        }
+
+        executorService.execute(() -> {
+            try {
+                // 먼저 해당 정류장의 버스 도착 정보를 가져와서 해당 번호의 버스가 있는지 확인
+                Future<List<BusArrival>> future = busApiClient.getBusArrivalInfo(
+                    busStop.getNodeId(), busStop.getCityCode());
+
+                List<BusArrival> arrivals = future.get();
+
+                // 입력한 번호와 일치하는 버스 찾기
+                BusArrival targetBus = null;
+                for (BusArrival arrival : arrivals) {
+                    if (busNumber.trim().equals(arrival.getRouteNo())) {
+                        targetBus = arrival;
+                        break;
+                    }
+                }
+
+                if (targetBus != null) {
+                    // 해당 버스를 찾았으면 일반 등록 프로세스 진행
+                    registerBus(busStop, targetBus);
+                } else {
+                    // 해당 번호의 버스가 현재 이 정류장에 없으면 기본 정보로 등록
+                    String routeId = "MANUAL_" + busNumber + "_" + busStop.getNodeId();
+
+                    // 중복 확인
+                    if (busDao.isDuplicateBus(busStop.getNodeId(), routeId)) {
+                        errorMessage.postValue("이미 등록된 버스입니다.");
+                        return;
+                    }
+
+                    RegisteredBus registeredBus = new RegisteredBus(
+                        busStop.getNodeId(),
+                        busStop.getNodeName(),
+                        routeId,
+                        busNumber,
+                        "수동 등록", // 방향 정보
+                        busStop.getCityCode(),
+                        busStop.getGpsLati(),
+                        busStop.getGpsLong()
+                    );
+
+                    long id = busDao.insertRegisteredBus(registeredBus);
+                    if (id > 0) {
+                        Log.d(TAG, "버스 번호로 등록 완료: " + busNumber);
+                        // 성공 메시지는 Activity에서 처리
+                    } else {
+                        errorMessage.postValue("버스 등록에 실패했습니다.");
+                    }
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "버스 번호 등록 실패", e);
                 errorMessage.postValue("버스 등록 중 오류가 발생했습니다.");
             }
         });

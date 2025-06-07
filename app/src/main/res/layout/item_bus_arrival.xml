@@ -50,14 +50,15 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:layout_marginEnd="@dimen/ios_spacing_sm"
-            android:textSize="12sp"
-            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:textColor="@color/ios_blue"
+            android:textStyle="bold"
             android:ellipsize="end"
             android:maxLines="1"
             app:layout_constraintStart_toStartOf="@id/tv_route_no"
             app:layout_constraintTop_toBottomOf="@id/tv_route_no"
             app:layout_constraintEnd_toStartOf="@id/tv_arrival_time"
-            tools:text="→ 대전역 방면" />
+            tools:text="🚌 대전역 방면" />
 
         <!-- 노선 유형 -->
         <TextView

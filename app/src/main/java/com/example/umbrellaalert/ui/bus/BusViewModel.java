@@ -144,31 +144,51 @@ public class BusViewModel extends AndroidViewModel {
      */
     private void loadArrivalInfoForBuses(List<RegisteredBus> buses) {
         Map<String, BusArrival> newArrivalMap = new HashMap<>();
-        
+        Map<String, String> busStatusMap = new HashMap<>(); // 버스 상태 추가
+
         for (RegisteredBus bus : buses) {
             try {
                 Future<List<BusArrival>> future = busApiClient.getBusArrivalInfo(
                     bus.getNodeId(), bus.getCityCode());
-                
+
                 List<BusArrival> arrivals = future.get();
-                
-                // 해당 노선의 도착 정보 찾기
+                String key = bus.getNodeId() + "_" + bus.getRouteId();
+
+                // 등록한 버스 번호와 일치하는 도착 정보 찾기
+                boolean found = false;
                 for (BusArrival arrival : arrivals) {
-                    if (bus.getRouteId().equals(arrival.getRouteId()) || 
-                        bus.getRouteNo().equals(arrival.getRouteNo())) {
-                        String key = bus.getNodeId() + "_" + bus.getRouteId();
+                    // 버스 번호로 매칭 (더 정확한 매칭)
+                    if (bus.getRouteNo().equals(arrival.getRouteNo())) {
                         newArrivalMap.put(key, arrival);
+                        busStatusMap.put(key, "운행중");
+                        found = true;
+
+                        Log.d(TAG, String.format("✅ 등록된 버스 매칭 성공: %s번 → %s에 %d분 후 도착",
+                            bus.getRouteNo(), bus.getNodeName(), arrival.getArrTime()));
                         break;
                     }
                 }
-                
+
+                // 해당 노선을 찾지 못한 경우
+                if (!found) {
+                    // 전체 도착 정보가 비어있으면 정류장 자체에 문제
+                    if (arrivals.isEmpty()) {
+                        busStatusMap.put(key, "정류장 정보 없음");
+                    } else {
+                        // 다른 버스는 있지만 해당 노선이 없으면 운행 종료 또는 지나감
+                        busStatusMap.put(key, "운행 종료");
+                    }
+                }
+
             } catch (Exception e) {
                 Log.e(TAG, "도착 정보 로드 실패: " + bus.getRouteNo(), e);
-                // 개별 버스의 실패는 전체에 영향주지 않음
+                String key = bus.getNodeId() + "_" + bus.getRouteId();
+                busStatusMap.put(key, "정보 로드 실패");
             }
         }
-        
+
         arrivalInfoMap.postValue(newArrivalMap);
+        // 상태 정보도 함께 전달 (추후 필요시 별도 LiveData로 분리 가능)
     }
 
     /**

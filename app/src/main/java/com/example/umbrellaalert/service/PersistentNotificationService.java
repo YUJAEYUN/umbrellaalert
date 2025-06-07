@@ -26,7 +26,15 @@ import androidx.core.content.ContextCompat;
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.Weather;
-import com.example.umbrellaalert.ui.home.HomeActivity;
+import com.example.umbrellaalert.data.model.RegisteredBus;
+import com.example.umbrellaalert.data.model.BusArrival;
+import com.example.umbrellaalert.data.api.BusApiClient;
+import com.example.umbrellaalert.data.database.BusDao;
+import com.example.umbrellaalert.data.database.DatabaseHelper;
+import com.example.umbrellaalert.ui.main.MainActivity;
+
+import java.util.List;
+import java.util.concurrent.Future;
 
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +56,8 @@ public class PersistentNotificationService extends Service implements LocationLi
     private static final String KEY_PERSISTENT_NOTIFICATION = "persistent_notification_enabled";
 
     private WeatherManager weatherManager;
+    private BusApiClient busApiClient;
+    private BusDao busDao;
     private ExecutorService executorService;
     private Handler handler;
     private Runnable updateRunnable;
@@ -58,6 +68,9 @@ public class PersistentNotificationService extends Service implements LocationLi
     public void onCreate() {
         super.onCreate();
         weatherManager = WeatherManager.getInstance(this);
+        busApiClient = new BusApiClient(this);
+        DatabaseHelper dbHelper = DatabaseHelper.getInstance(this);
+        busDao = new BusDao(dbHelper);
         executorService = Executors.newSingleThreadExecutor();
         handler = new Handler(Looper.getMainLooper());
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -66,7 +79,7 @@ public class PersistentNotificationService extends Service implements LocationLi
         updateRunnable = new Runnable() {
             @Override
             public void run() {
-                updateWeatherNotification();
+                updateNotification();
                 // 다음 업데이트 예약
                 handler.postDelayed(this, UPDATE_INTERVAL);
             }
@@ -82,7 +95,7 @@ public class PersistentNotificationService extends Service implements LocationLi
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // 서비스가 시작될 때 알림 표시
-        updateWeatherNotification();
+        updateNotification();
 
         // 주기적 업데이트 시작
         handler.postDelayed(updateRunnable, UPDATE_INTERVAL);
@@ -125,32 +138,106 @@ public class PersistentNotificationService extends Service implements LocationLi
 
 
     /**
-     * 날씨 알림 업데이트
+     * 날씨 + 버스 알림 업데이트
      */
-    private void updateWeatherNotification() {
-        if (currentLocation != null) {
-            // 현재 위치 사용
+    private void updateNotification() {
+        executorService.execute(() -> {
+            try {
+                // 1. 날씨 정보 가져오기
+                Weather weather = getWeatherData();
+
+                // 2. 버스 정보 가져오기
+                String busInfo = getBusInfo();
+
+                // 3. 알림 표시
+                handler.post(() -> showCombinedNotification(weather, busInfo));
+
+            } catch (Exception e) {
+                Log.e(TAG, "알림 업데이트 실패", e);
+            }
+        });
+    }
+
+    /**
+     * 날씨 데이터 가져오기 (동기)
+     */
+    private Weather getWeatherData() {
+        if (currentLocation == null) {
+            return null;
+        }
+
+        try {
+            // 동기적으로 날씨 데이터 가져오기
+            final Weather[] weatherResult = {null};
+            final boolean[] completed = {false};
+
             weatherManager.getCurrentWeather(currentLocation.getLatitude(), currentLocation.getLongitude(), new WeatherManager.WeatherCallback() {
                 @Override
                 public void onSuccess(Weather weather) {
-                    if (weather != null) {
-                        // 메인 스레드에서 알림 업데이트
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                showWeatherNotification(weather);
-                            }
-                        });
-                    }
+                    weatherResult[0] = weather;
+                    completed[0] = true;
                 }
 
                 @Override
                 public void onError(String error) {
-                    Log.e(TAG, "Failed to get weather for notification: " + error);
+                    Log.e(TAG, "날씨 데이터 가져오기 실패: " + error);
+                    completed[0] = true;
                 }
             });
-        } else {
-            Log.w(TAG, "Current location not available for weather update");
+
+            // 최대 5초 대기
+            int waitCount = 0;
+            while (!completed[0] && waitCount < 50) {
+                Thread.sleep(100);
+                waitCount++;
+            }
+
+            return weatherResult[0];
+        } catch (Exception e) {
+            Log.e(TAG, "날씨 데이터 가져오기 오류", e);
+            return null;
+        }
+    }
+
+    /**
+     * 버스 정보 가져오기
+     */
+    private String getBusInfo() {
+        try {
+            List<RegisteredBus> buses = busDao.getAllRegisteredBuses();
+            if (buses.isEmpty()) {
+                return "등록된 버스 없음";
+            }
+
+            StringBuilder busInfo = new StringBuilder();
+            int count = 0;
+
+            for (RegisteredBus bus : buses) {
+                if (count >= 2) break; // 최대 2개만 표시
+
+                try {
+                    Future<List<BusArrival>> future = busApiClient.getBusArrivalInfo(bus.getNodeId(), bus.getCityCode());
+                    List<BusArrival> arrivals = future.get(3, TimeUnit.SECONDS); // 3초 타임아웃
+
+                    // 해당 버스 찾기
+                    for (BusArrival arrival : arrivals) {
+                        if (bus.getRouteNo().equals(arrival.getRouteNo())) {
+                            if (count > 0) busInfo.append(" | ");
+                            busInfo.append(bus.getRouteNo()).append("번: ").append(arrival.getFormattedArrTime());
+                            count++;
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "버스 정보 가져오기 실패: " + bus.getRouteNo(), e);
+                }
+            }
+
+            return busInfo.length() > 0 ? busInfo.toString() : "버스 정보 없음";
+
+        } catch (Exception e) {
+            Log.e(TAG, "버스 정보 조회 오류", e);
+            return "버스 정보 오류";
         }
     }
 
@@ -215,29 +302,44 @@ public class PersistentNotificationService extends Service implements LocationLi
     }
 
     /**
-     * 날씨 알림 표시
+     * 날씨 + 버스 통합 알림 표시
      */
-    private void showWeatherNotification(Weather weather) {
+    private void showCombinedNotification(Weather weather, String busInfo) {
         // 앱 실행 인텐트
-        Intent intent = new Intent(this, HomeActivity.class);
+        Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
         // 알림 내용 구성
-        String title = String.format(Locale.getDefault(), "현재 온도: %.1f°C", weather.getTemperature());
-        String content = getWeatherConditionText(weather.getWeatherCondition());
-        
-        if (weather.isNeedUmbrella()) {
-            content += " - 우산이 필요합니다!";
+        String title;
+        String content;
+        int icon;
+
+        if (weather != null) {
+            title = String.format(Locale.getDefault(), "%.1f°C %s",
+                weather.getTemperature(), getWeatherConditionText(weather.getWeatherCondition()));
+
+            if (weather.isNeedUmbrella()) {
+                content = "🌧️ 우산 필요 | " + busInfo;
+                icon = R.drawable.ic_umbrella_small;
+            } else {
+                content = "☀️ 우산 불필요 | " + busInfo;
+                icon = R.drawable.ic_weather_sunny;
+            }
         } else {
-            content += " - 우산이 필요하지 않습니다";
+            title = "날씨 정보 없음";
+            content = "🚌 " + busInfo;
+            icon = R.drawable.ic_bus;
         }
 
-        // 알림 생성
+        // 알림 생성 (확장 가능한 스타일)
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(weather.isNeedUmbrella() ? R.drawable.ic_umbrella_small : R.drawable.ic_weather_sunny)
+                .setSmallIcon(icon)
                 .setContentTitle(title)
                 .setContentText(content)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                    .bigText(content)
+                    .setBigContentTitle(title))
                 .setOngoing(true) // 사용자가 스와이프로 제거할 수 없음
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW)

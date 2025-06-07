@@ -44,7 +44,7 @@
             app:layout_constraintEnd_toStartOf="@id/tv_city_name"
             tools:text="세종시청 정류장" />
 
-        <!-- 정류장 번호 -->
+        <!-- 정류장 번호 및 방향 정보 -->
         <TextView
             android:id="@+id/tv_stop_number"
             android:layout_width="0dp"
@@ -54,11 +54,12 @@
             android:textSize="12sp"
             android:textColor="@color/text_secondary"
             android:ellipsize="end"
-            android:maxLines="1"
+            android:maxLines="2"
+            android:lineSpacingExtra="2dp"
             app:layout_constraintStart_toStartOf="@id/tv_stop_name"
             app:layout_constraintTop_toBottomOf="@id/tv_stop_name"
             app:layout_constraintEnd_toStartOf="@id/tv_distance"
-            tools:text="정류장 번호: 12345" />
+            tools:text="정류장 번호: 12345 • 북쪽 방향" />
 
         <!-- 도시명 -->
         <TextView
