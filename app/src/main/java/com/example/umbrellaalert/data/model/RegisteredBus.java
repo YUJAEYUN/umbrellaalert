@@ -12,13 +12,15 @@ public class RegisteredBus {
     private String routeType;       // 노선유형
     private String directionName;   // 방향
     private int cityCode;           // 도시코드
+    private double latitude;        // 정류장 위도
+    private double longitude;       // 정류장 경도
     private long createdAt;         // 등록 시간
     private boolean isActive;       // 활성화 상태
     private String alias;           // 사용자 지정 별명
 
     public RegisteredBus() {}
 
-    public RegisteredBus(String nodeId, String nodeName, String routeId, String routeNo, 
+    public RegisteredBus(String nodeId, String nodeName, String routeId, String routeNo,
                         String directionName, int cityCode) {
         this.nodeId = nodeId;
         this.nodeName = nodeName;
@@ -26,6 +28,22 @@ public class RegisteredBus {
         this.routeNo = routeNo;
         this.directionName = directionName;
         this.cityCode = cityCode;
+        this.latitude = 0.0;
+        this.longitude = 0.0;
+        this.createdAt = System.currentTimeMillis();
+        this.isActive = true;
+    }
+
+    public RegisteredBus(String nodeId, String nodeName, String routeId, String routeNo,
+                        String directionName, int cityCode, double latitude, double longitude) {
+        this.nodeId = nodeId;
+        this.nodeName = nodeName;
+        this.routeId = routeId;
+        this.routeNo = routeNo;
+        this.directionName = directionName;
+        this.cityCode = cityCode;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.createdAt = System.currentTimeMillis();
         this.isActive = true;
     }
@@ -93,6 +111,22 @@ public class RegisteredBus {
 
     public void setCityCode(int cityCode) {
         this.cityCode = cityCode;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
     }
 
     public long getCreatedAt() {

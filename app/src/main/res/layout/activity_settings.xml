@@ -36,17 +36,24 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- iOS 17 스타일 설정 컨테이너 -->
-    <androidx.cardview.widget.CardView
+    <!-- 스크롤 가능한 컨테이너 -->
+    <ScrollView
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/ios_card_margin"
-        app:cardBackgroundColor="@color/ios_card_background"
-        app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
-        app:cardElevation="@dimen/ios_card_elevation"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/top_bar">
+
+        <!-- iOS 17 스타일 설정 컨테이너 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/ios_card_margin"
+            app:cardBackgroundColor="@color/ios_card_background"
+            app:cardCornerRadius="@dimen/ios_card_large_corner_radius"
+            app:cardElevation="@dimen/ios_card_elevation">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -310,11 +317,67 @@
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
+            <!-- 섹션 구분 공간 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/ios_spacing_lg"
+                android:background="@color/ios_background" />
+
+            <!-- 버스 알림 설정 섹션 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/ios_spacing_md"
+                android:layout_marginTop="@dimen/ios_spacing_md"
+                android:layout_marginBottom="@dimen/ios_spacing_sm"
+                android:text="버스 알림"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/ios_text_footnote"
+                android:textAllCaps="true"
+                android:fontFamily="@font/pretendard_font_family" />
+
+            <!-- 버스 알림 활성화 -->
+            <LinearLayout
+                style="@style/iOSListItem"
+                android:background="?attr/selectableItemBackground">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="버스 도착 알림"
+                        android:textColor="@color/text_primary"
+                        android:textSize="@dimen/ios_text_body"
+                        android:fontFamily="@font/pretendard_font_family" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="도보 시간을 고려한 출발 알림"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="@dimen/ios_text_caption1"
+                        android:fontFamily="@font/pretendard_font_family" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_bus_notification"
+                    style="@style/iOSSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
             <!-- 하단 여백 -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/ios_spacing_md" />
 
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+        </androidx.cardview.widget.CardView>
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

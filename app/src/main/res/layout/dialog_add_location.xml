@@ -5,11 +5,68 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- 장소 이름 입력 -->
-    <com.google.android.material.textfield.TextInputLayout
+    <!-- 설명 텍스트 -->
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="장소 이름">
+        android:layout_marginBottom="16dp"
+        android:text="지도에서 위치를 선택하여 장소를 추가하세요"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:fontFamily="@font/pretendard_font_family" />
+
+    <!-- 지도에서 선택 버튼 -->
+    <Button
+        android:id="@+id/btn_select_from_map"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="지도에서 위치 선택"
+        android:drawableStart="@drawable/ic_map"
+        android:drawablePadding="8dp"
+        android:padding="16dp"
+        android:textSize="16sp" />
+
+    <!-- 선택된 위치 정보 표시 -->
+    <LinearLayout
+        android:id="@+id/selected_location_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/rounded_background"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="선택된 위치"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:fontFamily="@font/pretendard_font_family" />
+
+        <TextView
+            android:id="@+id/text_selected_location_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text=""
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:fontFamily="@font/pretendard_font_family" />
+
+    </LinearLayout>
+
+    <!-- 장소 이름 입력 -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/name_input_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="장소 이름 (선택사항)"
+        android:visibility="gone">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/edit_name"
@@ -19,35 +76,18 @@
             android:maxLines="1" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- 위도 입력 -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:hint="위도 (예: 37.5665)">
+    <!-- 숨겨진 좌표 필드들 (지도에서 선택된 값 저장용) -->
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/edit_latitude"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/edit_latitude"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal|numberSigned"
-            android:maxLines="1" />
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- 경도 입력 -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:hint="경도 (예: 126.9780)">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/edit_longitude"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal|numberSigned"
-            android:maxLines="1" />
-    </com.google.android.material.textfield.TextInputLayout>
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/edit_longitude"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
 
     <!-- 자주 가는 장소 체크박스 -->
     <CheckBox

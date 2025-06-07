@@ -115,7 +115,7 @@ Flow / StateFlow 기반 상태 관리
 ✅ 6. 상태관리 / 데이터 저장
 DataStore 사용 → 사용자 설정, 알림 시간, 캐릭터 감정 상태 저장
 
-Room Database → 버스 정류장, 노선, 과거 날씨 기록 저장 가능
+Room Database → 버스 정류장, 노선 저장 가능
 
 ✅ 7. 접근성과 대응 전략
 다크모드 대응 (Material Design 3 권장)
@@ -125,7 +125,7 @@ Room Database → 버스 정류장, 노선, 과거 날씨 기록 저장 가능
 다양한 해상도 대응: LDPI ~ XXXHDPI
 
 ✅ 8. 보안 및 배포 전 고려사항
-API 키 보안: local.properties 혹은 Firebase Remote Config로 분리
+API 키 보안: local.properties 로 분리
 
 앱 사이즈 최적화: Unused 리소스 제거, 이미지 압축
 

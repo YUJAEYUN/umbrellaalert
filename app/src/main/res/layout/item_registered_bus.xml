@@ -99,6 +99,34 @@
             app:layout_constraintTop_toBottomOf="@id/tv_arrival_time"
             tools:text="3정거장 전" />
 
+        <!-- 도보 시간 정보 -->
+        <LinearLayout
+            android:id="@+id/walking_time_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_station_count">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@drawable/ic_walk"
+                android:tint="@color/text_tertiary"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:id="@+id/tv_walking_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:textColor="@color/text_tertiary"
+                tools:text="도보 5분" />
+
+        </LinearLayout>
+
         <!-- 로딩 상태 -->
         <ProgressBar
             android:id="@+id/progress_bar_item"

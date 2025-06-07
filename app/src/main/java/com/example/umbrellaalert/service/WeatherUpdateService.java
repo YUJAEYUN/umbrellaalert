@@ -145,7 +145,7 @@ public class WeatherUpdateService extends Service {
         return new NotificationCompat.Builder(this, UmbrellaApplication.CHANNEL_ID)
                 .setContentTitle("아 맞다 우산!")
                 .setContentText(content)
-                .setSmallIcon(R.drawable.ic_umbrella)
+                .setSmallIcon(R.drawable.ic_umbrella_small)
                 .setContentIntent(pendingIntent)
                 .build();
     }
@@ -173,7 +173,7 @@ public class WeatherUpdateService extends Service {
                 .setContentTitle("아 맞다 우산!")
                 .setContentText(message)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
-                .setSmallIcon(R.drawable.ic_umbrella)
+                .setSmallIcon(R.drawable.ic_umbrella_small)
                 .setContentIntent(pendingIntent)
                 .setColor(getResources().getColor(R.color.alert_color, null))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)

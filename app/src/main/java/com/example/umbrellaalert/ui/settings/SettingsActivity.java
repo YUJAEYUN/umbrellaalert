@@ -61,6 +61,9 @@ public class SettingsActivity extends AppCompatActivity {
         viewModel.getPersistentNotificationEnabled().observe(this, enabled ->
             binding.switchPersistentNotification.setChecked(enabled));
 
+        viewModel.getBusNotificationEnabled().observe(this, enabled ->
+            binding.switchBusNotification.setChecked(enabled));
+
         // 시간 텍스트 관찰
         viewModel.getTimeText().observe(this, text ->
             binding.timeText.setText(text));
@@ -104,6 +107,10 @@ public class SettingsActivity extends AppCompatActivity {
         // 상태바 알림 스위치
         binding.switchPersistentNotification.setOnCheckedChangeListener((buttonView, isChecked) ->
             viewModel.setPersistentNotificationEnabled(isChecked));
+
+        // 버스 알림 스위치
+        binding.switchBusNotification.setOnCheckedChangeListener((buttonView, isChecked) ->
+            viewModel.setBusNotificationEnabled(isChecked));
 
         // 아침 알림 시간 설정
         binding.timePickerContainer.setOnClickListener(v -> showTimePickerDialog());

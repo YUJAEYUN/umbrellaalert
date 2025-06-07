@@ -145,14 +145,16 @@ public class BusSettingsViewModel extends AndroidViewModel {
                     return;
                 }
                 
-                // RegisteredBus 객체 생성
+                // RegisteredBus 객체 생성 (위치 정보 포함)
                 RegisteredBus registeredBus = new RegisteredBus(
                     busStop.getNodeId(),
                     busStop.getNodeName(),
                     busArrival.getRouteId(),
                     busArrival.getRouteNo(),
                     busArrival.getDirectionName(),
-                    busStop.getCityCode()
+                    busStop.getCityCode(),
+                    busStop.getGpsLati(),
+                    busStop.getGpsLong()
                 );
                 
                 long id = busDao.insertRegisteredBus(registeredBus);

@@ -58,7 +58,7 @@ public class BusFragment extends Fragment {
     }
 
     private void setupRecyclerView() {
-        adapter = new RegisteredBusAdapter();
+        adapter = new RegisteredBusAdapter(requireContext());
         binding.recyclerViewBuses.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.recyclerViewBuses.setAdapter(adapter);
 

@@ -1,5 +1,7 @@
 package com.example.umbrellaalert.ui.bus;
 
+import android.content.Context;
+import android.location.Location;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,20 +12,26 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.umbrellaalert.data.model.BusArrival;
 import com.example.umbrellaalert.data.model.RegisteredBus;
 import com.example.umbrellaalert.databinding.ItemRegisteredBusBinding;
+import com.example.umbrellaalert.service.LocationService;
+import com.example.umbrellaalert.util.WalkingTimeCalculator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
  * 등록된 버스 목록을 표시하는 RecyclerView 어댑터
  */
 public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdapter.BusViewHolder> {
-    
+
     private List<RegisteredBus> buses = new ArrayList<>();
     private Map<String, BusArrival> arrivalInfoMap;
     private OnBusClickListener onBusClickListener;
     private OnBusDeleteListener onBusDeleteListener;
+    private Context context;
+    private WalkingTimeCalculator walkingTimeCalculator;
+    private LocationService locationService;
 
     public interface OnBusClickListener {
         void onBusClick(RegisteredBus bus);
@@ -31,6 +39,12 @@ public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdap
 
     public interface OnBusDeleteListener {
         void onBusDelete(RegisteredBus bus);
+    }
+
+    public RegisteredBusAdapter(Context context) {
+        this.context = context;
+        this.walkingTimeCalculator = new WalkingTimeCalculator(context);
+        this.locationService = LocationService.getInstance(context);
     }
 
     @NonNull
@@ -131,6 +145,9 @@ public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdap
                 binding.tvErrorState.setText("정보 없음");
             }
 
+            // 도보 시간 계산 및 표시
+            calculateAndDisplayWalkingTime(bus);
+
             // 클릭 리스너
             binding.getRoot().setOnClickListener(v -> {
                 if (onBusClickListener != null) {
@@ -158,6 +175,47 @@ public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdap
             } else {
                 binding.btnDelete.setVisibility(View.VISIBLE);
             }
+        }
+
+        /**
+         * 도보 시간 계산 및 표시
+         */
+        private void calculateAndDisplayWalkingTime(RegisteredBus bus) {
+            // 정류장 위치 정보가 있는지 확인
+            if (bus.getLatitude() == 0.0 && bus.getLongitude() == 0.0) {
+                binding.walkingTimeContainer.setVisibility(View.GONE);
+                return;
+            }
+
+            // 현재 위치 가져오기
+            Location currentLocation = locationService.getLastLocation();
+            if (currentLocation == null) {
+                binding.walkingTimeContainer.setVisibility(View.GONE);
+                return;
+            }
+
+            // 도보 시간 계산 (백그라운드에서)
+            new Thread(() -> {
+                try {
+                    Future<Integer> walkingTimeFuture = walkingTimeCalculator.calculateWalkingTime(
+                            currentLocation.getLatitude(), currentLocation.getLongitude(),
+                            bus.getLatitude(), bus.getLongitude());
+
+                    int walkingTimeMinutes = walkingTimeFuture.get();
+
+                    // UI 스레드에서 업데이트
+                    binding.getRoot().post(() -> {
+                        binding.walkingTimeContainer.setVisibility(View.VISIBLE);
+                        binding.tvWalkingTime.setText("도보 " + walkingTimeMinutes + "분");
+                    });
+
+                } catch (Exception e) {
+                    // 오류 발생 시 숨김
+                    binding.getRoot().post(() -> {
+                        binding.walkingTimeContainer.setVisibility(View.GONE);
+                    });
+                }
+            }).start();
         }
 
         /**

@@ -86,7 +86,7 @@ public class WeatherWidget extends AppWidgetProvider {
         if (weather.isNeedUmbrella()) {
             views.setTextViewText(R.id.widget_message, "우산이 필요하다냥!");
             views.setInt(R.id.widget_container, "setBackgroundResource", R.drawable.widget_bg_rainy);
-            views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella);
+            views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella_small);
             // RemoteViews에서는 setShadowLayer 직접 호출 불가능
             // 그림자 효과는 XML에서 정의해야 함
         } else {

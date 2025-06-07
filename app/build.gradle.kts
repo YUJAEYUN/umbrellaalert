@@ -33,7 +33,9 @@ android {
 
         // Naver Map API Key
         val naverMapClientId = localProperties.getProperty("naver.map.client.id") ?: ""
+        val naverMapClientSecret = localProperties.getProperty("naver.map.client.secret") ?: ""
         buildConfigField("String", "NAVER_MAP_CLIENT_ID", "\"$naverMapClientId\"")
+        buildConfigField("String", "NAVER_MAP_CLIENT_SECRET", "\"$naverMapClientSecret\"")
 
         // AndroidManifest.xml에 네이버 지도 클라이언트 ID 추가
         manifestPlaceholders["NAVER_MAP_CLIENT_ID"] = naverMapClientId
@@ -108,4 +110,8 @@ dependencies {
 
     // Google Play Services Location (위치 서비스)
     implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // HTTP 클라이언트 (네이버 Directions API용)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }

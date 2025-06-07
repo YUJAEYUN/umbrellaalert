@@ -8,7 +8,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // 데이터베이스 정보
     private static final String DATABASE_NAME = "umbrella_alert.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     // 날씨 테이블
     public static final String TABLE_WEATHER = "weather";
@@ -41,6 +41,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_ROUTE_TYPE = "route_type";
     public static final String COLUMN_DIRECTION_NAME = "direction_name";
     public static final String COLUMN_CITY_CODE = "city_code";
+    public static final String COLUMN_BUS_LATITUDE = "latitude";
+    public static final String COLUMN_BUS_LONGITUDE = "longitude";
     public static final String COLUMN_CREATED_AT = "created_at";
     public static final String COLUMN_IS_ACTIVE = "is_active";
     public static final String COLUMN_ALIAS = "alias";
@@ -97,6 +99,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_ROUTE_TYPE + " TEXT,"
                 + COLUMN_DIRECTION_NAME + " TEXT,"
                 + COLUMN_CITY_CODE + " INTEGER,"
+                + COLUMN_BUS_LATITUDE + " REAL DEFAULT 0.0,"
+                + COLUMN_BUS_LONGITUDE + " REAL DEFAULT 0.0,"
                 + COLUMN_CREATED_AT + " INTEGER,"
                 + COLUMN_IS_ACTIVE + " INTEGER DEFAULT 1,"
                 + COLUMN_ALIAS + " TEXT"
@@ -122,6 +126,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     + COLUMN_ALIAS + " TEXT"
                     + ")";
             db.execSQL(CREATE_REGISTERED_BUS_TABLE);
+        }
+
+        if (oldVersion < 3) {
+            // 버전 3: 등록된 버스 테이블에 위치 정보 컬럼 추가
+            db.execSQL("ALTER TABLE " + TABLE_REGISTERED_BUS + " ADD COLUMN " + COLUMN_BUS_LATITUDE + " REAL DEFAULT 0.0");
+            db.execSQL("ALTER TABLE " + TABLE_REGISTERED_BUS + " ADD COLUMN " + COLUMN_BUS_LONGITUDE + " REAL DEFAULT 0.0");
         }
     }
 }

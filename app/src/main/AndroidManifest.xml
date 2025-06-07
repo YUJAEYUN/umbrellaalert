@@ -53,6 +53,9 @@
         <!-- 버스 설정 액티비티 -->
         <activity android:name=".ui.bus.BusSettingsActivity" />
 
+        <!-- 지도 기반 위치 선택 액티비티 -->
+        <activity android:name=".ui.location.MapLocationPickerActivity" />
+
         <!-- 위치 및 날씨 모니터링 서비스 -->
         <service
             android:name=".service.WeatherUpdateService"
@@ -63,6 +66,13 @@
         <!-- 상태바 날씨 알림 서비스 -->
         <service
             android:name=".service.PersistentNotificationService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- 버스 알림 서비스 -->
+        <service
+            android:name=".service.BusNotificationService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />

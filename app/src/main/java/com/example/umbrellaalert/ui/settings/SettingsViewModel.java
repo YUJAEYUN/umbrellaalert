@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.Application;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,6 +18,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.umbrellaalert.receiver.AlarmReceiver;
+import com.example.umbrellaalert.service.BusNotificationService;
 import com.example.umbrellaalert.service.PersistentNotificationService;
 import com.example.umbrellaalert.widget.WeatherWidgetProvider;
 
@@ -42,6 +44,7 @@ public class SettingsViewModel extends AndroidViewModel {
     private static final String KEY_WIDGET_ENABLED = "widget_enabled";
     private static final String KEY_WIDGET_AUTO_UPDATE = "widget_auto_update";
     private static final String KEY_PERSISTENT_NOTIFICATION = "persistent_notification_enabled";
+    private static final String KEY_BUS_NOTIFICATION = "bus_notification_enabled";
     
     private final SharedPreferences preferences;
     private final AlarmManager alarmManager;
@@ -55,6 +58,7 @@ public class SettingsViewModel extends AndroidViewModel {
     private final MutableLiveData<Boolean> widgetEnabled = new MutableLiveData<>();
     private final MutableLiveData<Boolean> widgetAutoUpdateEnabled = new MutableLiveData<>();
     private final MutableLiveData<Boolean> persistentNotificationEnabled = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> busNotificationEnabled = new MutableLiveData<>();
     private final MutableLiveData<String> timeText = new MutableLiveData<>();
     private final MutableLiveData<String> toastMessage = new MutableLiveData<>();
     
@@ -87,6 +91,7 @@ public class SettingsViewModel extends AndroidViewModel {
         widgetEnabled.setValue(preferences.getBoolean(KEY_WIDGET_ENABLED, false));
         widgetAutoUpdateEnabled.setValue(preferences.getBoolean(KEY_WIDGET_AUTO_UPDATE, true));
         persistentNotificationEnabled.setValue(preferences.getBoolean(KEY_PERSISTENT_NOTIFICATION, false));
+        busNotificationEnabled.setValue(preferences.getBoolean(KEY_BUS_NOTIFICATION, false));
 
         // 아침 알림 시간 로드 및 표시
         int hour = preferences.getInt(KEY_MORNING_HOUR, 7);
@@ -152,6 +157,18 @@ public class SettingsViewModel extends AndroidViewModel {
         preferences.edit().putBoolean(KEY_PERSISTENT_NOTIFICATION, enabled).apply();
         persistentNotificationEnabled.setValue(enabled);
         PersistentNotificationService.setEnabled(getApplication(), enabled);
+    }
+
+    /**
+     * 버스 알림 설정 변경
+     */
+    public void setBusNotificationEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_BUS_NOTIFICATION, enabled).apply();
+        busNotificationEnabled.setValue(enabled);
+        BusNotificationService.setEnabled(getApplication(), enabled);
+
+        String message = enabled ? "버스 알림이 활성화되었습니다" : "버스 알림이 비활성화되었습니다";
+        toastMessage.setValue(message);
     }
     
     /**
@@ -226,11 +243,20 @@ public class SettingsViewModel extends AndroidViewModel {
      */
     private void updateWidgetSettings(boolean isEnabled) {
         if (isEnabled) {
-            // 위젯 활성화 로직
-            Intent intent = new Intent(getApplication(), WeatherWidgetProvider.class);
-            intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-            getApplication().sendBroadcast(intent);
-            toastMessage.setValue("날씨 위젯이 활성화되었습니다");
+            // 위젯 활성화 로직 - 모든 위젯 인스턴스 업데이트
+            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(getApplication());
+            ComponentName componentName = new ComponentName(getApplication(), WeatherWidgetProvider.class);
+            int[] appWidgetIds = appWidgetManager.getAppWidgetIds(componentName);
+
+            if (appWidgetIds.length > 0) {
+                Intent intent = new Intent(getApplication(), WeatherWidgetProvider.class);
+                intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
+                getApplication().sendBroadcast(intent);
+                toastMessage.setValue("날씨 위젯이 활성화되었습니다. 홈 화면에서 위젯을 추가해주세요.");
+            } else {
+                toastMessage.setValue("날씨 위젯이 활성화되었습니다. 홈 화면에서 위젯을 추가해주세요.");
+            }
         } else {
             // 위젯 비활성화 로직
             toastMessage.setValue("날씨 위젯이 비활성화되었습니다");
@@ -278,11 +304,15 @@ public class SettingsViewModel extends AndroidViewModel {
     public LiveData<Boolean> getPersistentNotificationEnabled() {
         return persistentNotificationEnabled;
     }
-    
+
+    public LiveData<Boolean> getBusNotificationEnabled() {
+        return busNotificationEnabled;
+    }
+
     public LiveData<String> getTimeText() {
         return timeText;
     }
-    
+
     public LiveData<String> getToastMessage() {
         return toastMessage;
     }

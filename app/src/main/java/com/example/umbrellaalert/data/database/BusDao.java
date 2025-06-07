@@ -36,6 +36,8 @@ public class BusDao {
         values.put(DatabaseHelper.COLUMN_ROUTE_TYPE, bus.getRouteType());
         values.put(DatabaseHelper.COLUMN_DIRECTION_NAME, bus.getDirectionName());
         values.put(DatabaseHelper.COLUMN_CITY_CODE, bus.getCityCode());
+        values.put(DatabaseHelper.COLUMN_BUS_LATITUDE, bus.getLatitude());
+        values.put(DatabaseHelper.COLUMN_BUS_LONGITUDE, bus.getLongitude());
         values.put(DatabaseHelper.COLUMN_CREATED_AT, bus.getCreatedAt());
         values.put(DatabaseHelper.COLUMN_IS_ACTIVE, bus.isActive() ? 1 : 0);
         values.put(DatabaseHelper.COLUMN_ALIAS, bus.getAlias());
@@ -183,6 +185,18 @@ public class BusDao {
             bus.setRouteType(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_ROUTE_TYPE)));
             bus.setDirectionName(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_DIRECTION_NAME)));
             bus.setCityCode(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_CITY_CODE)));
+
+            // 위치 정보 (기존 데이터는 0.0으로 설정됨)
+            int latIndex = cursor.getColumnIndex(DatabaseHelper.COLUMN_BUS_LATITUDE);
+            int lngIndex = cursor.getColumnIndex(DatabaseHelper.COLUMN_BUS_LONGITUDE);
+            if (latIndex >= 0 && lngIndex >= 0) {
+                bus.setLatitude(cursor.getDouble(latIndex));
+                bus.setLongitude(cursor.getDouble(lngIndex));
+            } else {
+                bus.setLatitude(0.0);
+                bus.setLongitude(0.0);
+            }
+
             bus.setCreatedAt(cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_CREATED_AT)));
             bus.setActive(cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_IS_ACTIVE)) == 1);
             bus.setAlias(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_ALIAS)));

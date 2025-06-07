@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 import androidx.core.content.ContextCompat;
@@ -17,6 +18,7 @@ import androidx.core.content.ContextCompat;
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.Weather;
+import com.example.umbrellaalert.service.LocationService;
 import com.example.umbrellaalert.ui.home.HomeActivity;
 
 import java.util.Locale;
@@ -26,6 +28,7 @@ import java.util.Locale;
  */
 public class WeatherWidgetProvider extends AppWidgetProvider {
 
+    private static final String TAG = "WeatherWidgetProvider";
     private static final String PREF_NAME = "UmbrellaAlertPrefs";
     private static final String KEY_WIDGET_ENABLED = "widget_enabled";
 
@@ -65,6 +68,8 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
      * 날씨 데이터 로드 및 위젯 업데이트
      */
     private void loadWeatherData(Context context, RemoteViews views, AppWidgetManager appWidgetManager, int appWidgetId) {
+        Log.d(TAG, "위젯 날씨 데이터 로드 시작");
+
         // 로딩 상태 표시
         views.setTextViewText(R.id.widget_temperature, "로딩 중...");
         views.setTextViewText(R.id.widget_condition, "");
@@ -72,31 +77,39 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
 
         // 위치 권한 확인 후 날씨 데이터 로드
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            // 현재 위치 가져오기
-            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-            Location currentLocation = null;
-            
-            try {
-                Location gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                Location networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                
-                if (gpsLocation != null) {
-                    currentLocation = gpsLocation;
-                } else if (networkLocation != null) {
-                    currentLocation = networkLocation;
+            // LocationService를 사용하여 현재 위치 가져오기
+            LocationService locationService = LocationService.getInstance(context);
+            Location currentLocation = locationService.getLastLocation();
+
+            // LocationService에서 위치를 가져올 수 없으면 LocationManager 사용
+            if (currentLocation == null) {
+                LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+
+                try {
+                    Location gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    Location networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+
+                    if (gpsLocation != null) {
+                        currentLocation = gpsLocation;
+                    } else if (networkLocation != null) {
+                        currentLocation = networkLocation;
+                    }
+                } catch (SecurityException e) {
+                    Log.e(TAG, "위치 권한 오류", e);
                 }
-            } catch (SecurityException e) {
-                // 권한 오류 무시
             }
             
             if (currentLocation != null) {
+                Log.d(TAG, "위치 정보 확인됨: " + currentLocation.getLatitude() + ", " + currentLocation.getLongitude());
+
                 // 현재 위치로 날씨 데이터 가져오기
                 WeatherManager weatherManager = WeatherManager.getInstance(context);
                 final Location finalLocation = currentLocation;
-                
+
                 weatherManager.getCurrentWeather(finalLocation.getLatitude(), finalLocation.getLongitude(), new WeatherManager.WeatherCallback() {
                     @Override
                     public void onSuccess(Weather weather) {
+                        Log.d(TAG, "날씨 데이터 성공적으로 가져옴");
                         if (weather != null) {
                             // 위젯 UI 업데이트
                             views.setTextViewText(R.id.widget_temperature,
@@ -105,13 +118,14 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
 
                             // 우산 필요 여부에 따라 아이콘 변경
                             if (weather.isNeedUmbrella()) {
-                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella);
+                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella_small);
                                 views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요해요!");
                             } else {
                                 views.setImageViewResource(R.id.widget_icon, R.drawable.ic_weather_sunny);
                                 views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요 없어요");
                             }
                         } else {
+                            Log.w(TAG, "날씨 데이터가 null입니다");
                             // 날씨 데이터를 가져오지 못한 경우
                             views.setTextViewText(R.id.widget_temperature, "--°C");
                             views.setTextViewText(R.id.widget_condition, "날씨 정보 없음");
@@ -124,6 +138,7 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
 
                     @Override
                     public void onError(String error) {
+                        Log.e(TAG, "날씨 데이터 가져오기 실패: " + error);
                         // 오류 발생 시 위젯 업데이트
                         views.setTextViewText(R.id.widget_temperature, "--°C");
                         views.setTextViewText(R.id.widget_condition, "오류 발생");
@@ -132,11 +147,40 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
                     }
                 });
             } else {
-                // 위치 정보가 없는 경우
-                views.setTextViewText(R.id.widget_temperature, "--°C");
-                views.setTextViewText(R.id.widget_condition, "위치 정보 없음");
-                views.setTextViewText(R.id.widget_umbrella_text, "현재 위치를 확인할 수 없습니다");
-                appWidgetManager.updateAppWidget(appWidgetId, views);
+                Log.w(TAG, "위치 정보를 가져올 수 없습니다");
+                // 위치 정보가 없는 경우 - 기본 위치(세종시) 사용
+                WeatherManager weatherManager = WeatherManager.getInstance(context);
+                weatherManager.getCurrentWeather(36.4800, 127.2890, new WeatherManager.WeatherCallback() {
+                    @Override
+                    public void onSuccess(Weather weather) {
+                        if (weather != null) {
+                            views.setTextViewText(R.id.widget_temperature,
+                                    String.format(Locale.getDefault(), "%.1f°C", weather.getTemperature()));
+                            views.setTextViewText(R.id.widget_condition, getWeatherConditionText(weather.getWeatherCondition()) + " (세종시)");
+
+                            if (weather.isNeedUmbrella()) {
+                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_umbrella_small);
+                                views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요해요!");
+                            } else {
+                                views.setImageViewResource(R.id.widget_icon, R.drawable.ic_weather_sunny);
+                                views.setTextViewText(R.id.widget_umbrella_text, "우산이 필요 없어요");
+                            }
+                        } else {
+                            views.setTextViewText(R.id.widget_temperature, "--°C");
+                            views.setTextViewText(R.id.widget_condition, "날씨 정보 없음");
+                            views.setTextViewText(R.id.widget_umbrella_text, "날씨 정보를 확인할 수 없습니다");
+                        }
+                        appWidgetManager.updateAppWidget(appWidgetId, views);
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        views.setTextViewText(R.id.widget_temperature, "--°C");
+                        views.setTextViewText(R.id.widget_condition, "위치 정보 없음");
+                        views.setTextViewText(R.id.widget_umbrella_text, "현재 위치를 확인할 수 없습니다");
+                        appWidgetManager.updateAppWidget(appWidgetId, views);
+                    }
+                });
             }
         } else {
             // 위치 권한이 없는 경우

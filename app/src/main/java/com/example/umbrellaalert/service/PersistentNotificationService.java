@@ -235,7 +235,7 @@ public class PersistentNotificationService extends Service implements LocationLi
 
         // 알림 생성
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(weather.isNeedUmbrella() ? R.drawable.ic_umbrella : R.drawable.ic_weather_sunny)
+                .setSmallIcon(weather.isNeedUmbrella() ? R.drawable.ic_umbrella_small : R.drawable.ic_weather_sunny)
                 .setContentTitle(title)
                 .setContentText(content)
                 .setOngoing(true) // 사용자가 스와이프로 제거할 수 없음
