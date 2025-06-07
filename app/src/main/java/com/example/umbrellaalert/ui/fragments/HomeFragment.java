@@ -155,43 +155,9 @@ public class HomeFragment extends Fragment {
 
         // 날씨 상태 표시
         binding.weatherCondition.setText(weatherViewModel.getWeatherConditionText(weather.getWeatherCondition()));
-
-        // 날씨에 따른 프레임 변경
-        updateWeatherFrame(weather.getWeatherCondition());
     }
 
-    /**
-     * 날씨 상태에 따라 프레임 배경 변경
-     */
-    private void updateWeatherFrame(String weatherCondition) {
-        int frameResource;
 
-        if (weatherCondition == null) {
-            frameResource = R.drawable.weather_frame_default;
-        } else {
-            String condition = weatherCondition.toLowerCase();
-
-            if (condition.contains("clear") || condition.contains("sunny") || condition.equals("맑음")) {
-                frameResource = R.drawable.weather_frame_sunny;
-            } else if (condition.contains("rain") || condition.contains("drizzle") ||
-                      condition.contains("thunderstorm") || condition.equals("비") ||
-                      condition.equals("이슬비") || condition.equals("뇌우") || condition.equals("소나기")) {
-                frameResource = R.drawable.weather_frame_rainy;
-            } else if (condition.contains("snow") || condition.equals("눈")) {
-                frameResource = R.drawable.weather_frame_snowy;
-            } else if (condition.contains("cloud") || condition.contains("overcast") ||
-                      condition.equals("구름많음") || condition.equals("흐림")) {
-                frameResource = R.drawable.weather_frame_cloudy;
-            } else {
-                frameResource = R.drawable.weather_frame_default;
-            }
-        }
-
-        // 프레임 배경 변경
-        binding.weatherFrameContainer.setBackgroundResource(frameResource);
-
-        Log.d(TAG, "날씨 프레임 변경: " + weatherCondition + " -> " + frameResource);
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

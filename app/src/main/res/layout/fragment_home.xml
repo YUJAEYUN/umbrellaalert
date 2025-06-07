@@ -20,13 +20,16 @@
         android:paddingEnd="@dimen/ios_spacing_md"
         android:clipToPadding="false">
 
-        <!-- 구름 및 고양이 컨테이너 (날씨별 프레임 포함) -->
+        <!-- 구름 및 고양이 컨테이너 (고정 프레임) -->
         <FrameLayout
             android:id="@+id/weather_frame_container"
             android:layout_width="0dp"
             android:layout_height="220dp"
             android:layout_marginTop="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
             android:background="@drawable/weather_frame_default"
+            android:elevation="4dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -37,7 +40,7 @@
                 android:id="@+id/cloud_cat_container"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_margin="12dp">
+                android:layout_margin="16dp">
 
                 <!-- 구름 이미지 -->
                 <ImageView
