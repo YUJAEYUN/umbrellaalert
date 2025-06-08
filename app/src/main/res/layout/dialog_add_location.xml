@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -10,20 +11,55 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:text="지도에서 위치를 선택하여 장소를 추가하세요"
+        android:text="장소 이름을 검색하거나 지도에서 선택하세요"
         android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:gravity="center"
         android:fontFamily="@font/pretendard_font_family" />
 
+    <!-- 장소 검색 입력 -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/search_input_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:hint="장소 이름 검색 (예: 세종시청, 롯데마트 등)"
+        app:startIconDrawable="@drawable/ic_search"
+        app:endIconMode="clear_text">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edit_search_location"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:maxLines="1"
+            android:imeOptions="actionSearch" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- 검색 결과 리스트 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_search_results"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:maxHeight="200dp"
+        android:visibility="gone" />
+
+    <!-- 구분선 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="8dp"
+        android:background="@color/divider_color" />
+
     <!-- 지도에서 선택 버튼 -->
     <Button
         android:id="@+id/btn_select_from_map"
-        style="@style/Widget.Material3.Button"
+        style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:text="지도에서 위치 선택"
+        android:text="지도에서 직접 선택"
         android:drawableStart="@drawable/ic_map"
         android:drawablePadding="8dp"
         android:padding="16dp"

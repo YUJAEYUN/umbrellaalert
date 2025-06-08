@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="?android:attr/selectableItemBackground"
+    android:gravity="center_vertical">
+
+    <!-- 위치 아이콘 -->
+    <ImageView
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_location"
+        android:layout_marginEnd="12dp"
+        android:tint="@color/text_secondary" />
+
+    <!-- 장소 정보 -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- 장소 이름 -->
+        <TextView
+            android:id="@+id/text_place_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="세종시청"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:fontFamily="@font/pretendard_font_family" />
+
+        <!-- 주소 -->
+        <TextView
+            android:id="@+id/text_place_address"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="세종특별자치시 한누리대로 2130"
+            android:textSize="14sp"
+            android:textColor="@color/text_secondary"
+            android:fontFamily="@font/pretendard_font_family"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+    </LinearLayout>
+
+</LinearLayout>

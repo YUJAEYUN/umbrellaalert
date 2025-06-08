@@ -105,18 +105,22 @@ public class MapLocationPickerActivity extends AppCompatActivity implements OnMa
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
         this.naverMap = naverMap;
-        
+
         // 지도 설정
         naverMap.setLocationSource(locationSource);
         naverMap.setLocationTrackingMode(LocationTrackingMode.NoFollow);
         naverMap.getUiSettings().setLocationButtonEnabled(false);
-        
+
         // 지도 클릭 리스너
         naverMap.setOnMapClickListener((point, coord) -> {
             selectLocation(coord.latitude, coord.longitude);
         });
-        
-        // 현재 위치로 이동
+
+        // 기본 위치로 먼저 이동 (세종시청)
+        LatLng defaultPosition = new LatLng(36.4800, 127.2890);
+        naverMap.moveCamera(CameraUpdate.scrollTo(defaultPosition));
+
+        // 현재 위치로 이동 시도
         moveToCurrentLocation();
     }
     
@@ -194,24 +198,39 @@ public class MapLocationPickerActivity extends AppCompatActivity implements OnMa
                     if (location != null && naverMap != null) {
                         LatLng currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
                         naverMap.moveCamera(CameraUpdate.scrollTo(currentPosition));
+                        Log.d(TAG, "현재 위치로 이동: " + location.getLatitude() + ", " + location.getLongitude());
+                    } else {
+                        Log.d(TAG, "현재 위치가 null이므로 기본 위치 사용");
+                        moveToDefaultLocation();
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "현재 위치 가져오기 실패", e);
-                    Toast.makeText(this, "현재 위치를 가져올 수 없습니다", Toast.LENGTH_SHORT).show();
-                    
-                    // 기본 위치 (세종시청)
-                    LatLng defaultPosition = new LatLng(36.4800, 127.2890);
-                    if (naverMap != null) {
-                        naverMap.moveCamera(CameraUpdate.scrollTo(defaultPosition));
-                    }
+                    moveToDefaultLocation();
                 });
         } else {
+            Log.d(TAG, "위치 권한이 없으므로 기본 위치 사용");
+            moveToDefaultLocation();
+
             // 권한 요청
             ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                 LOCATION_PERMISSION_REQUEST_CODE);
         }
+    }
+
+    /**
+     * 기본 위치로 이동 (세종시청)
+     */
+    private void moveToDefaultLocation() {
+        LatLng defaultPosition = new LatLng(36.4800, 127.2890);
+        if (naverMap != null) {
+            naverMap.moveCamera(CameraUpdate.scrollTo(defaultPosition));
+            Log.d(TAG, "기본 위치로 이동: 세종시청");
+        }
+
+        // 사용자에게 안내 메시지 표시
+        Toast.makeText(this, "기본 위치(세종시)에서 시작합니다. 지도를 클릭하여 원하는 위치를 선택하세요.", Toast.LENGTH_LONG).show();
     }
     
     private void returnSelectedLocation() {
@@ -229,11 +248,27 @@ public class MapLocationPickerActivity extends AppCompatActivity implements OnMa
         if (locationSource.onRequestPermissionsResult(requestCode, permissions, grantResults)) {
             if (!locationSource.isActivated()) {
                 naverMap.setLocationTrackingMode(LocationTrackingMode.None);
+                Log.d(TAG, "위치 권한이 거부됨, 기본 위치 사용");
+                moveToDefaultLocation();
             } else {
+                Log.d(TAG, "위치 권한이 승인됨, 현재 위치로 이동");
                 moveToCurrentLocation();
             }
             return;
         }
+
+        // 직접 권한 요청 처리
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "위치 권한 승인됨");
+                moveToCurrentLocation();
+            } else {
+                Log.d(TAG, "위치 권한 거부됨, 기본 위치 사용");
+                moveToDefaultLocation();
+            }
+            return;
+        }
+
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 }

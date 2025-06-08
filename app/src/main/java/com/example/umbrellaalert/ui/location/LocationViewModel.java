@@ -65,11 +65,12 @@ public class LocationViewModel extends AndroidViewModel {
     }
 
     /**
-     * 새 위치 추가
+     * 새 위치 추가 (목업 데이터 지원)
      */
     public void addLocation(Location location) {
         if (locationRepository == null) {
-            toastMessage.setValue("위치 서비스를 사용할 수 없습니다");
+            // Repository가 없어도 목업 데이터로 추가
+            addLocationAsMockData(location);
             return;
         }
 
@@ -86,11 +87,45 @@ public class LocationViewModel extends AndroidViewModel {
     }
 
     /**
-     * 위치 삭제
+     * 목업 데이터로 위치 추가
+     */
+    private void addLocationAsMockData(Location location) {
+        executorService.execute(() -> {
+            // 현재 위치 목록 가져오기
+            List<Location> currentLocations = locations.getValue();
+            if (currentLocations == null) {
+                currentLocations = new java.util.ArrayList<>();
+            } else {
+                // 기존 리스트를 복사하여 새 리스트 생성
+                currentLocations = new java.util.ArrayList<>(currentLocations);
+            }
+
+            // 새 위치에 ID 할당 (기존 최대 ID + 1)
+            int newId = 1;
+            for (Location loc : currentLocations) {
+                if (loc.getId() >= newId) {
+                    newId = (int) (loc.getId() + 1);
+                }
+            }
+            location.setId(newId);
+
+            // 리스트에 추가
+            currentLocations.add(location);
+
+            // UI 업데이트
+            locations.postValue(currentLocations);
+            isEmpty.postValue(false);
+            toastMessage.postValue("위치가 추가되었습니다");
+        });
+    }
+
+    /**
+     * 위치 삭제 (목업 데이터 지원)
      */
     public void deleteLocation(Location location) {
         if (locationRepository == null) {
-            toastMessage.setValue("위치 서비스를 사용할 수 없습니다");
+            // Repository가 없어도 목업 데이터에서 삭제
+            deleteLocationFromMockData(location);
             return;
         }
 
@@ -103,11 +138,35 @@ public class LocationViewModel extends AndroidViewModel {
     }
 
     /**
-     * 위치 알림 설정 토글
+     * 목업 데이터에서 위치 삭제
+     */
+    private void deleteLocationFromMockData(Location locationToDelete) {
+        executorService.execute(() -> {
+            List<Location> currentLocations = locations.getValue();
+            if (currentLocations != null) {
+                // 기존 리스트를 복사하여 새 리스트 생성
+                List<Location> updatedLocations = new java.util.ArrayList<>();
+                for (Location loc : currentLocations) {
+                    if (loc.getId() != locationToDelete.getId()) {
+                        updatedLocations.add(loc);
+                    }
+                }
+
+                // UI 업데이트
+                locations.postValue(updatedLocations);
+                isEmpty.postValue(updatedLocations.isEmpty());
+                toastMessage.postValue("위치가 삭제되었습니다");
+            }
+        });
+    }
+
+    /**
+     * 위치 알림 설정 토글 (목업 데이터 지원)
      */
     public void toggleNotification(Location location) {
         if (locationRepository == null) {
-            toastMessage.setValue("위치 서비스를 사용할 수 없습니다");
+            // Repository가 없어도 목업 데이터에서 토글
+            toggleNotificationInMockData(location);
             return;
         }
 
@@ -121,6 +180,33 @@ public class LocationViewModel extends AndroidViewModel {
                     "알림이 활성화되었습니다" : "알림이 비활성화되었습니다";
             toastMessage.postValue(message);
             loadLocations();
+        });
+    }
+
+    /**
+     * 목업 데이터에서 알림 설정 토글
+     */
+    private void toggleNotificationInMockData(Location locationToToggle) {
+        executorService.execute(() -> {
+            List<Location> currentLocations = locations.getValue();
+            if (currentLocations != null) {
+                // 기존 리스트를 복사하여 새 리스트 생성
+                List<Location> updatedLocations = new java.util.ArrayList<>();
+                for (Location loc : currentLocations) {
+                    if (loc.getId() == locationToToggle.getId()) {
+                        // 알림 설정 토글
+                        loc.setNotificationEnabled(!loc.isNotificationEnabled());
+                    }
+                    updatedLocations.add(loc);
+                }
+
+                // UI 업데이트
+                locations.postValue(updatedLocations);
+
+                String message = locationToToggle.isNotificationEnabled() ?
+                        "알림이 활성화되었습니다" : "알림이 비활성화되었습니다";
+                toastMessage.postValue(message);
+            }
         });
     }
 

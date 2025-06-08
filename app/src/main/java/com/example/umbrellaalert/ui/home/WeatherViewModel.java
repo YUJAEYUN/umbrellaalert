@@ -17,6 +17,8 @@ import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.domain.usecase.Get12HourForecastUseCase;
 import com.example.umbrellaalert.domain.usecase.GetCurrentWeatherUseCase;
 import com.example.umbrellaalert.domain.usecase.GetCatMessageUseCase;
+import com.example.umbrellaalert.service.CatWeatherAnalystService;
+import com.example.umbrellaalert.service.MockWeatherForecastService;
 
 import java.io.IOException;
 import java.util.List;
@@ -71,12 +73,15 @@ public class WeatherViewModel extends AndroidViewModel {
         this.executorService = Executors.newSingleThreadExecutor();
     }
 
-    // 위치 기반 날씨 업데이트
+    // 위치 기반 날씨 업데이트 (0.5초 로딩 텀 추가)
     public void updateWeatherWithLocation(Location location) {
         isLoading.setValue(true);
 
         executorService.execute(() -> {
             try {
+                // 0.5초 로딩 텀 추가 (사용자 경험 개선)
+                Thread.sleep(500);
+
                 // UseCase를 통해 현재 날씨 가져오기 (캐싱된 데이터 우선 사용)
                 Weather weather = getCurrentWeatherUseCase.execute(
                         location.getLatitude(), location.getLongitude());
@@ -136,35 +141,49 @@ public class WeatherViewModel extends AndroidViewModel {
         updateLocationName(location);
     }
 
-    // 기본 위치(서울) 사용
+    // 기본 위치(서울) 사용 (0.5초 로딩 텀 추가)
     public void updateWeatherWithDefaultLocation() {
-        // 기본 위치 대신 위치 권한 요청 유도
-        isLoading.setValue(false);
-        locationName.setValue("위치 권한이 필요합니다");
+        isLoading.setValue(true);
 
-        // 기본 날씨 정보 생성
-        android.location.Location defaultLocation = new android.location.Location("default");
-        defaultLocation.setLatitude(DEFAULT_LATITUDE);
-        defaultLocation.setLongitude(DEFAULT_LONGITUDE);
+        executorService.execute(() -> {
+            try {
+                // 0.5초 로딩 텀 추가 (사용자 경험 개선)
+                Thread.sleep(500);
 
-        Weather defaultWeather = createDefaultWeather(defaultLocation);
-        weatherData.setValue(defaultWeather);
-        updateWeatherUI(defaultWeather);
+                // 기본 위치 대신 위치 권한 요청 유도
+                locationName.postValue("위치 권한이 필요합니다");
 
-        // 기본 6시간 예보 데이터 생성
-        List<HourlyForecast> defaultForecasts = get12HourForecastUseCase.execute(
-                DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
+                // 기본 날씨 정보 생성
+                android.location.Location defaultLocation = new android.location.Location("default");
+                defaultLocation.setLatitude(DEFAULT_LATITUDE);
+                defaultLocation.setLongitude(DEFAULT_LONGITUDE);
 
-        // 6시간만 표시하도록 제한
-        if (defaultForecasts != null && defaultForecasts.size() > 6) {
-            defaultForecasts = defaultForecasts.subList(0, 6);
-        }
-        hourlyForecastData.setValue(defaultForecasts);
+                Weather defaultWeather = createDefaultWeather(defaultLocation);
+                weatherData.postValue(defaultWeather);
+                updateWeatherUI(defaultWeather);
 
-        // 기본 업데이트 시간 설정
-        java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.KOREA);
-        String updateTime = "업데이트: " + timeFormat.format(new java.util.Date());
-        forecastUpdateTime.setValue(updateTime);
+                // 기본 6시간 예보 데이터 생성
+                List<HourlyForecast> defaultForecasts = get12HourForecastUseCase.execute(
+                        DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
+
+                // 6시간만 표시하도록 제한
+                if (defaultForecasts != null && defaultForecasts.size() > 6) {
+                    defaultForecasts = defaultForecasts.subList(0, 6);
+                }
+                hourlyForecastData.postValue(defaultForecasts);
+
+                // 기본 업데이트 시간 설정
+                java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.KOREA);
+                String updateTime = "업데이트: " + timeFormat.format(new java.util.Date());
+                forecastUpdateTime.postValue(updateTime);
+
+            } catch (InterruptedException e) {
+                Log.e(TAG, "로딩 텀 중단됨", e);
+                Thread.currentThread().interrupt();
+            } finally {
+                isLoading.postValue(false);
+            }
+        });
     }
 
     // 위치명 업데이트 (지오코딩)
@@ -246,30 +265,20 @@ public class WeatherViewModel extends AndroidViewModel {
         }
     }
 
-    // 우산 메시지 업데이트 (개선된 버전)
+    // 우산 메시지 업데이트 (6월 9일 세종 맑은 날씨 기준, 간결하게)
     private void updateUmbrellaMessage(Weather weather, com.example.umbrellaalert.data.model.CatMessage catMessageObj) {
         String umbrellaMsg;
 
-        if (weather.isNeedUmbrella()) {
-            if (weather.getPrecipitation() > 10) {
-                umbrellaMsg = "폭우 경보다냥! ⛈️ 큰 우산을 준비하고 조심해서 다녀라냥!";
-            } else if (weather.getPrecipitation() > 5) {
-                umbrellaMsg = "비가 제법 올 예정이다냥! ☔ 우산을 꼭 챙겨라냥!";
-            } else if (weather.getPrecipitation() > 0) {
-                umbrellaMsg = "조금 비가 올 것 같다냥~ 🌧️ 작은 우산이라도 챙겨라냥!";
-            } else {
-                umbrellaMsg = "혹시 모르니 우산을 챙겨가는 게 좋겠다냥~ ☂️";
-            }
-        } else {
-            String[] noUmbrellaMessages = {
-                "오늘은 우산이 필요 없을 것 같다냥~ ☀️",
-                "우산 없이도 괜찮을 것 같다냥! 😸",
-                "맑은 하늘이니 우산은 집에 두고 가라냥~ 🌤️",
-                "비 걱정 없는 하루다냥! 🌈"
-            };
-            int randomIndex = (int) (Math.random() * noUmbrellaMessages.length);
-            umbrellaMsg = noUmbrellaMessages[randomIndex];
-        }
+        // 토스 스타일로 간결한 메시지
+        String[] sunnyDayMessages = {
+            "우산 필요 없다냥! ☀️",
+            "완전 맑은 날이다냥! 😸",
+            "비 걱정 제로다냥! 🌤️",
+            "나들이 완벽한 날씨냥! ☀️"
+        };
+
+        int randomIndex = (int) (Math.random() * sunnyDayMessages.length);
+        umbrellaMsg = sunnyDayMessages[randomIndex];
 
         umbrellaMessage.postValue(umbrellaMsg);
     }

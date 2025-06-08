@@ -66,8 +66,11 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.Locati
         public void bind(final Location location) {
             // 위치 정보 표시
             binding.locationName.setText(location.getName());
-            binding.locationCoordinates.setText(
-                    String.format("위도: %.6f, 경도: %.6f", location.getLatitude(), location.getLongitude()));
+
+            // 좌표를 주소로 변환하여 표시
+            String address = com.example.umbrellaalert.service.LocationSearchService
+                    .getAddressFromCoordinates(location.getLatitude(), location.getLongitude());
+            binding.locationAddress.setText(address);
 
             // 자주 가는 장소 표시
             binding.frequentIndicator.setVisibility(location.isFrequent() ? View.VISIBLE : View.GONE);

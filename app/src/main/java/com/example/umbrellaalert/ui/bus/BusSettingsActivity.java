@@ -131,6 +131,9 @@ public class BusSettingsActivity extends AppCompatActivity implements OnMapReady
             if (selectedStop != null) {
                 viewModel.registerBus(selectedStop, busArrival);
                 Toast.makeText(this, busArrival.getRouteNo() + "번 버스가 등록되었습니다", Toast.LENGTH_SHORT).show();
+
+                // 등록 성공 결과 전달
+                setResult(RESULT_OK);
                 finish(); // 등록 후 화면 닫기
             }
         });
@@ -144,6 +147,9 @@ public class BusSettingsActivity extends AppCompatActivity implements OnMapReady
                 viewModel.registerBusByNumber(selectedStop, busNumber);
                 Toast.makeText(this, busNumber + "번 버스가 등록되었습니다", Toast.LENGTH_SHORT).show();
                 binding.etBusNumber.setText(""); // 입력 필드 초기화
+
+                // 등록 성공 결과 전달
+                setResult(RESULT_OK);
                 finish(); // 등록 후 화면 닫기
             } else if (busNumber.isEmpty()) {
                 Toast.makeText(this, "버스 번호를 입력해주세요", Toast.LENGTH_SHORT).show();

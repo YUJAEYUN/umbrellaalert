@@ -8,6 +8,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -69,11 +71,14 @@ public class HomeFragment extends Fragment {
             }
         });
         
-        // 로딩 상태 관찰
+        // 로딩 상태 관찰 (애니메이션 포함)
         weatherViewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
             // 로딩 상태에 따른 UI 업데이트
             if (isLoading) {
                 binding.catMessage.setText("날씨 정보를 불러오는 중이다냥~");
+                showLoadingAnimation();
+            } else {
+                hideLoadingAnimation();
             }
         });
         
@@ -169,6 +174,33 @@ public class HomeFragment extends Fragment {
             } else {
                 weatherViewModel.updateWeatherWithDefaultLocation();
             }
+        }
+    }
+
+    /**
+     * 로딩 애니메이션 표시
+     */
+    private void showLoadingAnimation() {
+        if (binding != null) {
+            binding.loadingAnimation.setVisibility(View.VISIBLE);
+            Animation rotation = AnimationUtils.loadAnimation(getContext(), R.anim.loading_rotation);
+            binding.loadingAnimation.startAnimation(rotation);
+
+            // 고양이 이미지 살짝 투명하게
+            binding.catImage.setAlpha(0.5f);
+        }
+    }
+
+    /**
+     * 로딩 애니메이션 숨기기
+     */
+    private void hideLoadingAnimation() {
+        if (binding != null) {
+            binding.loadingAnimation.setVisibility(View.GONE);
+            binding.loadingAnimation.clearAnimation();
+
+            // 고양이 이미지 원래대로
+            binding.catImage.setAlpha(1.0f);
         }
     }
 

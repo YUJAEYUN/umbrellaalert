@@ -64,23 +64,29 @@ public class BusViewModel extends AndroidViewModel {
     }
 
     /**
-     * 등록된 버스 목록 로드
+     * 등록된 버스 목록 로드 (0.5초 로딩 텀 추가)
      */
     public void loadRegisteredBuses() {
         isLoading.setValue(true);
-        
+
         executorService.execute(() -> {
             try {
+                // 0.5초 로딩 텀 추가 (사용자 경험 개선)
+                Thread.sleep(500);
+
                 List<RegisteredBus> buses = busDao.getAllRegisteredBuses();
                 registeredBuses.postValue(buses);
-                
+
                 // 각 버스의 도착 정보도 함께 로드
                 if (!buses.isEmpty()) {
                     loadArrivalInfoForBuses(buses);
                 }
-                
+
                 Log.d(TAG, "등록된 버스 로드 완료: " + buses.size() + "개");
-                
+
+            } catch (InterruptedException e) {
+                Log.e(TAG, "로딩 텀 중단됨", e);
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 Log.e(TAG, "등록된 버스 로드 실패", e);
                 errorMessage.postValue("버스 정보를 불러올 수 없습니다.");

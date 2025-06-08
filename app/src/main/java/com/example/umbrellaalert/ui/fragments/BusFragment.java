@@ -1,5 +1,6 @@
 package com.example.umbrellaalert.ui.fragments;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -20,6 +21,8 @@ import com.example.umbrellaalert.ui.bus.BusViewModel;
 import com.example.umbrellaalert.ui.bus.RegisteredBusAdapter;
 
 public class BusFragment extends Fragment {
+
+    private static final int REQUEST_BUS_SETTINGS = 1001;
 
     private FragmentBusBinding binding;
     private BusViewModel busViewModel;
@@ -51,13 +54,13 @@ public class BusFragment extends Fragment {
         // 버스 설정 버튼 클릭 리스너
         binding.btnBusSettings.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), com.example.umbrellaalert.ui.bus.BusSettingsActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_BUS_SETTINGS);
         });
 
         // 빈 상태에서 버스 추가 버튼 클릭 리스너
         binding.btnAddBusEmpty.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), com.example.umbrellaalert.ui.bus.BusSettingsActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_BUS_SETTINGS);
         });
 
         // 데이터 관찰
@@ -168,6 +171,16 @@ public class BusFragment extends Fragment {
                 // TODO: 에러 메시지 표시 (Toast 또는 Snackbar)
             }
         });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_BUS_SETTINGS && resultCode == Activity.RESULT_OK) {
+            // 버스 등록/삭제 후 즉시 새로고침
+            busViewModel.loadRegisteredBuses();
+        }
     }
 
     @Override

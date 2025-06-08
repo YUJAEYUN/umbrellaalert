@@ -3,7 +3,9 @@ package com.example.umbrellaalert.ui.location;
 import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Toast;
@@ -12,16 +14,25 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.model.Location;
+import com.example.umbrellaalert.data.model.SearchLocation;
 import com.example.umbrellaalert.databinding.DialogAddLocationBinding;
+import com.example.umbrellaalert.service.LocationSearchService;
+import com.example.umbrellaalert.ui.adapter.LocationSearchAdapter;
 
-public class AddLocationDialog extends DialogFragment {
+import java.util.List;
+
+public class AddLocationDialog extends DialogFragment implements LocationSearchAdapter.OnLocationSelectedListener {
 
     private static final int MAP_PICKER_REQUEST_CODE = 1001;
 
     private DialogAddLocationBinding binding;
     private LocationAddedListener listener;
+    private LocationSearchAdapter searchAdapter;
+    private SearchLocation selectedSearchLocation;
 
     // 위치 추가 완료 리스너
     public interface LocationAddedListener {
@@ -36,6 +47,9 @@ public class AddLocationDialog extends DialogFragment {
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         binding = DialogAddLocationBinding.inflate(LayoutInflater.from(getContext()));
+
+        // 검색 기능 설정
+        setupSearchFunctionality();
 
         // 지도에서 선택 버튼 설정
         binding.btnSelectFromMap.setOnClickListener(v -> openMapPicker());
@@ -60,6 +74,80 @@ public class AddLocationDialog extends DialogFragment {
         });
 
         return dialog;
+    }
+
+    /**
+     * 검색 기능 설정
+     */
+    private void setupSearchFunctionality() {
+        // 검색 결과 어댑터 설정
+        searchAdapter = new LocationSearchAdapter(this);
+        binding.recyclerSearchResults.setLayoutManager(new LinearLayoutManager(getContext()));
+        binding.recyclerSearchResults.setAdapter(searchAdapter);
+
+        // 검색 입력 리스너
+        binding.editSearchLocation.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String query = s.toString().trim();
+                if (query.length() >= 2) {
+                    performSearch(query);
+                } else {
+                    hideSearchResults();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    /**
+     * 장소 검색 수행
+     */
+    private void performSearch(String query) {
+        List<SearchLocation> results = LocationSearchService.searchByName(query);
+        if (results.isEmpty()) {
+            hideSearchResults();
+        } else {
+            searchAdapter.setSearchResults(results);
+            binding.recyclerSearchResults.setVisibility(View.VISIBLE);
+        }
+    }
+
+    /**
+     * 검색 결과 숨기기
+     */
+    private void hideSearchResults() {
+        binding.recyclerSearchResults.setVisibility(View.GONE);
+        searchAdapter.setSearchResults(null);
+    }
+
+    /**
+     * 검색 결과에서 장소 선택 시 호출
+     */
+    @Override
+    public void onLocationSelected(SearchLocation location) {
+        selectedSearchLocation = location;
+
+        // 검색 입력창에 선택된 장소 이름 표시
+        binding.editSearchLocation.setText(location.getName());
+
+        // 선택된 위치 정보 표시
+        binding.textSelectedLocationName.setText(location.getName() + "\n" + location.getAddress());
+        binding.selectedLocationContainer.setVisibility(View.VISIBLE);
+        binding.nameInputLayout.setVisibility(View.VISIBLE);
+        binding.editName.setText(location.getName());
+
+        // 좌표 정보 저장
+        binding.editLatitude.setText(String.valueOf(location.getLatitude()));
+        binding.editLongitude.setText(String.valueOf(location.getLongitude()));
+
+        // 검색 결과 숨기기
+        hideSearchResults();
     }
 
     private void openMapPicker() {

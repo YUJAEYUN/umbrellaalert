@@ -57,6 +57,15 @@
                     android:layout_height="140dp"
                     android:layout_gravity="center"
                     android:src="@drawable/cat_sunny" />
+
+                <!-- 로딩 애니메이션 -->
+                <ImageView
+                    android:id="@+id/loading_animation"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_loading"
+                    android:visibility="gone" />
             </FrameLayout>
         </FrameLayout>
 

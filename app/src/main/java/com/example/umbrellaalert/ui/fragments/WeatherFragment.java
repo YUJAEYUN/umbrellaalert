@@ -5,18 +5,26 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.model.HourlyForecast;
 import com.example.umbrellaalert.databinding.FragmentWeatherBinding;
+import com.example.umbrellaalert.service.CatWeatherAnalystService;
+import com.example.umbrellaalert.service.MockWeatherForecastService;
 import com.example.umbrellaalert.ui.home.WeatherViewModel;
 import com.example.umbrellaalert.ui.adapter.HourlyForecastAdapter;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -38,18 +46,20 @@ public class WeatherFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
-        // Activity의 공유 ViewModel 사용 (홈에서 이미 로드된 데이터 재사용)
+
+        // Activity의 공유 ViewModel 사용
         weatherViewModel = ((com.example.umbrellaalert.ui.main.MainActivity) requireActivity()).getSharedWeatherViewModel();
 
         // RecyclerView 설정
         setupRecyclerView();
 
-        // UI 관찰자 설정 (이미 로드된 데이터 표시)
+        // UI 관찰자 설정
         setupObservers();
 
-        // 홈에서 이미 데이터를 로드했으므로 추가 API 호출 불필요
-        Log.d(TAG, "홈에서 로드된 6시간 예보 데이터 재사용");
+        // 8시간 예보 목업 데이터 생성 및 고양이 분석 (3시간 단위)
+        load12HourForecastAndAnalysis();
+
+        Log.d(TAG, "8시간 예보 (3시간 단위) 및 고양이 분석 시작");
     }
 
     private void setupRecyclerView() {
@@ -60,25 +70,135 @@ public class WeatherFragment extends Fragment {
     }
 
     private void setupObservers() {
-        // 6시간 예보 데이터 관찰
-        weatherViewModel.getHourlyForecastData().observe(getViewLifecycleOwner(), this::updateForecastDisplay);
-        
-        // 예보 업데이트 시간 관찰
-        weatherViewModel.getForecastUpdateTime().observe(getViewLifecycleOwner(), updateTime -> {
-            if (updateTime != null) {
-                binding.updateTime.setText(updateTime);
+        // 현재 날씨 데이터 관찰 (고양이 이미지 업데이트용)
+        weatherViewModel.getWeatherData().observe(getViewLifecycleOwner(), weather -> {
+            if (weather != null) {
+                updateCatAnalystImage(weather);
             }
         });
     }
 
 
 
+    /**
+     * 8시간 예보 목업 데이터 로드 및 고양이 분석 (3시간 단위, 0.5초 로딩 텀 추가)
+     */
+    private void load12HourForecastAndAnalysis() {
+        // 로딩 애니메이션 시작
+        showWeatherLoadingAnimation();
+
+        // 0.5초 후에 데이터 로드 (사용자 경험 개선)
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            // 8시간 예보 목업 데이터 생성 (3시간 단위)
+            List<HourlyForecast> forecasts = MockWeatherForecastService.generate12HourForecast();
+
+            // RecyclerView에 데이터 설정
+            updateForecastDisplay(forecasts);
+
+            // 토스 스타일 고양이 분석 카드 업데이트
+            updateCatAnalysisCard(forecasts);
+
+            // 업데이트 시간 표시
+            SimpleDateFormat sdf = new SimpleDateFormat("06/09 HH:mm 업데이트", Locale.KOREA);
+            binding.updateTime.setText(sdf.format(new Date()));
+
+            // 로딩 애니메이션 종료
+            hideWeatherLoadingAnimation();
+
+            Log.d(TAG, "8시간 예보 (3시간 단위) " + forecasts.size() + "개 생성 및 고양이 분석 완료");
+        }, 500); // 0.5초 지연
+    }
+
+    /**
+     * 토스 스타일 고양이 분석 카드 업데이트
+     */
+    private void updateCatAnalysisCard(List<HourlyForecast> forecasts) {
+        if (forecasts == null || forecasts.isEmpty()) return;
+
+        // 온도 범위 계산
+        float minTemp = Float.MAX_VALUE;
+        float maxTemp = Float.MIN_VALUE;
+        for (HourlyForecast forecast : forecasts) {
+            minTemp = Math.min(minTemp, forecast.getTemperature());
+            maxTemp = Math.max(maxTemp, forecast.getTemperature());
+        }
+        float tempRange = maxTemp - minTemp;
+
+        // 메인 메시지 (간결하게)
+        binding.catMainMessage.setText("오늘은 완전 맑은 날이다냥! ☀️");
+
+        // 우산 상태
+        binding.umbrellaStatus.setText("불필요");
+
+        // 온도차
+        binding.temperatureRange.setText(String.format("%.0f°C", tempRange));
+
+        // 추천 활동
+        if (maxTemp >= 30) {
+            binding.recommendation.setText("선크림");
+        } else {
+            binding.recommendation.setText("나들이");
+        }
+
+        // 날씨 상태 배지
+        binding.weatherStatusBadge.setText("맑음");
+    }
+
+    /**
+     * 예보 데이터 표시 업데이트
+     */
     private void updateForecastDisplay(List<HourlyForecast> forecasts) {
         if (forecasts != null && !forecasts.isEmpty()) {
-            Log.d(TAG, "6시간 예보 데이터 " + forecasts.size() + "개 수신");
+            Log.d(TAG, "예보 데이터 " + forecasts.size() + "개 표시");
             forecastAdapter.setForecasts(forecasts);
         } else {
             Log.w(TAG, "예보 데이터가 없음");
+        }
+    }
+
+    /**
+     * 날씨에 따른 고양이 분석관 이미지 업데이트
+     */
+    private void updateCatAnalystImage(com.example.umbrellaalert.data.model.Weather weather) {
+        int catImageResource;
+
+        if (weather.isNeedUmbrella()) {
+            catImageResource = R.drawable.cat_rainy;
+        } else if (weather.getTemperature() >= 30) {
+            catImageResource = R.drawable.cat_sunny;
+        } else if (weather.getTemperature() <= 5) {
+            catImageResource = R.drawable.cat_cloudy;
+        } else {
+            catImageResource = R.drawable.cat_sunny;
+        }
+
+        binding.catAnalystImage.setImageResource(catImageResource);
+    }
+
+    /**
+     * 날씨 로딩 애니메이션 표시
+     */
+    private void showWeatherLoadingAnimation() {
+        if (binding != null) {
+            binding.weatherLoadingAnimation.setVisibility(View.VISIBLE);
+            Animation rotation = AnimationUtils.loadAnimation(getContext(), R.anim.loading_rotation);
+            binding.weatherLoadingAnimation.startAnimation(rotation);
+
+            // 고양이 분석관 이미지 살짝 투명하게
+            binding.catAnalystImage.setAlpha(0.5f);
+        }
+    }
+
+    /**
+     * 날씨 로딩 애니메이션 숨기기
+     */
+    private void hideWeatherLoadingAnimation() {
+        if (binding != null) {
+            binding.weatherLoadingAnimation.setVisibility(View.GONE);
+            binding.weatherLoadingAnimation.clearAnimation();
+
+            // 고양이 분석관 이미지 원래대로
+            binding.catAnalystImage.setAlpha(1.0f);
         }
     }
 
