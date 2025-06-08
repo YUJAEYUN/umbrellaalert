@@ -115,33 +115,59 @@ public class WeatherFragment extends Fragment {
     private void updateCatAnalysisCard(List<HourlyForecast> forecasts) {
         if (forecasts == null || forecasts.isEmpty()) return;
 
+        // 고양이 분석관 서비스를 사용하여 실제 분석 수행
+        String catAnalysisMessage = CatWeatherAnalystService.analyzeWeatherForecast(forecasts);
+
         // 온도 범위 계산
         float minTemp = Float.MAX_VALUE;
         float maxTemp = Float.MIN_VALUE;
+        boolean hasRain = false;
+        int maxRainProb = 0;
+
         for (HourlyForecast forecast : forecasts) {
             minTemp = Math.min(minTemp, forecast.getTemperature());
             maxTemp = Math.max(maxTemp, forecast.getTemperature());
+            maxRainProb = Math.max(maxRainProb, forecast.getPrecipitationProbability());
+            if (forecast.getPrecipitationProbability() > 30) {
+                hasRain = true;
+            }
         }
         float tempRange = maxTemp - minTemp;
 
-        // 메인 메시지 (간결하게)
-        binding.catMainMessage.setText("오늘은 완전 맑은 날이다냥! ☀️");
+        // 고양이 분석관의 메인 메시지 표시
+        binding.catMainMessage.setText(catAnalysisMessage);
 
-        // 우산 상태
-        binding.umbrellaStatus.setText("불필요");
+        // 우산 상태 - 강수 확률에 따라 결정
+        if (maxRainProb > 70) {
+            binding.umbrellaStatus.setText("필수");
+        } else if (maxRainProb > 30) {
+            binding.umbrellaStatus.setText("권장");
+        } else {
+            binding.umbrellaStatus.setText("불필요");
+        }
 
         // 온도차
         binding.temperatureRange.setText(String.format("%.0f°C", tempRange));
 
-        // 추천 활동
-        if (maxTemp >= 30) {
+        // 추천 활동 - 날씨와 온도에 따라 결정
+        if (hasRain) {
+            binding.recommendation.setText("실내활동");
+        } else if (maxTemp >= 30) {
             binding.recommendation.setText("선크림");
+        } else if (minTemp <= 5) {
+            binding.recommendation.setText("따뜻한 옷");
         } else {
             binding.recommendation.setText("나들이");
         }
 
-        // 날씨 상태 배지
-        binding.weatherStatusBadge.setText("맑음");
+        // 날씨 상태 배지 - 강수 확률에 따라 결정
+        if (maxRainProb > 50) {
+            binding.weatherStatusBadge.setText("비");
+        } else if (maxRainProb > 30) {
+            binding.weatherStatusBadge.setText("흐림");
+        } else {
+            binding.weatherStatusBadge.setText("맑음");
+        }
     }
 
     /**

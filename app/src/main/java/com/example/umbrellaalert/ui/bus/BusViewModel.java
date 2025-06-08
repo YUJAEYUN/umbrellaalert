@@ -37,6 +37,7 @@ public class BusViewModel extends AndroidViewModel {
     private final MutableLiveData<Map<String, BusArrival>> arrivalInfoMap = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
+    private final MutableLiveData<RegisteredBus> deletedBus = new MutableLiveData<>();
 
     public BusViewModel(@NonNull Application application) {
         super(application);
@@ -61,6 +62,10 @@ public class BusViewModel extends AndroidViewModel {
 
     public LiveData<String> getErrorMessage() {
         return errorMessage;
+    }
+
+    public LiveData<RegisteredBus> getDeletedBus() {
+        return deletedBus;
     }
 
     /**
@@ -130,14 +135,32 @@ public class BusViewModel extends AndroidViewModel {
     public void deleteBus(int busId) {
         executorService.execute(() -> {
             try {
+                // 삭제하기 전에 버스 정보를 가져옴
+                RegisteredBus busToDelete = null;
+                List<RegisteredBus> currentBuses = registeredBuses.getValue();
+                if (currentBuses != null) {
+                    for (RegisteredBus bus : currentBuses) {
+                        if (bus.getId() == busId) {
+                            busToDelete = bus;
+                            break;
+                        }
+                    }
+                }
+
                 int result = busDao.deleteRegisteredBus(busId);
                 if (result > 0) {
                     Log.d(TAG, "버스 삭제 완료: ID=" + busId);
+
+                    // 삭제된 버스 정보를 전달 (애니메이션용)
+                    if (busToDelete != null) {
+                        deletedBus.postValue(busToDelete);
+                    }
+
                     loadRegisteredBuses(); // 목록 새로고침
                 } else {
                     errorMessage.postValue("버스 삭제에 실패했습니다.");
                 }
-                
+
             } catch (Exception e) {
                 Log.e(TAG, "버스 삭제 실패", e);
                 errorMessage.postValue("버스 삭제 중 오류가 발생했습니다.");

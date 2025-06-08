@@ -166,6 +166,13 @@ public class BusFragment extends Fragment {
             binding.progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
         });
 
+        // 삭제된 버스 관찰 (애니메이션용)
+        busViewModel.getDeletedBus().observe(getViewLifecycleOwner(), deletedBus -> {
+            if (deletedBus != null) {
+                adapter.removeBus(deletedBus);
+            }
+        });
+
         busViewModel.getErrorMessage().observe(getViewLifecycleOwner(), errorMessage -> {
             if (errorMessage != null && !errorMessage.isEmpty()) {
                 // TODO: 에러 메시지 표시 (Toast 또는 Snackbar)

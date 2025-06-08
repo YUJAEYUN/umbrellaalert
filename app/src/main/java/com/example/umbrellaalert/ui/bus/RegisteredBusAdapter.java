@@ -79,6 +79,29 @@ public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdap
     }
 
     /**
+     * 특정 버스 삭제 (애니메이션 포함)
+     */
+    public void removeBus(RegisteredBus busToRemove) {
+        int position = -1;
+        for (int i = 0; i < buses.size(); i++) {
+            if (buses.get(i).getId() == busToRemove.getId()) {
+                position = i;
+                break;
+            }
+        }
+
+        if (position != -1) {
+            buses.remove(position);
+            notifyItemRemoved(position);
+
+            // 삭제된 아이템 이후의 아이템들 위치 업데이트
+            if (position < buses.size()) {
+                notifyItemRangeChanged(position, buses.size() - position);
+            }
+        }
+    }
+
+    /**
      * 도착 정보 업데이트
      */
     public void updateArrivalInfo(Map<String, BusArrival> arrivalInfoMap) {
