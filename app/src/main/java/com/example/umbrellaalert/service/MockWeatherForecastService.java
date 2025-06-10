@@ -16,9 +16,9 @@ public class MockWeatherForecastService {
     
     private static final String TAG = "MockWeatherForecast";
     
-    // 날씨 상태 목록
+    // 날씨 상태 목록 (3가지로 단순화)
     private static final String[] WEATHER_CONDITIONS = {
-        "맑음", "구름많음", "흐림", "비", "소나기", "눈"
+        "맑음", "흐림", "비"
     };
     
     // 강수 확률 (%)
@@ -98,6 +98,160 @@ public class MockWeatherForecastService {
         }
         
         return forecasts;
+    }
+
+    /**
+     * 현재 날씨 데이터를 기반으로 8시간 예보 생성 (3시간 단위)
+     */
+    public static List<HourlyForecast> generateForecastBasedOnWeather(com.example.umbrellaalert.data.model.Weather currentWeather) {
+        List<HourlyForecast> forecasts = new ArrayList<>();
+        Calendar calendar = Calendar.getInstance();
+
+        // 3시간 단위 시간대: 02시, 05시, 08시, 11시, 14시, 17시, 20시, 23시
+        int[] forecastHours = {2, 5, 8, 11, 14, 17, 20, 23};
+
+        // 현재 날씨 정보
+        String baseCondition = currentWeather.getWeatherCondition();
+        float baseTemperature = currentWeather.getTemperature();
+        boolean isRainy = baseCondition.contains("비");
+        boolean isCloudy = baseCondition.contains("흐림");
+
+        for (int i = 0; i < 8; i++) {
+            Calendar forecastTime = (Calendar) calendar.clone();
+            forecastTime.set(Calendar.HOUR_OF_DAY, forecastHours[i]);
+            forecastTime.set(Calendar.MINUTE, 0);
+            forecastTime.set(Calendar.SECOND, 0);
+
+            int currentHour = forecastHours[i];
+
+            // 현재 날씨를 기반으로 시간별 온도 변화 생성
+            float temperature = calculateTemperatureByHour(baseTemperature, currentHour);
+
+            // 현재 날씨 상태를 기반으로 예보 날씨 결정
+            String weatherCondition = generateWeatherCondition(baseCondition, i);
+
+            // 강수확률 계산
+            int rainProbability = calculateRainProbability(weatherCondition, currentHour);
+
+            // 습도 계산
+            int humidity = calculateHumidity(weatherCondition, rainProbability);
+
+            // 풍속 계산
+            float windSpeed = calculateWindSpeed(weatherCondition);
+
+            // 날짜와 시간 포맷 생성
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd", java.util.Locale.KOREA);
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HHmm", java.util.Locale.KOREA);
+
+            String forecastDate = dateFormat.format(forecastTime.getTime());
+            String forecastTimeStr = timeFormat.format(forecastTime.getTime());
+
+            // 강수형태 결정
+            int precipitationType = weatherCondition.contains("비") ? 1 : 0;
+
+            // 강수량 계산
+            float precipitation = calculatePrecipitation(weatherCondition, rainProbability);
+
+            // 우산 필요 여부
+            boolean needUmbrella = weatherCondition.contains("비") || rainProbability > 50;
+
+            HourlyForecast forecast = new HourlyForecast(
+                forecastDate,
+                forecastTimeStr,
+                temperature,
+                precipitation,
+                rainProbability,
+                humidity,
+                windSpeed,
+                precipitationType,
+                weatherCondition,
+                needUmbrella
+            );
+
+            forecast.setDataSource("MOCK_BASED_ON_CURRENT");
+
+            forecasts.add(forecast);
+        }
+
+        return forecasts;
+    }
+
+    // 시간별 온도 계산 (현재 온도 기준)
+    private static float calculateTemperatureByHour(float baseTemp, int hour) {
+        // 시간대별 온도 변화 패턴 (기준 온도에서 변화)
+        float[] tempChanges = {
+            -3.0f,  // 02시 (새벽, 가장 낮음)
+            -2.0f,  // 05시 (새벽)
+            -1.0f,  // 08시 (아침)
+            +1.0f,  // 11시 (오전)
+            +3.0f,  // 14시 (오후, 가장 높음)
+            +2.0f,  // 17시 (오후)
+            0.0f,   // 20시 (저녁)
+            -1.0f   // 23시 (밤)
+        };
+
+        int index = 0;
+        int[] hours = {2, 5, 8, 11, 14, 17, 20, 23};
+        for (int i = 0; i < hours.length; i++) {
+            if (hours[i] == hour) {
+                index = i;
+                break;
+            }
+        }
+
+        return baseTemp + tempChanges[index];
+    }
+
+    // 현재 날씨 기반 예보 날씨 생성
+    private static String generateWeatherCondition(String baseCondition, int hourIndex) {
+        // 70% 확률로 현재 날씨 유지, 30% 확률로 변화
+        if (Math.random() < 0.7) {
+            return baseCondition;
+        } else {
+            // 약간의 변화 (맑음 <-> 흐림, 흐림 <-> 비)
+            if (baseCondition.contains("맑음")) {
+                return Math.random() < 0.5 ? "흐림" : "맑음";
+            } else if (baseCondition.contains("흐림")) {
+                return Math.random() < 0.3 ? "비" : "흐림";
+            } else { // 비
+                return Math.random() < 0.3 ? "흐림" : "비";
+            }
+        }
+    }
+
+    // 강수확률 계산
+    private static int calculateRainProbability(String condition, int hour) {
+        if (condition.contains("비")) {
+            return 70 + (int)(Math.random() * 30); // 70-100%
+        } else if (condition.contains("흐림")) {
+            return 20 + (int)(Math.random() * 30); // 20-50%
+        } else {
+            return (int)(Math.random() * 20); // 0-20%
+        }
+    }
+
+    // 중복 메서드 제거됨 - 기존 calculateHumidity 메서드 사용
+
+    // 풍속 계산
+    private static float calculateWindSpeed(String condition) {
+        if (condition.contains("비")) {
+            return 3.0f + (float)(Math.random() * 2.0f); // 3-5 m/s
+        } else if (condition.contains("흐림")) {
+            return 2.0f + (float)(Math.random() * 1.5f); // 2-3.5 m/s
+        } else {
+            return 1.0f + (float)(Math.random() * 1.0f); // 1-2 m/s
+        }
+    }
+
+    // 강수량 계산
+    private static float calculatePrecipitation(String condition, int rainProb) {
+        if (condition.contains("비")) {
+            return 2.0f + (float)(Math.random() * 8.0f); // 2-10mm
+        } else if (rainProb > 50) {
+            return (float)(Math.random() * 2.0f); // 0-2mm
+        } else {
+            return 0.0f;
+        }
     }
     
     /**

@@ -98,72 +98,94 @@ public class SimpleKmaApiClient {
     }
     
     /**
-     * 현재 날씨 정보 가져오기 (간단한 버전)
+     * 현재 날씨 정보 가져오기 (Future 버전 - 호환성 유지)
      */
     public Future<Weather> getCurrentWeather(double latitude, double longitude) {
-        return executorService.submit(new Callable<Weather>() {
-            @Override
-            public Weather call() throws Exception {
+        return executorService.submit(() -> getCurrentWeatherSync(latitude, longitude));
+    }
+
+    /**
+     * 현재 날씨 정보 가져오기 (동기 버전) - 실제 API 호출 주석처리
+     */
+    public Weather getCurrentWeatherSync(double latitude, double longitude) {
+        // 실제 API 호출 모두 주석처리 - 랜덤 데이터만 사용
+        /*
+        try {
+            // 1. 가장 가까운 관측소 찾기
+            int stationId = findNearestStation(latitude, longitude);
+            Log.d(TAG, "🎯 선택된 관측소: " + stationId + " (위치: " + latitude + ", " + longitude + ")");
+
+            // 2. 현재 날짜의 최신 데이터 요청 (최대 3일 전까지 시도)
+            for (int dayOffset = 0; dayOffset <= 2; dayOffset++) {
                 try {
-                    // 1. 가장 가까운 관측소 찾기
-                    int stationId = findNearestStation(latitude, longitude);
-                    Log.d(TAG, "🎯 선택된 관측소: " + stationId + " (위치: " + latitude + ", " + longitude + ")");
+                    String response = requestWeatherDataWithOffset(stationId, dayOffset);
+                    Weather weather = parseWeatherResponse(response, latitude, longitude);
 
-                    // 2. 현재 날짜의 최신 데이터 요청 (필요시 과거 날짜도 시도)
-                    Weather weather = null;
-                    for (int dayOffset = 0; dayOffset <= 2; dayOffset++) {
-                        try {
-                            String response = requestWeatherDataWithOffset(stationId, dayOffset);
-                            weather = parseWeatherResponse(response, latitude, longitude);
-
-                            // 유효한 데이터를 받았으면 중단
-                            if (weather != null && weather.getTemperature() > -50 && weather.getTemperature() < 60) {
-                                Log.d(TAG, "✅ 날씨 데이터 수신 완료 (" + dayOffset + "일 전 최신 데이터): " + weather.getTemperature() + "°C");
-                                return weather;
-                            }
-                        } catch (Exception e) {
-                            Log.w(TAG, "⚠️ " + dayOffset + "일 전 데이터 요청 실패: " + e.getMessage());
-                        }
+                    // 유효한 데이터를 받았으면 반환
+                    if (weather != null && isValidTemperature(weather.getTemperature())) {
+                        Log.d(TAG, "✅ 날씨 데이터 수신 완료 (" + dayOffset + "일 전 최신 데이터): " + weather.getTemperature() + "°C");
+                        return weather;
                     }
-
-                    // 모든 시도가 실패한 경우
-                    Log.w(TAG, "⚠️ 모든 시간대에서 데이터 수신 실패, 기본값 사용");
-                    return createDefaultWeather(latitude, longitude);
-
                 } catch (Exception e) {
-                    Log.e(TAG, "날씨 데이터 요청 실패", e);
-                    return createDefaultWeather(latitude, longitude);
+                    Log.w(TAG, "⚠️ " + dayOffset + "일 전 데이터 요청 실패: " + e.getMessage());
                 }
             }
-        });
+
+            // 모든 시도가 실패한 경우 기본값 반환
+            Log.w(TAG, "⚠️ 모든 시간대에서 데이터 수신 실패, 기본값 사용");
+            return createDefaultWeather(latitude, longitude);
+
+        } catch (Exception e) {
+            Log.e(TAG, "날씨 데이터 요청 실패", e);
+            return createDefaultWeather(latitude, longitude);
+        }
+        */
+
+        // 랜덤 날씨 데이터 즉시 반환
+        Log.d(TAG, "🎲 랜덤 날씨 데이터 생성: " + latitude + ", " + longitude);
+        return createDefaultWeather(latitude, longitude);
+    }
+
+    // 온도 유효성 검사
+    private boolean isValidTemperature(float temperature) {
+        return temperature > -50 && temperature < 60;
     }
     
     /**
-     * 6시간 예보 데이터 가져오기 (간단한 버전)
+     * 6시간 예보 데이터 가져오기 (Future 버전 - 호환성 유지)
      */
     public Future<List<HourlyForecast>> get6HourForecast(double latitude, double longitude) {
-        return executorService.submit(new Callable<List<HourlyForecast>>() {
-            @Override
-            public List<HourlyForecast> call() throws Exception {
-                try {
-                    // 1. 가장 가까운 관측소 찾기
-                    int stationId = findNearestStation(latitude, longitude);
-                    
-                    // 2. 기간 조회 API 사용 (현재부터 6시간)
-                    String response = requestForecastData(stationId);
-                    
-                    // 3. 예보 데이터 파싱
-                    List<HourlyForecast> forecasts = parseForecastResponse(response);
-                    
-                    Log.d(TAG, "✅ 6시간 예보 데이터 수신 완료: " + forecasts.size() + "개");
-                    return forecasts;
-                    
-                } catch (Exception e) {
-                    Log.e(TAG, "예보 데이터 요청 실패", e);
-                    return createDefaultForecast(latitude, longitude);
-                }
-            }
-        });
+        return executorService.submit(() -> get6HourForecastSync(latitude, longitude));
+    }
+
+    /**
+     * 6시간 예보 데이터 가져오기 (동기 버전) - 실제 API 호출 주석처리
+     */
+    public List<HourlyForecast> get6HourForecastSync(double latitude, double longitude) {
+        // 실제 API 호출 모두 주석처리 - 랜덤 데이터만 사용
+        /*
+        try {
+            // 1. 가장 가까운 관측소 찾기
+            int stationId = findNearestStation(latitude, longitude);
+
+            // 2. 기간 조회 API 사용 (현재부터 6시간)
+            String response = requestForecastData(stationId);
+
+            // 3. 예보 데이터 파싱
+            List<HourlyForecast> forecasts = parseForecastResponse(response);
+
+            Log.d(TAG, "✅ 6시간 예보 데이터 수신 완료: " + forecasts.size() + "개");
+            return forecasts;
+
+        } catch (Exception e) {
+            Log.e(TAG, "예보 데이터 요청 실패", e);
+            return createDefaultForecast(latitude, longitude);
+        }
+        */
+
+        // 랜덤 예보 데이터 즉시 반환
+        Log.d(TAG, "🎲 랜덤 예보 데이터 생성: " + latitude + ", " + longitude);
+        return createDefaultForecast(latitude, longitude);
     }
     
     /**
@@ -301,14 +323,14 @@ public class SimpleKmaApiClient {
     }
     
     /**
-     * HTTP 요청 실행
+     * HTTP 요청 실행 (빠른 응답을 위한 짧은 타임아웃)
      */
     private String executeHttpRequest(String urlStr) throws IOException {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(10000);
+        conn.setConnectTimeout(3000);  // 3초로 단축
+        conn.setReadTimeout(5000);     // 5초로 단축
         
         BufferedReader rd;
         int responseCode = conn.getResponseCode();

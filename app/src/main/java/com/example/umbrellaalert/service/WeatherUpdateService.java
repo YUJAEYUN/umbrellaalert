@@ -31,7 +31,7 @@ public class WeatherUpdateService extends Service {
 
     private static final String TAG = "WeatherUpdateService";
     private static final int NOTIFICATION_ID = 1001;
-    private static final long UPDATE_INTERVAL = TimeUnit.HOURS.toMillis(1); // 1시간 간격 업데이트
+    private static final long UPDATE_INTERVAL = TimeUnit.HOURS.toMillis(6); // 6시간 간격으로 변경 (덜 자주)
 
     private ExecutorService executorService;
     private Handler handler;
@@ -83,28 +83,35 @@ public class WeatherUpdateService extends Service {
         return START_STICKY;
     }
 
-    // 날씨 업데이트 시작
+    // 날씨 업데이트 시작 (덜 자주 업데이트)
     private void startWeatherUpdates() {
-        // 위치 업데이트 시작
+        // 위치 업데이트 시작 (위치 변경시에는 업데이트하지 않음)
         locationService.startLocationUpdates(new LocationService.LocationCallback() {
             @Override
             public void onLocationUpdate(Location location) {
-                // 위치가 업데이트되면 날씨 정보 가져오기
-                updateWeatherForLocation(location);
+                // 위치 변경시에는 날씨 업데이트하지 않음 (중복 요청 방지)
+                Log.d(TAG, "위치 업데이트됨, 하지만 날씨는 업데이트하지 않음");
             }
         });
 
-        // 주기적 업데이트 스케줄링
+        // 첫 번째 업데이트만 실행
+        Location currentLocation = locationService.getLastLocation();
+        if (currentLocation != null) {
+            updateWeatherForLocation(currentLocation);
+        }
+
+        // 주기적 업데이트 스케줄링 (6시간마다)
         scheduleNextUpdate();
     }
 
-    // 위치에 따른 날씨 업데이트
+    // 위치에 따른 날씨 업데이트 - 실제 API 호출 주석처리
     private void updateWeatherForLocation(Location location) {
         executorService.execute(new Runnable() {
             @Override
             public void run() {
                 try {
-                    // 날씨 정보 가져오기
+                    // 실제 날씨 정보 가져오기 주석처리 - 랜덤 데이터 사용
+                    /*
                     weatherManager.getCurrentWeather(
                             location.getLatitude(), location.getLongitude(), new WeatherManager.WeatherCallback() {
                                 @Override
@@ -130,11 +137,54 @@ public class WeatherUpdateService extends Service {
                                     Log.e(TAG, "Failed to get weather: " + error);
                                 }
                             });
+                    */
+
+                    // 랜덤 날씨 데이터로 알림 업데이트
+                    Weather randomWeather = createRandomWeather(location);
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            updateNotification(randomWeather);
+                            if (randomWeather.isNeedUmbrella()) {
+                                sendUmbrellaNotification(randomWeather);
+                            }
+                        }
+                    });
+
                 } catch (Exception e) {
                     Log.e(TAG, "Error updating weather", e);
                 }
             }
         });
+    }
+
+    // 랜덤 날씨 데이터 생성
+    private Weather createRandomWeather(Location location) {
+        String[] conditions = {"맑음", "흐림", "비"};
+        float[] temperatures = {8.0f, 15.0f, 22.0f, 28.0f};
+
+        String condition = conditions[(int) (Math.random() * conditions.length)];
+        float temperature = temperatures[(int) (Math.random() * temperatures.length)];
+
+        float precipitation = 0.0f;
+        boolean needUmbrella = false;
+
+        if (condition.contains("비")) {
+            precipitation = (float) (Math.random() * 15 + 2);
+            needUmbrella = true;
+        }
+
+        return new Weather(
+                0,
+                temperature,
+                condition,
+                precipitation,
+                (int) (Math.random() * 40 + 40),
+                (float) (Math.random() * 5 + 1),
+                location.getLatitude() + "," + location.getLongitude(),
+                System.currentTimeMillis(),
+                needUmbrella
+        );
     }
 
     // 포그라운드 서비스 알림 생성

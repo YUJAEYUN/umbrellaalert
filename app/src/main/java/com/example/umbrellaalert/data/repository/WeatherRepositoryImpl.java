@@ -44,97 +44,17 @@ public class WeatherRepositoryImpl implements WeatherRepository {
     }
 
     /**
-     * 현재 위치의 날씨 정보 가져오기
-     * WeatherManager를 통해 기상청 API 호출
+     * 현재 위치의 날씨 정보 가져오기 - 단순화된 버전
+     * WeatherManager를 통해 간단하게 호출
      */
     @Override
     public Weather getCurrentWeather(double latitude, double longitude) {
-        String locationKey = String.format("%f,%f", latitude, longitude);
+        Log.d("WeatherRepositoryImpl", "🌤️ 날씨 정보 요청 (단순화된 버전)");
 
-        // 1. 먼저 SharedPreferences에서 최신 데이터 확인 (앱 재시작 시에도 유지)
-        Weather sharedPrefWeather = getWeatherFromSharedPreferences(locationKey);
-        if (sharedPrefWeather != null) {
-            long currentTime = System.currentTimeMillis();
-            long dataAge = currentTime - sharedPrefWeather.getTimestamp();
+        // 복잡한 캐시 로직 제거, WeatherManager에서 처리하도록 위임
 
-            if (dataAge < 30 * 60 * 1000) { // 30분 이내
-                Log.d("WeatherRepositoryImpl", "✅ SharedPreferences 캐시 데이터 사용: " + sharedPrefWeather.getTemperature() + "°C (데이터 나이: " + (dataAge / 60000) + "분)");
-                return sharedPrefWeather;
-            }
-        }
-
-        // 2. 데이터베이스에서 최신 데이터 확인
-        Weather cachedWeather = weatherDao.getLatestWeatherByLocation(locationKey);
-
-        // 3. 캐시된 데이터가 있고 30분 이내 데이터면 바로 반환 (캐시 시간 연장)
-        if (cachedWeather != null) {
-            long currentTime = System.currentTimeMillis();
-            long dataAge = currentTime - cachedWeather.getTimestamp();
-
-            if (dataAge < 30 * 60 * 1000) { // 30분 이내로 연장
-                Log.d("WeatherRepositoryImpl", "✅ DB 캐시된 데이터 사용: " + cachedWeather.getTemperature() + "°C (데이터 나이: " + (dataAge / 60000) + "분)");
-                // SharedPreferences에도 저장
-                saveWeatherToSharedPreferences(cachedWeather, locationKey);
-                return cachedWeather;
-            }
-        }
-
-        // 3. 캐시가 만료되었거나 없는 경우에만 새 데이터 요청 (동기적으로 처리)
-        try {
-            Log.d("WeatherRepositoryImpl", "🔄 새로운 날씨 데이터 요청 중...");
-
-            // WeatherManager를 통해 동기적으로 새 데이터 가져오기
-            final Weather[] newWeather = new Weather[1];
-            final boolean[] requestCompleted = new boolean[1];
-            final Object lock = new Object();
-
-            weatherManager.getCurrentWeather(latitude, longitude, new WeatherManager.WeatherCallback() {
-                @Override
-                public void onSuccess(Weather weather) {
-                    synchronized (lock) {
-                        newWeather[0] = weather;
-                        requestCompleted[0] = true;
-                        lock.notify();
-                    }
-                    Log.d("WeatherRepositoryImpl", "✅ 새 데이터 수신 완료: " + weather.getTemperature() + "°C");
-                }
-
-                @Override
-                public void onError(String error) {
-                    synchronized (lock) {
-                        requestCompleted[0] = true;
-                        lock.notify();
-                    }
-                    Log.e("WeatherRepositoryImpl", "날씨 데이터 요청 실패: " + error);
-                }
-            });
-
-            // 최대 10초 대기
-            synchronized (lock) {
-                if (!requestCompleted[0]) {
-                    lock.wait(10000);
-                }
-            }
-
-            // 새 데이터를 성공적으로 받았으면 SharedPreferences에 저장하고 반환
-            if (newWeather[0] != null) {
-                Log.d("WeatherRepositoryImpl", "🎉 새 데이터 반환: " + newWeather[0].getTemperature() + "°C");
-                saveWeatherToSharedPreferences(newWeather[0], locationKey);
-                return newWeather[0];
-            }
-
-        } catch (InterruptedException e) {
-            Log.e("WeatherRepositoryImpl", "날씨 데이터 요청 중 인터럽트 발생", e);
-        }
-
-        // 4. 새 데이터 요청이 실패한 경우, 캐시된 데이터가 있으면 반환 (만료되었어도)
-        if (cachedWeather != null) {
-            Log.d("WeatherRepositoryImpl", "📦 만료된 캐시 데이터 사용: " + cachedWeather.getTemperature() + "°C");
-            return cachedWeather;
-        } else {
-            Log.d("WeatherRepositoryImpl", "🔧 기본 데이터 생성");
-            return createDefaultWeather(latitude, longitude);
-        }
+        // 즉시 랜덤 날씨 데이터 생성 (대기 시간 제거)
+        return createDefaultWeather(latitude, longitude);
     }
 
     /**
@@ -144,16 +64,31 @@ public class WeatherRepositoryImpl implements WeatherRepository {
         String locationKey = String.format("%f,%f", latitude, longitude);
         long timestamp = System.currentTimeMillis();
 
+        // 랜덤한 날씨 데이터 생성 - 3가지 날씨 (리소스에 맞춤)
+        String[] conditions = {"맑음", "흐림", "비"};
+        float[] temperatures = {8.0f, 15.0f, 22.0f, 28.0f};
+
+        String condition = conditions[(int) (Math.random() * conditions.length)];
+        float temperature = temperatures[(int) (Math.random() * temperatures.length)];
+
+        float precipitation = 0.0f;
+        boolean needUmbrella = false;
+
+        if (condition.contains("비")) {
+            precipitation = (float) (Math.random() * 15 + 2);
+            needUmbrella = true;
+        }
+
         return new Weather(
                 0,
-                20.0f,  // 기본 온도 20도
-                "Clear", // 기본 날씨 상태
-                0.0f,   // 강수량 없음
-                50,     // 습도 50%
-                2.0f,   // 풍속 2m/s
+                temperature,
+                condition,
+                precipitation,
+                (int) (Math.random() * 40 + 40), // 40-80% 습도
+                (float) (Math.random() * 5 + 1), // 1-6 m/s 풍속
                 locationKey,
                 timestamp,
-                false   // 우산 필요 없음
+                needUmbrella
         );
     }
 

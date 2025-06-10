@@ -70,10 +70,12 @@ public class WeatherFragment extends Fragment {
     }
 
     private void setupObservers() {
-        // 현재 날씨 데이터 관찰 (고양이 이미지 업데이트용)
+        // 현재 날씨 데이터 관찰 (고양이 이미지 업데이트 + 예보 연동)
         weatherViewModel.getWeatherData().observe(getViewLifecycleOwner(), weather -> {
             if (weather != null) {
                 updateCatAnalystImage(weather);
+                // 홈탭의 날씨에 맞춰 예보 데이터 다시 생성
+                updateForecastBasedOnCurrentWeather(weather);
             }
         });
     }
@@ -81,32 +83,56 @@ public class WeatherFragment extends Fragment {
 
 
     /**
-     * 8시간 예보 목업 데이터 로드 및 고양이 분석 (3시간 단위, 0.5초 로딩 텀 추가)
+     * 8시간 예보 목업 데이터 로드 및 고양이 분석 (3시간 단위) - 초기 로드용
      */
     private void load12HourForecastAndAnalysis() {
         // 로딩 애니메이션 시작
         showWeatherLoadingAnimation();
 
-        // 0.5초 후에 데이터 로드 (사용자 경험 개선)
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            // 8시간 예보 목업 데이터 생성 (3시간 단위)
-            List<HourlyForecast> forecasts = MockWeatherForecastService.generate12HourForecast();
+        // 현재 날씨 데이터가 있으면 그에 맞춰 생성, 없으면 기본값
+        com.example.umbrellaalert.data.model.Weather currentWeather = weatherViewModel.getWeatherData().getValue();
+        List<HourlyForecast> forecasts;
 
-            // RecyclerView에 데이터 설정
-            updateForecastDisplay(forecasts);
+        if (currentWeather != null) {
+            forecasts = MockWeatherForecastService.generateForecastBasedOnWeather(currentWeather);
+        } else {
+            forecasts = MockWeatherForecastService.generate12HourForecast();
+        }
 
-            // 토스 스타일 고양이 분석 카드 업데이트
-            updateCatAnalysisCard(forecasts);
+        // RecyclerView에 데이터 설정
+        updateForecastDisplay(forecasts);
 
-            // 업데이트 시간 표시
-            SimpleDateFormat sdf = new SimpleDateFormat("06/09 HH:mm 업데이트", Locale.KOREA);
-            binding.updateTime.setText(sdf.format(new Date()));
+        // 토스 스타일 고양이 분석 카드 업데이트
+        updateCatAnalysisCard(forecasts);
 
-            // 로딩 애니메이션 종료
-            hideWeatherLoadingAnimation();
+        // 업데이트 시간 표시
+        SimpleDateFormat sdf = new SimpleDateFormat("06/09 HH:mm 업데이트", Locale.KOREA);
+        binding.updateTime.setText(sdf.format(new Date()));
 
-            Log.d(TAG, "8시간 예보 (3시간 단위) " + forecasts.size() + "개 생성 및 고양이 분석 완료");
-        }, 500); // 0.5초 지연
+        // 로딩 애니메이션 종료
+        hideWeatherLoadingAnimation();
+
+        Log.d(TAG, "8시간 예보 (3시간 단위) " + forecasts.size() + "개 생성 및 고양이 분석 완료");
+    }
+
+    /**
+     * 홈탭의 현재 날씨에 맞춰 예보 업데이트
+     */
+    private void updateForecastBasedOnCurrentWeather(com.example.umbrellaalert.data.model.Weather weather) {
+        // 현재 날씨에 맞춘 예보 데이터 생성
+        List<HourlyForecast> forecasts = MockWeatherForecastService.generateForecastBasedOnWeather(weather);
+
+        // RecyclerView에 데이터 설정
+        updateForecastDisplay(forecasts);
+
+        // 토스 스타일 고양이 분석 카드 업데이트
+        updateCatAnalysisCard(forecasts);
+
+        // 업데이트 시간 표시
+        SimpleDateFormat sdf = new SimpleDateFormat("06/09 HH:mm 업데이트", Locale.KOREA);
+        binding.updateTime.setText(sdf.format(new Date()));
+
+        Log.d(TAG, "현재 날씨(" + weather.getWeatherCondition() + ", " + weather.getTemperature() + "°C)에 맞춰 예보 업데이트 완료");
     }
 
     /**
@@ -160,13 +186,16 @@ public class WeatherFragment extends Fragment {
             binding.recommendation.setText("나들이");
         }
 
-        // 날씨 상태 배지 - 강수 확률에 따라 결정
+        // 날씨 상태 배지 - 3가지 날씨에 따라 색상과 텍스트 결정
         if (maxRainProb > 50) {
             binding.weatherStatusBadge.setText("비");
+            binding.weatherStatusBadge.setBackgroundResource(R.drawable.status_badge_rainy);
         } else if (maxRainProb > 30) {
             binding.weatherStatusBadge.setText("흐림");
+            binding.weatherStatusBadge.setBackgroundResource(R.drawable.status_badge_cloudy);
         } else {
             binding.weatherStatusBadge.setText("맑음");
+            binding.weatherStatusBadge.setBackgroundResource(R.drawable.status_badge_sunny);
         }
     }
 
@@ -183,18 +212,18 @@ public class WeatherFragment extends Fragment {
     }
 
     /**
-     * 날씨에 따른 고양이 분석관 이미지 업데이트
+     * 날씨에 따른 고양이 분석관 이미지 업데이트 (3가지 날씨)
      */
     private void updateCatAnalystImage(com.example.umbrellaalert.data.model.Weather weather) {
         int catImageResource;
+        String condition = weather.getWeatherCondition();
 
-        if (weather.isNeedUmbrella()) {
+        if (condition != null && condition.contains("비")) {
             catImageResource = R.drawable.cat_rainy;
-        } else if (weather.getTemperature() >= 30) {
-            catImageResource = R.drawable.cat_sunny;
-        } else if (weather.getTemperature() <= 5) {
+        } else if (condition != null && condition.contains("흐림")) {
             catImageResource = R.drawable.cat_cloudy;
         } else {
+            // 맑음 (기본값)
             catImageResource = R.drawable.cat_sunny;
         }
 

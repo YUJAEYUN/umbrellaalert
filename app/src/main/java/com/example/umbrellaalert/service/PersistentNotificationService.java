@@ -175,7 +175,8 @@ public class PersistentNotificationService extends Service implements LocationLi
         }
 
         try {
-            // 동기적으로 날씨 데이터 가져오기
+            // 실제 날씨 데이터 가져오기 주석처리 - 랜덤 데이터 사용
+            /*
             final Weather[] weatherResult = {null};
             final boolean[] completed = {false};
 
@@ -201,10 +202,44 @@ public class PersistentNotificationService extends Service implements LocationLi
             }
 
             return weatherResult[0];
+            */
+
+            // 랜덤 날씨 데이터 즉시 반환
+            return createRandomWeather(currentLocation);
+
         } catch (Exception e) {
-            Log.e(TAG, "날씨 데이터 가져오기 오류", e);
-            return null;
+            Log.e(TAG, "랜덤 날씨 데이터 생성 오류", e);
+            return createRandomWeather(currentLocation);
         }
+    }
+
+    // 랜덤 날씨 데이터 생성
+    private Weather createRandomWeather(Location location) {
+        String[] conditions = {"맑음", "흐림", "비"};
+        float[] temperatures = {8.0f, 15.0f, 22.0f, 28.0f};
+
+        String condition = conditions[(int) (Math.random() * conditions.length)];
+        float temperature = temperatures[(int) (Math.random() * temperatures.length)];
+
+        float precipitation = 0.0f;
+        boolean needUmbrella = false;
+
+        if (condition.contains("비")) {
+            precipitation = (float) (Math.random() * 15 + 2);
+            needUmbrella = true;
+        }
+
+        return new Weather(
+                0,
+                temperature,
+                condition,
+                precipitation,
+                (int) (Math.random() * 40 + 40),
+                (float) (Math.random() * 5 + 1),
+                location.getLatitude() + "," + location.getLongitude(),
+                System.currentTimeMillis(),
+                needUmbrella
+        );
     }
 
     /**

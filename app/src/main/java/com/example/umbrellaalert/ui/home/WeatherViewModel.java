@@ -79,8 +79,7 @@ public class WeatherViewModel extends AndroidViewModel {
 
         executorService.execute(() -> {
             try {
-                // 0.5초 로딩 텀 추가 (사용자 경험 개선)
-                Thread.sleep(500);
+                // 로딩 텀 제거 - 바로 데이터 생성
 
                 // UseCase를 통해 현재 날씨 가져오기 (캐싱된 데이터 우선 사용)
                 Weather weather = getCurrentWeatherUseCase.execute(
@@ -147,8 +146,7 @@ public class WeatherViewModel extends AndroidViewModel {
 
         executorService.execute(() -> {
             try {
-                // 0.5초 로딩 텀 추가 (사용자 경험 개선)
-                Thread.sleep(500);
+                // 로딩 텀 제거 - 바로 데이터 생성
 
                 // 기본 위치 대신 위치 권한 요청 유도
                 locationName.postValue("위치 권한이 필요합니다");
@@ -177,9 +175,8 @@ public class WeatherViewModel extends AndroidViewModel {
                 String updateTime = "업데이트: " + timeFormat.format(new java.util.Date());
                 forecastUpdateTime.postValue(updateTime);
 
-            } catch (InterruptedException e) {
-                Log.e(TAG, "로딩 텀 중단됨", e);
-                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                Log.e(TAG, "날씨 데이터 로딩 실패", e);
             } finally {
                 isLoading.postValue(false);
             }
@@ -248,20 +245,22 @@ public class WeatherViewModel extends AndroidViewModel {
         updateSpecialMessages();
     }
 
-    // 배경과 고양이 이미지 업데이트
+    // 배경과 고양이 이미지 업데이트 (3가지 날씨)
     private void updateBackgroundAndCatImage(Weather weather) {
-        if (weather.isNeedUmbrella()) {
+        String condition = weather.getWeatherCondition();
+
+        if (condition != null && condition.contains("비")) {
+            // 비오는 날 - 파란색 계열
             backgroundResource.postValue(R.drawable.ios_background_rainy);
             catImageResource.postValue(R.drawable.cat_rainy);
+        } else if (condition != null && condition.contains("흐림")) {
+            // 흐린 날 - 회색 계열
+            backgroundResource.postValue(R.drawable.ios_background_cloudy);
+            catImageResource.postValue(R.drawable.cat_cloudy);
         } else {
-            String condition = weather.getWeatherCondition();
-            if (condition != null && condition.equalsIgnoreCase("Clear")) {
-                backgroundResource.postValue(R.drawable.ios_background_sunny);
-                catImageResource.postValue(R.drawable.cat_sunny);
-            } else {
-                backgroundResource.postValue(R.drawable.ios_background_cloudy);
-                catImageResource.postValue(R.drawable.cat_cloudy);
-            }
+            // 맑은 날 - 노란색/주황색 계열
+            backgroundResource.postValue(R.drawable.ios_background_sunny);
+            catImageResource.postValue(R.drawable.cat_sunny);
         }
     }
 
@@ -330,7 +329,7 @@ public class WeatherViewModel extends AndroidViewModel {
     private Weather createDefaultWeather(Location location) {
         return new Weather(
                 0,
-                20.0f,  // 기본 온도 20도
+                29.2f,  // 기본 온도 29.2도
                 "Clear", // 기본 날씨 상태
                 0.0f,   // 강수량 없음
                 50,     // 습도 50%

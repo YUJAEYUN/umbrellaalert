@@ -50,11 +50,13 @@ public class WeatherWidget extends AppWidgetProvider {
         // 앱 위젯 업데이트
         appWidgetManager.updateAppWidget(appWidgetId, views);
 
-        // 날씨 데이터 비동기 로드
+        // 날씨 데이터 비동기 로드 - 실제 API 호출 주석처리
         executorService.execute(new Runnable() {
             @Override
             public void run() {
                 try {
+                    // 실제 WeatherManager API 호출 주석처리 - 랜덤 데이터 사용
+                    /*
                     WeatherManager weatherManager = WeatherManager.getInstance(context);
 
                     // 마지막 알려진 위치 또는 기본 위치(서울) 사용
@@ -71,11 +73,46 @@ public class WeatherWidget extends AppWidgetProvider {
                             Log.e(TAG, "Failed to get weather for widget: " + error);
                         }
                     });
+                    */
+
+                    // 랜덤 날씨 데이터로 위젯 업데이트
+                    Weather randomWeather = createRandomWeather();
+                    updateWidgetWithWeather(context, appWidgetManager, appWidgetId, randomWeather);
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         });
+    }
+
+    // 랜덤 날씨 데이터 생성
+    private static Weather createRandomWeather() {
+        String[] conditions = {"맑음", "흐림", "비"};
+        float[] temperatures = {8.0f, 15.0f, 22.0f, 28.0f};
+
+        String condition = conditions[(int) (Math.random() * conditions.length)];
+        float temperature = temperatures[(int) (Math.random() * temperatures.length)];
+
+        float precipitation = 0.0f;
+        boolean needUmbrella = false;
+
+        if (condition.contains("비")) {
+            precipitation = (float) (Math.random() * 15 + 2);
+            needUmbrella = true;
+        }
+
+        return new Weather(
+                0,
+                temperature,
+                condition,
+                precipitation,
+                (int) (Math.random() * 40 + 40),
+                (float) (Math.random() * 5 + 1),
+                "37.5665,126.9780", // 서울 좌표
+                System.currentTimeMillis(),
+                needUmbrella
+        );
     }
 
     private static void updateWidgetWithWeather(Context context, AppWidgetManager appWidgetManager,

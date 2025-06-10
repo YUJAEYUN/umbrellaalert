@@ -165,11 +165,45 @@ public class CatWeatherAnalystService {
     }
     
     /**
-     * 고양이 스타일 간결한 분석 메시지 생성 (토스 스타일)
+     * 고양이 스타일 간결한 분석 메시지 생성 (토스 스타일) - 동적 생성
      */
     private static String generateCatAnalysisMessage(WeatherAnalysis analysis) {
-        // 토스 스타일로 간결하게 핵심만 전달
-        return "오늘은 완전 맑은 날이다냥! ☀️ 우산 없이도 괜찮고, 오후엔 31도까지 올라가니까 선크림 챙기라냥!";
+        StringBuilder message = new StringBuilder();
+
+        // 강수 관련 메시지 (최우선)
+        if (analysis.highRainHours > 0) {
+            message.append("비가 많이 올 예정이다냥! ☔ ");
+            message.append("우산은 필수고, 발도 조심하라냥! ");
+        } else if (analysis.rainHours > 0) {
+            message.append("가끔 비가 올 수 있다냥! 🌦️ ");
+            message.append("우산을 챙기는 게 좋겠다냥~ ");
+        } else if (analysis.maxRainProbability > 30) {
+            message.append("하늘이 흐릴 예정이다냥! ☁️ ");
+            message.append("비가 올 수도 있으니 우산 준비하라냥! ");
+        } else {
+            message.append("맑은 하루가 될 것 같다냥! ☀️ ");
+            message.append("기분 좋게 외출하라냥~ ");
+        }
+
+        // 온도 관련 메시지
+        if (analysis.isHot) {
+            message.append("너무 더워서 녹을 것 같다냥! 🥵 ");
+            message.append("시원한 곳에서 쉬고 물 많이 마시라냥! ");
+        } else if (analysis.isCold) {
+            message.append("춥다냥! 🥶 ");
+            message.append("따뜻하게 입고 감기 조심하라냥! ");
+        } else if (analysis.isComfortable) {
+            message.append("날씨가 딱 좋다냥! 😊 ");
+            message.append("산책하기 완벽한 날이냥~ ");
+        }
+
+        // 온도 변화 관련 메시지
+        if (analysis.temperatureRange > 8) {
+            message.append("하루 종일 온도 변화가 크다냥! ");
+            message.append("겉옷을 챙겨서 조절하라냥! ");
+        }
+
+        return message.toString().trim();
     }
     
     // 헬퍼 메서드들

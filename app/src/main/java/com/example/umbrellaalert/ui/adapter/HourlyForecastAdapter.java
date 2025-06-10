@@ -114,34 +114,21 @@ public class HourlyForecastAdapter extends RecyclerView.Adapter<HourlyForecastAd
         }
 
         /**
-         * 날씨 상태에 따른 아이콘 리소스 반환
+         * 날씨 상태에 따른 아이콘 리소스 반환 (3가지 날씨)
          */
         private int getWeatherIcon(String weatherCondition) {
             if (weatherCondition == null) {
                 return R.drawable.ic_sunny;
             }
 
-            switch (weatherCondition.toLowerCase()) {
-                case "clear":
-                case "sunny":
-                    return R.drawable.ic_sunny;
-                case "clouds":
-                case "partly cloudy":
-                case "cloudy":
-                    return R.drawable.ic_cloudy;
-                case "rain":
-                case "drizzle":
-                    return R.drawable.ic_rainy;
-                case "thunderstorm":
-                    return R.drawable.ic_thunderstorm;
-                case "snow":
-                    return R.drawable.ic_snowy;
-                case "mist":
-                case "fog":
-                case "haze":
-                    return R.drawable.ic_foggy;
-                default:
-                    return R.drawable.ic_sunny;
+            // 3가지 날씨 상황에 맞춘 아이콘
+            if (weatherCondition.contains("비")) {
+                return R.drawable.ic_rainy;
+            } else if (weatherCondition.contains("흐림")) {
+                return R.drawable.ic_cloudy;
+            } else {
+                // 맑음 (기본값)
+                return R.drawable.ic_sunny;
             }
         }
     }
