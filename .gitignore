@@ -19,7 +19,21 @@ local.properties
 *.properties
 secrets.properties
 config.properties
+.env
+.env.local
+.env.production
 
 # 네이버 지도 API 키 관련
 naver_map_key.txt
 api_keys.txt
+
+# 환경변수 파일들
+local.properties
+gradle.properties
+keystore.properties
+
+# API 키 관련 백업 파일들
+*_api_key.txt
+*_secret.txt
+credentials.json
+auth.json

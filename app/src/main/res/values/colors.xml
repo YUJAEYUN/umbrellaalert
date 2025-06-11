@@ -83,4 +83,9 @@
 
     <!-- 토글 스위치 테두리 색상 -->
     <color name="switch_border_color">#C7C7CC</color>
+
+    <!-- 우산 상태 색상 -->
+    <color name="umbrella_required">#FF3B30</color>      <!-- 빨간색 - 필수 -->
+    <color name="umbrella_recommended">#FF9F0A</color>   <!-- 주황색 - 권장 -->
+    <color name="umbrella_not_needed">#30D158</color>    <!-- 초록색 - 불필요 -->
 </resources>

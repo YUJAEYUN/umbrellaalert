@@ -87,65 +87,55 @@
 
                 </LinearLayout>
 
-                <!-- 메인 메시지 -->
-                <TextView
-                    android:id="@+id/cat_main_message"
+                <!-- 우산 상태 메인 표시 -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="오늘은 완전 맑은 날이다냥! ☀️"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary" />
+                    android:layout_marginTop="20dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/info_box_background"
+                    android:padding="24dp">
 
-                <!-- 핵심 정보 그리드 -->
+                    <TextView
+                        android:id="@+id/umbrella_icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="☀️"
+                        android:textSize="48sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="우산"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_secondary" />
+
+                    <TextView
+                        android:id="@+id/umbrella_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="불필요"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/umbrella_not_needed" />
+
+                </LinearLayout>
+
+                <!-- 추가 정보 그리드 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:orientation="horizontal">
 
-                    <!-- 우산 정보 -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:background="@drawable/info_box_background"
-                        android:padding="12dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="☂️"
-                            android:textSize="20sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="우산"
-                            android:textSize="12sp"
-                            android:textColor="@color/text_secondary" />
-
-                        <TextView
-                            android:id="@+id/umbrella_status"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="불필요"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/text_primary" />
-
-                    </LinearLayout>
-
                     <!-- 온도 정보 -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:layout_marginStart="8dp"
                         android:orientation="vertical"
                         android:gravity="center"
                         android:background="@drawable/info_box_background"

@@ -201,13 +201,10 @@ public class WeatherFragment extends Fragment {
     }
 
     /**
-     * 토스 스타일 고양이 분석 카드 업데이트
+     * 우산 상태 카드 업데이트 (간소화)
      */
     private void updateCatAnalysisCard(List<HourlyForecast> forecasts) {
         if (forecasts == null || forecasts.isEmpty()) return;
-
-        // 고양이 분석관 서비스를 사용하여 실제 분석 수행
-        String catAnalysisMessage = CatWeatherAnalystService.analyzeWeatherForecast(forecasts);
 
         // 온도 범위 계산
         float minTemp = Float.MAX_VALUE;
@@ -225,16 +222,19 @@ public class WeatherFragment extends Fragment {
         }
         float tempRange = maxTemp - minTemp;
 
-        // 고양이 분석관의 메인 메시지 표시
-        binding.catMainMessage.setText(catAnalysisMessage);
-
-        // 우산 상태 - 강수 확률에 따라 결정
+        // 우산 상태 - 강수 확률에 따라 결정 (색상과 함께)
         if (maxRainProb > 70) {
             binding.umbrellaStatus.setText("필수");
+            binding.umbrellaStatus.setTextColor(getResources().getColor(R.color.umbrella_required, null));
+            binding.umbrellaIcon.setText("☔");
         } else if (maxRainProb > 30) {
             binding.umbrellaStatus.setText("권장");
+            binding.umbrellaStatus.setTextColor(getResources().getColor(R.color.umbrella_recommended, null));
+            binding.umbrellaIcon.setText("🌦️");
         } else {
             binding.umbrellaStatus.setText("불필요");
+            binding.umbrellaStatus.setTextColor(getResources().getColor(R.color.umbrella_not_needed, null));
+            binding.umbrellaIcon.setText("☀️");
         }
 
         // 온도차

@@ -18,21 +18,24 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Weather API Service Key from local.properties
+        // API Keys from local.properties
         val localProperties = Properties()
         val localPropertiesFile = rootProject.file("local.properties")
         if (localPropertiesFile.exists()) {
             localPropertiesFile.inputStream().use { localProperties.load(it) }
         }
-        val weatherApiKey = localProperties.getProperty("weather.api.service.key") ?: ""
-        buildConfigField("String", "WEATHER_API_SERVICE_KEY", "\"$weatherApiKey\"")
 
-        // Bus API Service Key
+        // OpenWeather API Key (날씨 정보)
+        val weatherApiKey = localProperties.getProperty("weather.api.service.key") ?: "bef3d511dc00345ed56204adcf073d16"
+        buildConfigField("String", "WEATHER_API_SERVICE_KEY", "\"$weatherApiKey\"")
+        buildConfigField("String", "OPENWEATHER_API_KEY", "\"$weatherApiKey\"")
+
+        // Bus API Service Key (버스 정보)
         val busApiKey = localProperties.getProperty("bus.api.service.key") ?: "VJ9IZb8N%2BRRUt%2Bl%2FtdMwuR2gO2W%2FyER8etH1%2FlCcR3q0c4AvOiXSItNi9hcNAfyrQOMTVvOkE0wJwTxnXZ0PDA%3D%3D"
         buildConfigField("String", "BUS_API_SERVICE_KEY", "\"$busApiKey\"")
 
-        // Naver Map API Key
-        val naverMapClientId = localProperties.getProperty("naver.map.client.id") ?: ""
+        // Naver Map API Key (지도 정보)
+        val naverMapClientId = localProperties.getProperty("naver.map.client.id") ?: "okua9z6cuf"
         val naverMapClientSecret = localProperties.getProperty("naver.map.client.secret") ?: ""
         buildConfigField("String", "NAVER_MAP_CLIENT_ID", "\"$naverMapClientId\"")
         buildConfigField("String", "NAVER_MAP_CLIENT_SECRET", "\"$naverMapClientSecret\"")
