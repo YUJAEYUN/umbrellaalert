@@ -17,6 +17,7 @@ import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.domain.usecase.Get12HourForecastUseCase;
 import com.example.umbrellaalert.domain.usecase.GetCurrentWeatherUseCase;
 import com.example.umbrellaalert.domain.usecase.GetCatMessageUseCase;
+import com.example.umbrellaalert.util.WeatherCacheManager;
 import com.example.umbrellaalert.service.CatWeatherAnalystService;
 import com.example.umbrellaalert.service.MockWeatherForecastService;
 
@@ -88,6 +89,10 @@ public class WeatherViewModel extends AndroidViewModel {
                 if (weather != null && weather.getTemperature() > -50 && weather.getTemperature() < 60) {
                     // 유효한 온도 범위의 실제 데이터인 경우
                     Log.d(TAG, "🌡️ WeatherViewModel에서 받은 유효한 날씨 데이터: " + weather.getTemperature() + "°C, 상태: " + weather.getWeatherCondition());
+
+                    // 캐시에 저장 (위젯과 알림에서 재사용)
+                    WeatherCacheManager.saveWeatherToCache(getApplication(), weather);
+
                     weatherData.postValue(weather);
                     updateWeatherUI(weather);
 

@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat;
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.Weather;
+import com.example.umbrellaalert.util.WeatherCacheManager;
 import com.example.umbrellaalert.data.model.RegisteredBus;
 import com.example.umbrellaalert.data.model.BusArrival;
 import com.example.umbrellaalert.data.api.BusApiClient;
@@ -138,11 +139,11 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
             if (currentLocation != null) {
                 Log.d(TAG, "위치 정보 확인됨: " + currentLocation.getLatitude() + ", " + currentLocation.getLongitude());
 
-                // 현재 위치로 날씨 데이터 가져오기 (임시로 랜덤 데이터 사용)
+                // 현재 위치로 실제 날씨 데이터 가져오기
                 final Location finalLocation = currentLocation;
 
-                // 날씨 정보와 버스 정보를 동시에 가져오기
-                loadWeatherAndBusDataWithRandomWeather(context, finalLocation, views, appWidgetManager, appWidgetId);
+                // 실제 날씨 정보와 버스 정보를 동시에 가져오기
+                loadWeatherAndBusDataWithRealAPI(context, finalLocation, views, appWidgetManager, appWidgetId);
             } else {
                 Log.w(TAG, "위치 정보를 가져올 수 없습니다");
                 // 위치 정보가 없는 경우 - 기본 위치(세종시) 사용
@@ -150,7 +151,7 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
                 defaultLocation.setLatitude(36.4800);
                 defaultLocation.setLongitude(127.2890);
 
-                loadWeatherAndBusDataWithRandomWeather(context, defaultLocation, views, appWidgetManager, appWidgetId);
+                loadWeatherAndBusDataWithRealAPI(context, defaultLocation, views, appWidgetManager, appWidgetId);
             }
         } else {
             // 위치 권한이 없는 경우
@@ -163,24 +164,38 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
     }
 
     /**
-     * 날씨와 버스 정보를 함께 로드 (랜덤 날씨 데이터 사용)
+     * 날씨와 버스 정보를 함께 로드 (캐시 우선, 없으면 API 호출)
      */
-    private void loadWeatherAndBusDataWithRandomWeather(Context context, Location location,
+    private void loadWeatherAndBusDataWithRealAPI(Context context, Location location,
                                      RemoteViews views, AppWidgetManager appWidgetManager, int appWidgetId) {
 
-        // 랜덤 날씨 데이터 생성
-        Weather randomWeather = createRandomWeather(location);
-        Log.d(TAG, "랜덤 날씨 데이터 생성: " + randomWeather.getTemperature() + "°C, " + randomWeather.getWeatherCondition());
-        updateWeatherInfo(randomWeather, views, location);
+        // 1. 먼저 캐시에서 날씨 데이터 확인
+        Weather cachedWeather = WeatherCacheManager.getWeatherFromCache(context);
+
+        if (cachedWeather != null) {
+            Log.d(TAG, "✅ 위젯 캐시된 날씨 데이터 사용: " + cachedWeather.getTemperature() + "°C, " + cachedWeather.getWeatherCondition());
+            updateWeatherInfo(cachedWeather, views, location);
+            appWidgetManager.updateAppWidget(appWidgetId, views);
+
+            // 버스 정보도 가져오기
+            loadBusInfo(context, views, appWidgetManager, appWidgetId);
+            return;
+        }
+
+        // 2. 캐시에 없으면 기본 데이터 사용 (홈 화면에서 API 호출하므로)
+        Log.d(TAG, "캐시된 데이터 없음, 기본 데이터 사용 (홈 화면에서 API 호출 대기)");
+        Weather fallbackWeather = createFallbackWeather(location);
+        updateWeatherInfo(fallbackWeather, views, location);
+        appWidgetManager.updateAppWidget(appWidgetId, views);
 
         // 버스 정보 가져오기
         loadBusInfo(context, views, appWidgetManager, appWidgetId);
     }
 
     /**
-     * 랜덤 날씨 데이터 생성
+     * 기본 날씨 데이터 생성 (API 실패 시 사용)
      */
-    private Weather createRandomWeather(Location location) {
+    private Weather createFallbackWeather(Location location) {
         String[] conditions = {"맑음", "흐림", "비"};
         float[] temperatures = {8.0f, 15.0f, 22.0f, 28.0f};
 

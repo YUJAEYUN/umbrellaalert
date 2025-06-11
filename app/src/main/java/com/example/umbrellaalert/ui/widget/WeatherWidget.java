@@ -12,6 +12,7 @@ import android.widget.RemoteViews;
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.Weather;
+import com.example.umbrellaalert.util.WeatherCacheManager;
 
 import java.util.Locale;
 import com.example.umbrellaalert.ui.home.HomeActivity;
@@ -50,34 +51,24 @@ public class WeatherWidget extends AppWidgetProvider {
         // 앱 위젯 업데이트
         appWidgetManager.updateAppWidget(appWidgetId, views);
 
-        // 날씨 데이터 비동기 로드 - 실제 API 호출 주석처리
+        // 캐시된 날씨 데이터 우선 사용, 없으면 API 호출
         executorService.execute(new Runnable() {
             @Override
             public void run() {
                 try {
-                    // 실제 WeatherManager API 호출 주석처리 - 랜덤 데이터 사용
-                    /*
-                    WeatherManager weatherManager = WeatherManager.getInstance(context);
+                    // 1. 먼저 캐시에서 날씨 데이터 확인
+                    Weather cachedWeather = WeatherCacheManager.getWeatherFromCache(context);
 
-                    // 마지막 알려진 위치 또는 기본 위치(서울) 사용
-                    weatherManager.getCurrentWeather(37.5665, 126.9780, new WeatherManager.WeatherCallback() {
-                        @Override
-                        public void onSuccess(Weather weather) {
-                            if (weather != null) {
-                                updateWidgetWithWeather(context, appWidgetManager, appWidgetId, weather);
-                            }
-                        }
+                    if (cachedWeather != null) {
+                        Log.d(TAG, "✅ 위젯 캐시된 날씨 데이터 사용: " + cachedWeather.getTemperature() + "°C, " + cachedWeather.getWeatherCondition());
+                        updateWidgetWithWeather(context, appWidgetManager, appWidgetId, cachedWeather);
+                        return;
+                    }
 
-                        @Override
-                        public void onError(String error) {
-                            Log.e(TAG, "Failed to get weather for widget: " + error);
-                        }
-                    });
-                    */
-
-                    // 랜덤 날씨 데이터로 위젯 업데이트
-                    Weather randomWeather = createRandomWeather();
-                    updateWidgetWithWeather(context, appWidgetManager, appWidgetId, randomWeather);
+                    // 2. 캐시에 없으면 기본 데이터 사용 (홈 화면에서 API 호출하므로)
+                    Log.d(TAG, "캐시된 데이터 없음, 기본 데이터 사용 (홈 화면에서 API 호출 대기)");
+                    Weather fallbackWeather = createFallbackWeather();
+                    updateWidgetWithWeather(context, appWidgetManager, appWidgetId, fallbackWeather);
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -86,8 +77,8 @@ public class WeatherWidget extends AppWidgetProvider {
         });
     }
 
-    // 랜덤 날씨 데이터 생성
-    private static Weather createRandomWeather() {
+    // 기본 날씨 데이터 생성 (API 실패 시 사용)
+    private static Weather createFallbackWeather() {
         String[] conditions = {"맑음", "흐림", "비"};
         float[] temperatures = {8.0f, 15.0f, 22.0f, 28.0f};
 

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -115,7 +116,39 @@ public class OpenWeatherApiClient {
             return createDefaultForecast();
         }
     }
-    
+
+    /**
+     * 예보 날짜 포맷 변환 (UTC → KST 변환 포함)
+     * yyyy-MM-dd HH:mm:ss (UTC) -> yyyyMMdd (KST)
+     */
+    private String formatForecastDate(String dtTxt) {
+        try {
+            // UTC 시간을 파싱
+            SimpleDateFormat utcFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA);
+            utcFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+            java.util.Date utcDate = utcFormat.parse(dtTxt);
+
+            // KST 날짜로 변환 (Calendar 사용)
+            Calendar kstCal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"));
+            kstCal.setTime(utcDate);
+
+            SimpleDateFormat kstFormat = new SimpleDateFormat("yyyyMMdd", Locale.KOREA);
+            kstFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+            String kstDate = kstFormat.format(kstCal.getTime());
+
+            Log.d(TAG, "날짜 변환: " + dtTxt + " (UTC) → " + kstDate + " (KST)");
+            return kstDate;
+
+        } catch (Exception e) {
+            Log.w(TAG, "날짜 포맷 변환 실패: " + dtTxt + ", 에러: " + e.getMessage());
+            // 실패 시 현재 날짜로 대체
+            SimpleDateFormat fallbackFormat = new SimpleDateFormat("yyyyMMdd", Locale.KOREA);
+            fallbackFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+            return fallbackFormat.format(new java.util.Date());
+        }
+    }
+
     /**
      * HTTP 요청 실행
      */
@@ -220,14 +253,50 @@ public class OpenWeatherApiClient {
             JSONObject json = new JSONObject(response);
             JSONArray list = json.getJSONArray("list");
             
-            // 현재 시간부터 12시간 동안의 예보 (3시간 간격으로 4개)
-            int count = Math.min(4, list.length());
-            
-            for (int i = 0; i < count; i++) {
+            // 한국시간 기준 당일 날씨만 필터링 (최대 7개 - 3시간 단위로 하루 종일)
+            Calendar now = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"));
+            SimpleDateFormat todayFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.KOREA);
+            String todayDateStr = todayFormat.format(now.getTime());
+            int count = 0;
+
+            Log.d(TAG, "한국시간 오늘 날짜: " + todayDateStr + ", 현재 시간: " + now.getTime());
+
+            for (int i = 0; i < list.length() && count < 7; i++) {
                 JSONObject item = list.getJSONObject(i);
-                
+
                 // 시간 정보
                 String dtTxt = item.getString("dt_txt");
+
+                // UTC 시간을 KST로 변환하여 한국시간 기준 당일인지 확인
+                boolean shouldInclude = false;
+                try {
+                    SimpleDateFormat utcFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA);
+                    utcFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    java.util.Date forecastTime = utcFormat.parse(dtTxt);
+
+                    // KST로 변환 (TimeZone 자동 변환 사용)
+                    Calendar forecastCal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"));
+                    forecastCal.setTime(forecastTime);
+
+                    String forecastDateStr = todayFormat.format(forecastCal.getTime());
+
+                    // 한국시간 기준 당일인지만 확인 (시간 제한 없음)
+                    if (todayDateStr.equals(forecastDateStr)) {
+                        shouldInclude = true;
+                        Log.d(TAG, "한국시간 당일 예보 포함: " + dtTxt + " → KST: " + forecastCal.getTime());
+                    } else {
+                        Log.d(TAG, "예보 스킵: " + dtTxt + " (날짜: " + forecastDateStr + ", 오늘: " + todayDateStr + ")");
+                    }
+
+                } catch (Exception e) {
+                    Log.w(TAG, "시간 비교 실패: " + dtTxt + ", 기본 포함");
+                    shouldInclude = true; // 파싱 실패 시에도 포함
+                }
+
+                // 조건에 맞지 않으면 스킵
+                if (!shouldInclude) {
+                    continue;
+                }
                 
                 // 온도 정보
                 JSONObject main = item.getJSONObject("main");
@@ -262,12 +331,13 @@ public class OpenWeatherApiClient {
                 // 우산 필요 여부 판단
                 boolean needUmbrella = isUmbrellaNeeded(weatherMain, precipitation);
                 
-                // 시간 포맷 변환 (yyyy-MM-dd HH:mm:ss -> HHmm)
+                // 시간 포맷 변환 (UTC → KST)
                 String timeStr = formatForecastTime(dtTxt);
+                String dateStr = formatForecastDate(dtTxt);
 
                 HourlyForecast forecast = new HourlyForecast(
-                    dtTxt.substring(0, 10).replace("-", ""), // yyyyMMdd
-                    timeStr.replace(":", ""), // HHmm 형식
+                    dateStr, // yyyyMMdd (KST 기준)
+                    timeStr.replace(":", ""), // HHmm 형식 (KST 기준)
                     temperature,
                     precipitation,
                     needUmbrella ? 80 : 10, // 강수확률
@@ -277,8 +347,9 @@ public class OpenWeatherApiClient {
                     koreanWeatherCondition,
                     needUmbrella
                 );
-                
+
                 forecasts.add(forecast);
+                count++; // 유효한 예보 추가 시에만 카운트 증가
             }
             
             Log.d(TAG, "✅ 예보 파싱 완료: " + forecasts.size() + "개 항목");
@@ -327,19 +398,35 @@ public class OpenWeatherApiClient {
     }
 
     /**
-     * 예보 시간 포맷 변환 (yyyy-MM-dd HH:mm:ss -> HH:mm)
+     * 예보 시간 포맷 변환 (UTC → KST 변환 포함)
+     * yyyy-MM-dd HH:mm:ss (UTC) -> HH:mm (KST)
      */
     private String formatForecastTime(String dtTxt) {
         try {
-            String[] parts = dtTxt.split(" ");
-            if (parts.length >= 2) {
-                String timePart = parts[1];
-                return timePart.substring(0, 5); // HH:mm
-            }
+            // UTC 시간을 파싱
+            SimpleDateFormat utcFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA);
+            utcFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+            java.util.Date utcDate = utcFormat.parse(dtTxt);
+
+            // KST 시간으로 변환 (Calendar 사용)
+            Calendar kstCal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"));
+            kstCal.setTime(utcDate);
+
+            SimpleDateFormat kstFormat = new SimpleDateFormat("HH:mm", Locale.KOREA);
+            kstFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+            String kstTime = kstFormat.format(kstCal.getTime());
+
+            Log.d(TAG, "시간 변환: " + dtTxt + " (UTC) → " + kstTime + " (KST)");
+            return kstTime;
+
         } catch (Exception e) {
-            Log.w(TAG, "시간 포맷 변환 실패: " + dtTxt);
+            Log.w(TAG, "시간 포맷 변환 실패: " + dtTxt + ", 에러: " + e.getMessage());
+            // 실패 시 현재 시간 기준으로 대체
+            SimpleDateFormat fallbackFormat = new SimpleDateFormat("HH:mm", Locale.KOREA);
+            fallbackFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+            return fallbackFormat.format(new java.util.Date());
         }
-        return "00:00";
     }
 
     /**
@@ -372,19 +459,30 @@ public class OpenWeatherApiClient {
     }
 
     /**
-     * 기본 예보 데이터 생성 (API 실패 시)
+     * 기본 예보 데이터 생성 (API 실패 시) - 오늘 날짜만
      */
     private List<HourlyForecast> createDefaultForecast() {
         List<HourlyForecast> forecasts = new ArrayList<>();
 
         String[] conditions = {"맑음", "흐림", "비"};
-        Calendar calendar = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"));
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd", Locale.KOREA);
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.KOREA);
 
-        // 3시간 간격으로 4개의 예보 생성
-        for (int i = 0; i < 4; i++) {
+        // 현재 시간부터 3시간 간격으로 오늘 날짜 내에서만 예보 생성
+        Calendar endOfDay = (Calendar) calendar.clone();
+        endOfDay.set(Calendar.HOUR_OF_DAY, 23);
+        endOfDay.set(Calendar.MINUTE, 59);
+        endOfDay.set(Calendar.SECOND, 59);
+
+        int count = 0;
+        while (count < 4 && calendar.before(endOfDay)) {
             calendar.add(Calendar.HOUR_OF_DAY, 3);
+
+            // 오늘 날짜를 벗어나면 중단
+            if (calendar.after(endOfDay)) {
+                break;
+            }
 
             String condition = conditions[(int) (Math.random() * conditions.length)];
             float temperature = (float) (Math.random() * 20 + 10); // 10-30도
@@ -405,9 +503,10 @@ public class OpenWeatherApiClient {
             );
 
             forecasts.add(forecast);
+            count++;
         }
 
-        Log.d(TAG, "🎲 기본 예보 데이터 생성: " + forecasts.size() + "개 항목");
+        Log.d(TAG, "🎲 기본 예보 데이터 생성 (오늘 날짜만): " + forecasts.size() + "개 항목");
         return forecasts;
     }
 

@@ -20,6 +20,7 @@ import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.UmbrellaApplication;
 import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.Weather;
+import com.example.umbrellaalert.util.WeatherCacheManager;
 import com.example.umbrellaalert.receiver.NotificationDismissReceiver;
 import com.example.umbrellaalert.ui.home.HomeActivity;
 
@@ -116,40 +117,43 @@ public class WeatherUpdateService extends Service {
         scheduleNextUpdate();
     }
 
-    // 위치에 따른 날씨 업데이트 - 실제 API 호출 주석처리
+    // 위치에 따른 날씨 업데이트 - 캐시 우선, 없으면 API 호출
     private void updateWeatherForLocation(Location location) {
         executorService.execute(new Runnable() {
             @Override
             public void run() {
                 try {
-                    // 실제 날씨 정보 가져오기 주석처리 - 랜덤 데이터 사용
-                    /*
-                    weatherManager.getCurrentWeather(
-                            location.getLatitude(), location.getLongitude(), new WeatherManager.WeatherCallback() {
-                                @Override
-                                public void onSuccess(Weather weather) {
-                                    if (weather != null) {
-                                        // UI 쓰레드에서 알림 업데이트
-                                        handler.post(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                updateNotification(weather);
+                    // 1. 먼저 캐시에서 날씨 데이터 확인
+                    Weather cachedWeather = WeatherCacheManager.getWeatherFromCache(WeatherUpdateService.this);
 
-                                                // 우산이 필요하면 특별 알림 생성
-                                                if (weather.isNeedUmbrella()) {
-                                                    sendUmbrellaNotification(weather);
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
+                    if (cachedWeather != null) {
+                        Log.d(TAG, "✅ WeatherUpdateService 캐시된 날씨 데이터 사용: " + cachedWeather.getTemperature() + "°C, " + cachedWeather.getWeatherCondition());
 
-                                @Override
-                                public void onError(String error) {
-                                    Log.e(TAG, "Failed to get weather: " + error);
+                        // UI 쓰레드에서 알림 업데이트
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                updateNotification(cachedWeather);
+
+                                // 우산이 필요하면 특별 알림 생성
+                                if (cachedWeather.isNeedUmbrella()) {
+                                    sendUmbrellaNotification(cachedWeather);
                                 }
-                            });
-                    */
+                            }
+                        });
+                        return;
+                    }
+
+                    // 2. 캐시에 없으면 기본 알림 표시 (홈 화면에서 API 호출하므로)
+                    Log.d(TAG, "캐시된 데이터 없음, 기본 알림 표시 (홈 화면에서 API 호출 대기)");
+
+                    // UI 쓰레드에서 기본 알림 표시
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            updateNotification(createDefaultWeather(location));
+                        }
+                    });
 
                     // 랜덤 날씨 데이터로 알림 업데이트
                     Weather randomWeather = createRandomWeather(location);
@@ -293,6 +297,23 @@ public class WeatherUpdateService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null; // 바인딩 불필요
+    }
+
+    /**
+     * 기본 날씨 데이터 생성 (API 실패 시 사용)
+     */
+    private Weather createDefaultWeather(Location location) {
+        return new Weather(
+                0,
+                22.0f,  // 기본 온도 22도
+                "맑음", // 기본 날씨 상태
+                0.0f,   // 강수량 없음
+                50,     // 습도 50%
+                2.0f,   // 풍속 2m/s
+                location.getLatitude() + "," + location.getLongitude(),
+                System.currentTimeMillis(),
+                false   // 우산 필요 없음
+        );
     }
 
     /**

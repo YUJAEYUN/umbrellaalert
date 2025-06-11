@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat;
 import com.example.umbrellaalert.R;
 import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.Weather;
+import com.example.umbrellaalert.util.WeatherCacheManager;
 import com.example.umbrellaalert.data.model.RegisteredBus;
 import com.example.umbrellaalert.data.model.BusArrival;
 import com.example.umbrellaalert.data.api.BusApiClient;
@@ -182,46 +183,26 @@ public class PersistentNotificationService extends Service implements LocationLi
         }
 
         try {
-            // 실제 날씨 데이터 가져오기 주석처리 - 랜덤 데이터 사용
-            /*
-            final Weather[] weatherResult = {null};
-            final boolean[] completed = {false};
+            // 1. 먼저 캐시에서 날씨 데이터 확인
+            Weather cachedWeather = WeatherCacheManager.getWeatherFromCache(this);
 
-            weatherManager.getCurrentWeather(currentLocation.getLatitude(), currentLocation.getLongitude(), new WeatherManager.WeatherCallback() {
-                @Override
-                public void onSuccess(Weather weather) {
-                    weatherResult[0] = weather;
-                    completed[0] = true;
-                }
-
-                @Override
-                public void onError(String error) {
-                    Log.e(TAG, "날씨 데이터 가져오기 실패: " + error);
-                    completed[0] = true;
-                }
-            });
-
-            // 최대 5초 대기
-            int waitCount = 0;
-            while (!completed[0] && waitCount < 50) {
-                Thread.sleep(100);
-                waitCount++;
+            if (cachedWeather != null) {
+                Log.d(TAG, "✅ 알림 캐시된 날씨 데이터 사용: " + cachedWeather.getTemperature() + "°C, " + cachedWeather.getWeatherCondition());
+                return cachedWeather;
             }
 
-            return weatherResult[0];
-            */
-
-            // 랜덤 날씨 데이터 즉시 반환
-            return createRandomWeather(currentLocation);
+            // 2. 캐시에 없으면 기본 데이터 사용 (홈 화면에서 API 호출하므로)
+            Log.d(TAG, "캐시된 데이터 없음, 기본 데이터 사용 (홈 화면에서 API 호출 대기)");
+            return createFallbackWeather(currentLocation);
 
         } catch (Exception e) {
-            Log.e(TAG, "랜덤 날씨 데이터 생성 오류", e);
-            return createRandomWeather(currentLocation);
+            Log.e(TAG, "알림 날씨 데이터 가져오기 오류", e);
+            return createFallbackWeather(currentLocation);
         }
     }
 
-    // 랜덤 날씨 데이터 생성
-    private Weather createRandomWeather(Location location) {
+    // 기본 날씨 데이터 생성 (API 실패 시 사용)
+    private Weather createFallbackWeather(Location location) {
         String[] conditions = {"맑음", "흐림", "비"};
         float[] temperatures = {8.0f, 15.0f, 22.0f, 28.0f};
 
