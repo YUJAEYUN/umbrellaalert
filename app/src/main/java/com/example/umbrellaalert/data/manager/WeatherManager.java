@@ -10,77 +10,50 @@ import com.example.umbrellaalert.weather.SimpleWeatherService;
 
 import java.util.List;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import dagger.hilt.android.qualifiers.ApplicationContext;
+
 /**
- * 날씨 매니저 - 단순화된 버전
- * 복잡한 로직을 제거하고 SimpleWeatherService를 사용
+ * 날씨 매니저 - OpenWeather API 사용
+ * Hilt 의존성 주입을 통해 SimpleWeatherService 사용
  */
+@Singleton
 public class WeatherManager {
 
     private static final String TAG = "WeatherManager";
-    private static WeatherManager instance;
+    private final Context context;
     private final SimpleWeatherService weatherService;
 
-    // 싱글톤 패턴
-    public static synchronized WeatherManager getInstance(Context context) {
-        if (instance == null) {
-            instance = new WeatherManager();
-        }
-        return instance;
-    }
-
-    private WeatherManager() {
-        weatherService = SimpleWeatherService.getInstance();
+    @Inject
+    public WeatherManager(@ApplicationContext Context context, SimpleWeatherService weatherService) {
+        this.context = context.getApplicationContext();
+        this.weatherService = weatherService;
     }
 
     /**
-     * 현재 위치의 날씨 가져오기 - 랜덤 데이터만 사용
+     * 현재 위치의 날씨 가져오기 - OpenWeather API 사용
      */
     public void getCurrentWeather(double latitude, double longitude, WeatherCallback callback) {
-        Log.d(TAG, "🌤️ 랜덤 날씨 데이터 생성 시작");
+        Log.d(TAG, "🌤️ OpenWeather API로 날씨 데이터 요청 시작");
 
-        // 실제 API 호출 주석처리 - 랜덤 데이터만 사용
-        // weatherService.getCurrentWeather(latitude, longitude, new SimpleWeatherService.WeatherCallback() {
+        weatherService.getCurrentWeather(latitude, longitude, new SimpleWeatherService.WeatherCallback() {
+            @Override
+            public void onSuccess(Weather weather) {
+                Log.d(TAG, "✅ OpenWeather API 날씨 데이터 수신: " + weather.getTemperature() + "°C, " + weather.getWeatherCondition());
+                callback.onSuccess(weather);
+            }
 
-        // 즉시 랜덤 날씨 데이터 생성
-        try {
-            Weather randomWeather = createRandomWeather(latitude, longitude);
-            Log.d(TAG, "✅ 랜덤 날씨 데이터 생성: " + randomWeather.getTemperature() + "°C, " + randomWeather.getWeatherCondition());
-            callback.onSuccess(randomWeather);
-        } catch (Exception e) {
-            Log.e(TAG, "❌ 랜덤 날씨 데이터 생성 실패", e);
-            Weather defaultWeather = createRandomWeather(latitude, longitude);
-            callback.onSuccess(defaultWeather);
-        }
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "❌ OpenWeather API 날씨 데이터 요청 실패: " + error);
+                callback.onError(error);
+            }
+        });
     }
 
-    // 랜덤 날씨 데이터 생성
-    private Weather createRandomWeather(double latitude, double longitude) {
-        String[] conditions = {"맑음", "흐림", "비"};
-        float[] temperatures = {8.0f, 15.0f, 22.0f, 28.0f};
 
-        String condition = conditions[(int) (Math.random() * conditions.length)];
-        float temperature = temperatures[(int) (Math.random() * temperatures.length)];
-
-        float precipitation = 0.0f;
-        boolean needUmbrella = false;
-
-        if (condition.contains("비")) {
-            precipitation = (float) (Math.random() * 15 + 2);
-            needUmbrella = true;
-        }
-
-        return new Weather(
-                0,
-                temperature,
-                condition,
-                precipitation,
-                (int) (Math.random() * 40 + 40), // 40-80% 습도
-                (float) (Math.random() * 5 + 1), // 1-6 m/s 풍속
-                latitude + "," + longitude,
-                System.currentTimeMillis(),
-                needUmbrella
-        );
-    }
 
     /**
      * 고양이 메시지 생성 - 단순화된 버전
@@ -90,21 +63,21 @@ public class WeatherManager {
     }
 
     /**
-     * 6시간 예보 가져오기 - 단순화된 버전
+     * 12시간 예보 가져오기 - OpenWeather API 사용
      */
-    public void get6HourForecast(double latitude, double longitude, ForecastCallback callback) {
-        Log.d(TAG, "🌤️ 6시간 예보 데이터 요청 시작");
+    public void get12HourForecast(double latitude, double longitude, ForecastCallback callback) {
+        Log.d(TAG, "🌤️ OpenWeather API로 12시간 예보 요청 시작");
 
-        weatherService.get6HourForecast(latitude, longitude, new SimpleWeatherService.ForecastCallback() {
+        weatherService.get12HourForecast(latitude, longitude, new SimpleWeatherService.ForecastCallback() {
             @Override
             public void onSuccess(List<HourlyForecast> forecasts) {
-                Log.d(TAG, "✅ 6시간 예보 데이터 가져오기 성공: " + forecasts.size() + "개");
+                Log.d(TAG, "✅ OpenWeather API 12시간 예보 수신 완료: " + forecasts.size() + "개");
                 callback.onSuccess(forecasts);
             }
 
             @Override
             public void onError(String error) {
-                Log.e(TAG, "❌ 6시간 예보 데이터 가져오기 실패: " + error);
+                Log.e(TAG, "❌ OpenWeather API 예보 데이터 요청 실패: " + error);
                 callback.onError(error);
             }
         });

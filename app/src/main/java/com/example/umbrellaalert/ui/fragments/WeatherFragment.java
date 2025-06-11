@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.umbrellaalert.R;
+import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.HourlyForecast;
 import com.example.umbrellaalert.databinding.FragmentWeatherBinding;
 import com.example.umbrellaalert.service.CatWeatherAnalystService;
@@ -26,8 +27,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import javax.inject.Inject;
+
 import dagger.hilt.android.AndroidEntryPoint;
 
+/**
+ * 날씨 탭 프래그먼트 - 12시간 예보 및 고양이 분석 (OpenWeather API 사용)
+ */
 @AndroidEntryPoint
 public class WeatherFragment extends Fragment {
 
@@ -36,6 +42,9 @@ public class WeatherFragment extends Fragment {
     private FragmentWeatherBinding binding;
     private WeatherViewModel weatherViewModel;
     private HourlyForecastAdapter forecastAdapter;
+
+    @Inject
+    WeatherManager weatherManager;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -83,36 +92,92 @@ public class WeatherFragment extends Fragment {
 
 
     /**
-     * 8시간 예보 목업 데이터 로드 및 고양이 분석 (3시간 단위) - 초기 로드용
+     * 12시간 예보 데이터 로드 및 고양이 분석 - OpenWeather API 사용
      */
     private void load12HourForecastAndAnalysis() {
         // 로딩 애니메이션 시작
         showWeatherLoadingAnimation();
 
-        // 현재 날씨 데이터가 있으면 그에 맞춰 생성, 없으면 기본값
+        // 현재 날씨 데이터에서 위치 정보 추출
         com.example.umbrellaalert.data.model.Weather currentWeather = weatherViewModel.getWeatherData().getValue();
-        List<HourlyForecast> forecasts;
 
-        if (currentWeather != null) {
-            forecasts = MockWeatherForecastService.generateForecastBasedOnWeather(currentWeather);
+        if (currentWeather != null && currentWeather.getLocation() != null) {
+            // 현재 날씨 데이터에서 위치 정보 파싱
+            String[] locationParts = currentWeather.getLocation().split(",");
+            if (locationParts.length >= 2) {
+                try {
+                    double latitude = Double.parseDouble(locationParts[0]);
+                    double longitude = Double.parseDouble(locationParts[1]);
+                    loadRealForecastData(latitude, longitude);
+                } catch (NumberFormatException e) {
+                    // 파싱 실패 시 기본 위치 사용
+                    loadRealForecastData(37.5665, 126.9780); // 서울 기본 좌표
+                }
+            } else {
+                loadRealForecastData(37.5665, 126.9780); // 서울 기본 좌표
+            }
         } else {
-            forecasts = MockWeatherForecastService.generate12HourForecast();
+            // 위치 정보가 없으면 기본 위치로 예보 데이터 가져오기
+            loadRealForecastData(37.5665, 126.9780); // 서울 기본 좌표
         }
+    }
 
-        // RecyclerView에 데이터 설정
-        updateForecastDisplay(forecasts);
+    /**
+     * 실제 OpenWeather API로 예보 데이터 가져오기
+     */
+    private void loadRealForecastData(double latitude, double longitude) {
+        weatherManager.get12HourForecast(latitude, longitude, new WeatherManager.ForecastCallback() {
+            @Override
+            public void onSuccess(List<HourlyForecast> forecasts) {
+                requireActivity().runOnUiThread(() -> {
+                    // RecyclerView에 데이터 설정
+                    updateForecastDisplay(forecasts);
 
-        // 토스 스타일 고양이 분석 카드 업데이트
-        updateCatAnalysisCard(forecasts);
+                    // 토스 스타일 고양이 분석 카드 업데이트
+                    updateCatAnalysisCard(forecasts);
 
-        // 업데이트 시간 표시
-        SimpleDateFormat sdf = new SimpleDateFormat("06/09 HH:mm 업데이트", Locale.KOREA);
-        binding.updateTime.setText(sdf.format(new Date()));
+                    // 업데이트 시간 표시
+                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd HH:mm 업데이트", Locale.KOREA);
+                    binding.updateTime.setText(sdf.format(new Date()));
 
-        // 로딩 애니메이션 종료
-        hideWeatherLoadingAnimation();
+                    // 로딩 애니메이션 종료
+                    hideWeatherLoadingAnimation();
 
-        Log.d(TAG, "8시간 예보 (3시간 단위) " + forecasts.size() + "개 생성 및 고양이 분석 완료");
+                    Log.d(TAG, "✅ OpenWeather API 12시간 예보 " + forecasts.size() + "개 로드 및 고양이 분석 완료");
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                requireActivity().runOnUiThread(() -> {
+                    // 에러 발생 시 기본 데이터 표시
+                    Log.e(TAG, "❌ OpenWeather API 예보 데이터 로드 실패: " + error);
+
+                    // 현재 날씨 데이터가 있으면 그에 맞춰 생성, 없으면 기본값
+                    com.example.umbrellaalert.data.model.Weather currentWeather = weatherViewModel.getWeatherData().getValue();
+                    List<HourlyForecast> forecasts;
+
+                    if (currentWeather != null) {
+                        forecasts = MockWeatherForecastService.generateForecastBasedOnWeather(currentWeather);
+                    } else {
+                        forecasts = MockWeatherForecastService.generate12HourForecast();
+                    }
+
+                    // RecyclerView에 데이터 설정
+                    updateForecastDisplay(forecasts);
+
+                    // 토스 스타일 고양이 분석 카드 업데이트
+                    updateCatAnalysisCard(forecasts);
+
+                    // 업데이트 시간 표시
+                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd HH:mm 업데이트", Locale.KOREA);
+                    binding.updateTime.setText(sdf.format(new Date()));
+
+                    // 로딩 애니메이션 종료
+                    hideWeatherLoadingAnimation();
+                });
+            }
+        });
     }
 
     /**

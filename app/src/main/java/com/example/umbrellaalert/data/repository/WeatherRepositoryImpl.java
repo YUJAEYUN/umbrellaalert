@@ -17,6 +17,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import dagger.hilt.android.qualifiers.ApplicationContext;
+
 /**
  * 날씨 데이터 관리를 위한 Repository 구현체
  * 데이터 소스(API, 로컬 DB)를 추상화하여 ViewModel에 제공
@@ -36,25 +38,60 @@ public class WeatherRepositoryImpl implements WeatherRepository {
     private final SharedPreferences sharedPreferences;
 
     @Inject
-    public WeatherRepositoryImpl(Context context) {
+    public WeatherRepositoryImpl(@ApplicationContext Context context, WeatherManager weatherManager) {
         this.context = context.getApplicationContext();
-        this.weatherManager = WeatherManager.getInstance(context);
+        this.weatherManager = weatherManager;
         this.weatherDao = new WeatherDao(DatabaseHelper.getInstance(context));
         this.sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
     }
 
     /**
-     * 현재 위치의 날씨 정보 가져오기 - 단순화된 버전
+     * 현재 위치의 날씨 정보 가져오기 - OpenWeather API 사용
      * WeatherManager를 통해 간단하게 호출
      */
     @Override
     public Weather getCurrentWeather(double latitude, double longitude) {
-        Log.d("WeatherRepositoryImpl", "🌤️ 날씨 정보 요청 (단순화된 버전)");
+        Log.d("WeatherRepositoryImpl", "🌤️ OpenWeather API로 날씨 정보 요청");
 
-        // 복잡한 캐시 로직 제거, WeatherManager에서 처리하도록 위임
+        // 동기적으로 날씨 정보를 가져오기 위해 CountDownLatch 사용
+        final Weather[] result = new Weather[1];
+        final Exception[] error = new Exception[1];
+        final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
 
-        // 즉시 랜덤 날씨 데이터 생성 (대기 시간 제거)
-        return createDefaultWeather(latitude, longitude);
+        weatherManager.getCurrentWeather(latitude, longitude, new WeatherManager.WeatherCallback() {
+            @Override
+            public void onSuccess(Weather weather) {
+                result[0] = weather;
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                error[0] = new Exception(errorMessage);
+                latch.countDown();
+            }
+        });
+
+        try {
+            // 최대 10초 대기
+            latch.await(10, java.util.concurrent.TimeUnit.SECONDS);
+
+            if (error[0] != null) {
+                Log.e("WeatherRepositoryImpl", "날씨 정보 요청 실패: " + error[0].getMessage());
+                return createDefaultWeather(latitude, longitude);
+            }
+
+            if (result[0] != null) {
+                return result[0];
+            } else {
+                Log.w("WeatherRepositoryImpl", "날씨 정보 응답이 null, 기본값 반환");
+                return createDefaultWeather(latitude, longitude);
+            }
+
+        } catch (InterruptedException e) {
+            Log.e("WeatherRepositoryImpl", "날씨 정보 요청 타임아웃", e);
+            return createDefaultWeather(latitude, longitude);
+        }
     }
 
     /**

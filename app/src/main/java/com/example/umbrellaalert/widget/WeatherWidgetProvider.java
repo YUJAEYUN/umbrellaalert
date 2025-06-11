@@ -138,21 +138,19 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
             if (currentLocation != null) {
                 Log.d(TAG, "위치 정보 확인됨: " + currentLocation.getLatitude() + ", " + currentLocation.getLongitude());
 
-                // 현재 위치로 날씨 데이터 가져오기
-                WeatherManager weatherManager = WeatherManager.getInstance(context);
+                // 현재 위치로 날씨 데이터 가져오기 (임시로 랜덤 데이터 사용)
                 final Location finalLocation = currentLocation;
 
                 // 날씨 정보와 버스 정보를 동시에 가져오기
-                loadWeatherAndBusData(context, weatherManager, finalLocation, views, appWidgetManager, appWidgetId);
+                loadWeatherAndBusDataWithRandomWeather(context, finalLocation, views, appWidgetManager, appWidgetId);
             } else {
                 Log.w(TAG, "위치 정보를 가져올 수 없습니다");
                 // 위치 정보가 없는 경우 - 기본 위치(세종시) 사용
-                WeatherManager weatherManager = WeatherManager.getInstance(context);
                 Location defaultLocation = new Location("default");
                 defaultLocation.setLatitude(36.4800);
                 defaultLocation.setLongitude(127.2890);
 
-                loadWeatherAndBusData(context, weatherManager, defaultLocation, views, appWidgetManager, appWidgetId);
+                loadWeatherAndBusDataWithRandomWeather(context, defaultLocation, views, appWidgetManager, appWidgetId);
             }
         } else {
             // 위치 권한이 없는 경우
@@ -165,31 +163,49 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
     }
 
     /**
-     * 날씨와 버스 정보를 함께 로드
+     * 날씨와 버스 정보를 함께 로드 (랜덤 날씨 데이터 사용)
      */
-    private void loadWeatherAndBusData(Context context, WeatherManager weatherManager, Location location,
+    private void loadWeatherAndBusDataWithRandomWeather(Context context, Location location,
                                      RemoteViews views, AppWidgetManager appWidgetManager, int appWidgetId) {
 
-        // 날씨 정보 가져오기
-        weatherManager.getCurrentWeather(location.getLatitude(), location.getLongitude(), new WeatherManager.WeatherCallback() {
-            @Override
-            public void onSuccess(Weather weather) {
-                Log.d(TAG, "날씨 데이터 성공적으로 가져옴");
-                updateWeatherInfo(weather, views, location);
+        // 랜덤 날씨 데이터 생성
+        Weather randomWeather = createRandomWeather(location);
+        Log.d(TAG, "랜덤 날씨 데이터 생성: " + randomWeather.getTemperature() + "°C, " + randomWeather.getWeatherCondition());
+        updateWeatherInfo(randomWeather, views, location);
 
-                // 버스 정보 가져오기
-                loadBusInfo(context, views, appWidgetManager, appWidgetId);
-            }
+        // 버스 정보 가져오기
+        loadBusInfo(context, views, appWidgetManager, appWidgetId);
+    }
 
-            @Override
-            public void onError(String error) {
-                Log.e(TAG, "날씨 데이터 가져오기 실패: " + error);
-                updateWeatherInfo(null, views, location);
+    /**
+     * 랜덤 날씨 데이터 생성
+     */
+    private Weather createRandomWeather(Location location) {
+        String[] conditions = {"맑음", "흐림", "비"};
+        float[] temperatures = {8.0f, 15.0f, 22.0f, 28.0f};
 
-                // 버스 정보는 여전히 시도
-                loadBusInfo(context, views, appWidgetManager, appWidgetId);
-            }
-        });
+        String condition = conditions[(int) (Math.random() * conditions.length)];
+        float temperature = temperatures[(int) (Math.random() * temperatures.length)];
+
+        float precipitation = 0.0f;
+        boolean needUmbrella = false;
+
+        if (condition.contains("비")) {
+            precipitation = (float) (Math.random() * 15 + 2);
+            needUmbrella = true;
+        }
+
+        return new Weather(
+                0,
+                temperature,
+                condition,
+                precipitation,
+                (int) (Math.random() * 40 + 40),
+                (float) (Math.random() * 5 + 1),
+                location.getLatitude() + "," + location.getLongitude(),
+                System.currentTimeMillis(),
+                needUmbrella
+        );
     }
 
     /**

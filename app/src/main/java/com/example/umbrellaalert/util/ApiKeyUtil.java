@@ -54,4 +54,22 @@ public class ApiKeyUtil {
 
         return apiKey;
     }
+
+    /**
+     * OpenWeather API 키 가져오기
+     * @param context 애플리케이션 컨텍스트
+     * @return OpenWeather API 키
+     */
+    public static String getOpenWeatherApiKey(Context context) {
+        loadProperties(context);
+        String apiKey = properties.getProperty("openweather_api_key");
+
+        // 키가 없는 경우 기본값 반환 (개발용)
+        if (apiKey == null || apiKey.isEmpty()) {
+            Log.w(TAG, "OpenWeather API 키가 없습니다. 기본값을 사용합니다.");
+            return "bef3d511dc00345ed56204adcf073d16"; // 제공받은 API 키
+        }
+
+        return apiKey;
+    }
 }

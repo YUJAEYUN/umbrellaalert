@@ -27,6 +27,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
+
+/**
+ * 백그라운드에서 주기적으로 날씨 정보를 업데이트하는 서비스
+ * 우산 필요 여부를 확인하고 알림을 표시
+ */
+@AndroidEntryPoint
 public class WeatherUpdateService extends Service {
 
     private static final String TAG = "WeatherUpdateService";
@@ -36,7 +45,10 @@ public class WeatherUpdateService extends Service {
     private ExecutorService executorService;
     private Handler handler;
     private LocationService locationService;
-    private WeatherManager weatherManager;
+
+    @Inject
+    WeatherManager weatherManager;
+
     private boolean isRunning;
 
     // 서비스 시작 (정적 메소드)
@@ -58,7 +70,7 @@ public class WeatherUpdateService extends Service {
         executorService = Executors.newSingleThreadExecutor();
         handler = new Handler(Looper.getMainLooper());
         locationService = LocationService.getInstance(this);
-        weatherManager = WeatherManager.getInstance(this);
+        // weatherManager는 Hilt로 주입됨
         isRunning = false;
 
         // 즉시 포그라운드 서비스로 시작

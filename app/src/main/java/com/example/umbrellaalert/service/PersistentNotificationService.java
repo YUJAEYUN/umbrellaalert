@@ -43,9 +43,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
+
 /**
  * 상태바에 지속적인 날씨 알림을 표시하는 서비스
  */
+@AndroidEntryPoint
 public class PersistentNotificationService extends Service implements LocationListener {
 
     private static final String TAG = "PersistentNotifService";
@@ -56,7 +61,9 @@ public class PersistentNotificationService extends Service implements LocationLi
     private static final String PREF_NAME = "UmbrellaAlertPrefs";
     private static final String KEY_PERSISTENT_NOTIFICATION = "persistent_notification_enabled";
 
-    private WeatherManager weatherManager;
+    @Inject
+    WeatherManager weatherManager;
+
     private BusApiClient busApiClient;
     private BusDao busDao;
     private ExecutorService executorService;
@@ -68,7 +75,7 @@ public class PersistentNotificationService extends Service implements LocationLi
     @Override
     public void onCreate() {
         super.onCreate();
-        weatherManager = WeatherManager.getInstance(this);
+        // weatherManager는 Hilt로 주입됨
         busApiClient = new BusApiClient(this);
         DatabaseHelper dbHelper = DatabaseHelper.getInstance(this);
         busDao = new BusDao(dbHelper);

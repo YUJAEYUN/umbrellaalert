@@ -2,7 +2,7 @@ package com.example.umbrellaalert.domain.usecase;
 
 import android.util.Log;
 
-import com.example.umbrellaalert.data.api.SimpleKmaApiClient;
+import com.example.umbrellaalert.data.manager.WeatherManager;
 import com.example.umbrellaalert.data.model.HourlyForecast;
 import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.domain.repository.WeatherRepository;
@@ -13,7 +13,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Future;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -26,31 +25,59 @@ import javax.inject.Singleton;
 public class Get12HourForecastUseCase {
 
     private static final String TAG = "Get12HourForecastUseCase";
-    private final SimpleKmaApiClient simpleApiClient;
+    private final WeatherManager weatherManager;
     private final WeatherRepository weatherRepository;
 
     @Inject
-    public Get12HourForecastUseCase(SimpleKmaApiClient simpleApiClient, WeatherRepository weatherRepository) {
-        this.simpleApiClient = simpleApiClient;
+    public Get12HourForecastUseCase(WeatherManager weatherManager, WeatherRepository weatherRepository) {
+        this.weatherManager = weatherManager;
         this.weatherRepository = weatherRepository;
     }
 
     /**
-     * 6시간 시간별 예보 조회 (새로운 간단한 API 사용)
+     * 12시간 시간별 예보 조회 (OpenWeather API 사용)
      * @param latitude 위도
      * @param longitude 경도
-     * @return 6시간 예보 리스트
+     * @return 12시간 예보 리스트 (6시간으로 제한)
      */
     public List<HourlyForecast> execute(double latitude, double longitude) {
         try {
-            Log.d(TAG, "🌤️ 간단한 API로 6시간 예보 조회 시작 - 위도: " + latitude + ", 경도: " + longitude);
+            Log.d(TAG, "🌤️ OpenWeather API로 12시간 예보 조회 시작 - 위도: " + latitude + ", 경도: " + longitude);
 
-            // 새로운 간단한 API 클라이언트 사용
-            Future<List<HourlyForecast>> forecastFuture = simpleApiClient.get6HourForecast(latitude, longitude);
-            List<HourlyForecast> forecasts = forecastFuture.get();
+            // WeatherManager를 통해 OpenWeather API 사용
+            final List<HourlyForecast>[] result = new List[1];
+            final Exception[] error = new Exception[1];
+            final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
 
+            weatherManager.get12HourForecast(latitude, longitude, new WeatherManager.ForecastCallback() {
+                @Override
+                public void onSuccess(List<HourlyForecast> forecasts) {
+                    result[0] = forecasts;
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    error[0] = new Exception(errorMessage);
+                    latch.countDown();
+                }
+            });
+
+            // 최대 10초 대기
+            latch.await(10, java.util.concurrent.TimeUnit.SECONDS);
+
+            if (error[0] != null) {
+                throw error[0];
+            }
+
+            List<HourlyForecast> forecasts = result[0];
             if (forecasts != null && !forecasts.isEmpty()) {
-                Log.d(TAG, "✅ API에서 6시간 예보 수신 완료: " + forecasts.size() + "개");
+                // 6시간으로 제한
+                if (forecasts.size() > 6) {
+                    forecasts = forecasts.subList(0, 6);
+                }
+
+                Log.d(TAG, "✅ OpenWeather API에서 예보 수신 완료: " + forecasts.size() + "개");
 
                 // 최종 반환 전 확인
                 for (int i = 0; i < forecasts.size(); i++) {
@@ -60,12 +87,12 @@ public class Get12HourForecastUseCase {
 
                 return forecasts;
             } else {
-                Log.w(TAG, "⚠️ API에서 예보 데이터 없음 - 기본 6시간 예보 생성");
+                Log.w(TAG, "⚠️ OpenWeather API에서 예보 데이터 없음 - 기본 6시간 예보 생성");
                 return generateDefaultSixHourForecast(latitude, longitude);
             }
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ 6시간 예보 조회 실패", e);
+            Log.e(TAG, "❌ OpenWeather API 예보 조회 실패: " + e.getMessage(), e);
             return generateDefaultSixHourForecast(latitude, longitude);
         }
     }
