@@ -83,13 +83,13 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="아침 날씨 알림 활성화"
+                    android:text="알림 자동 종료 활성화"
                     android:textColor="@color/text_primary"
                     android:textSize="@dimen/ios_text_body"
                     android:fontFamily="@font/pretendard_font_family" />
 
                 <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/switch_morning_alert"
+                    android:id="@+id/switch_auto_stop"
                     style="@style/iOSSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
@@ -98,7 +98,7 @@
             <!-- 구분선 -->
             <View style="@style/iOSSeparator" />
 
-            <!-- 아침 알림 시간 설정 -->
+            <!-- 알림 종료 시간 설정 -->
             <LinearLayout
                 android:id="@+id/time_picker_container"
                 style="@style/iOSListItem"
@@ -110,7 +110,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="알림 시간"
+                    android:text="알림 종료 시간"
                     android:textColor="@color/text_primary"
                     android:textSize="@dimen/ios_text_body"
                     android:fontFamily="@font/pretendard_font_family" />
@@ -119,11 +119,24 @@
                     android:id="@+id/time_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="오전 7:00"
+                    android:text="오전 10:00"
                     android:textColor="@color/text_secondary"
                     android:textSize="@dimen/ios_text_body"
                     android:fontFamily="@font/pretendard_font_family" />
             </LinearLayout>
+
+            <!-- 설명 텍스트 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/ios_spacing_md"
+                android:layout_marginEnd="@dimen/ios_spacing_md"
+                android:layout_marginTop="@dimen/ios_spacing_sm"
+                android:text="설정한 시간이 지나면 상태바 알림과 버스 알림이 자동으로 중단됩니다. 통학 시간이 끝난 후 불필요한 알림을 방지합니다."
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/ios_text_footnote"
+                android:fontFamily="@font/pretendard_font_family"
+                android:lineSpacingExtra="2dp" />
 
             <!-- 섹션 구분 공간 -->
             <View

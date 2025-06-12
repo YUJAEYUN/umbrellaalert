@@ -34,6 +34,7 @@ import com.example.umbrellaalert.data.database.BusDao;
 import com.example.umbrellaalert.data.database.DatabaseHelper;
 import com.example.umbrellaalert.receiver.NotificationDismissReceiver;
 import com.example.umbrellaalert.ui.main.MainActivity;
+import com.example.umbrellaalert.ui.settings.SettingsViewModel;
 import com.example.umbrellaalert.util.WalkingTimeCalculator;
 
 import java.util.List;
@@ -106,7 +107,10 @@ public class PersistentNotificationService extends Service implements LocationLi
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // 서비스가 시작될 때 알림 표시
+        // 즉시 포그라운드 서비스로 시작 (기본 알림으로)
+        startForeground(NOTIFICATION_ID, createInitialNotification());
+
+        // 서비스가 시작될 때 알림 표시 (비동기로 실제 데이터 로드)
         updateNotification();
 
         // 주기적 업데이트 시작
@@ -150,6 +154,30 @@ public class PersistentNotificationService extends Service implements LocationLi
         }
     }
 
+    /**
+     * 초기 알림 생성 (서비스 시작 시 즉시 표시용)
+     */
+    private Notification createInitialNotification() {
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
+        Intent dismissIntent = new Intent(this, NotificationDismissReceiver.class);
+        dismissIntent.setAction(NotificationDismissReceiver.ACTION_DISMISS_PERSISTENT);
+        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(
+                this, 0, dismissIntent, PendingIntent.FLAG_IMMUTABLE);
+
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_umbrella_small)
+                .setContentTitle("날씨 정보 로딩 중...")
+                .setContentText("잠시만 기다려주세요")
+                .setOngoing(true)
+                .setContentIntent(pendingIntent)
+                .addAction(R.drawable.ic_close, "알림 끄기", dismissPendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build();
+    }
+
 
 
     /**
@@ -159,6 +187,13 @@ public class PersistentNotificationService extends Service implements LocationLi
         // 사용자가 알림을 지웠는지 확인
         if (NotificationDismissReceiver.isPersistentNotificationDismissed(this)) {
             Log.d(TAG, "지속적 알림이 사용자에 의해 비활성화됨");
+            stopSelf(); // 서비스 종료
+            return;
+        }
+
+        // 설정된 시간이 지났는지 확인
+        if (SettingsViewModel.shouldStopNotifications(this)) {
+            Log.d(TAG, "설정된 종료 시간이 지나 알림 서비스 중단");
             stopSelf(); // 서비스 종료
             return;
         }

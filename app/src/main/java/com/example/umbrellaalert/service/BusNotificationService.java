@@ -25,6 +25,7 @@ import com.example.umbrellaalert.data.model.BusArrival;
 import com.example.umbrellaalert.data.model.RegisteredBus;
 import com.example.umbrellaalert.service.LocationService;
 import com.example.umbrellaalert.ui.home.HomeActivity;
+import com.example.umbrellaalert.ui.settings.SettingsViewModel;
 import com.example.umbrellaalert.util.WalkingTimeCalculator;
 
 import java.util.List;
@@ -154,6 +155,13 @@ public class BusNotificationService extends Service {
     }
     
     private void checkRegisteredBuses() {
+        // 설정된 시간이 지났는지 확인
+        if (SettingsViewModel.shouldStopNotifications(this)) {
+            Log.d(TAG, "설정된 종료 시간이 지나 버스 알림 서비스 중단");
+            stopSelf(); // 서비스 종료
+            return;
+        }
+
         if (currentLocation == null) {
             Log.w(TAG, "현재 위치를 알 수 없어 버스 체크를 건너뜁니다");
             return;

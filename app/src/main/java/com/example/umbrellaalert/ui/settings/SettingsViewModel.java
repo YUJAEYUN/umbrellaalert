@@ -36,12 +36,12 @@ public class SettingsViewModel extends AndroidViewModel {
     
     // 상수
     private static final String PREF_NAME = "UmbrellaAlertPrefs";
-    private static final String KEY_MORNING_ALERT = "morning_alert_enabled";
+    private static final String KEY_AUTO_STOP_ENABLED = "auto_stop_enabled";
     private static final String KEY_RAIN_ALERT = "rain_alert_enabled";
     private static final String KEY_VIBRATION = "vibration_enabled";
     private static final String KEY_SOUND = "sound_enabled";
-    private static final String KEY_MORNING_HOUR = "morning_hour";
-    private static final String KEY_MORNING_MINUTE = "morning_minute";
+    private static final String KEY_STOP_HOUR = "stop_hour";
+    private static final String KEY_STOP_MINUTE = "stop_minute";
     private static final String KEY_WIDGET_ENABLED = "widget_enabled";
     private static final String KEY_WIDGET_AUTO_UPDATE = "widget_auto_update";
     private static final String KEY_PERSISTENT_NOTIFICATION = "persistent_notification_enabled";
@@ -52,7 +52,7 @@ public class SettingsViewModel extends AndroidViewModel {
     private final PendingIntent morningAlarmIntent;
     
     // LiveData
-    private final MutableLiveData<Boolean> morningAlertEnabled = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> autoStopEnabled = new MutableLiveData<>();
     private final MutableLiveData<Boolean> rainAlertEnabled = new MutableLiveData<>();
     private final MutableLiveData<Boolean> vibrationEnabled = new MutableLiveData<>();
     private final MutableLiveData<Boolean> soundEnabled = new MutableLiveData<>();
@@ -85,7 +85,7 @@ public class SettingsViewModel extends AndroidViewModel {
      * 설정값 로드
      */
     private void loadSettings() {
-        morningAlertEnabled.setValue(preferences.getBoolean(KEY_MORNING_ALERT, true));
+        autoStopEnabled.setValue(preferences.getBoolean(KEY_AUTO_STOP_ENABLED, true));
         rainAlertEnabled.setValue(preferences.getBoolean(KEY_RAIN_ALERT, true));
         vibrationEnabled.setValue(preferences.getBoolean(KEY_VIBRATION, true));
         soundEnabled.setValue(preferences.getBoolean(KEY_SOUND, true));
@@ -94,19 +94,20 @@ public class SettingsViewModel extends AndroidViewModel {
         persistentNotificationEnabled.setValue(preferences.getBoolean(KEY_PERSISTENT_NOTIFICATION, false));
         busNotificationEnabled.setValue(preferences.getBoolean(KEY_BUS_NOTIFICATION, false));
 
-        // 아침 알림 시간 로드 및 표시
-        int hour = preferences.getInt(KEY_MORNING_HOUR, 7);
-        int minute = preferences.getInt(KEY_MORNING_MINUTE, 0);
+        // 알림 종료 시간 로드 및 표시
+        int hour = preferences.getInt(KEY_STOP_HOUR, 10);
+        int minute = preferences.getInt(KEY_STOP_MINUTE, 0);
         updateTimeText(hour, minute);
     }
     
     /**
-     * 아침 알림 설정 변경
+     * 알림 자동 종료 설정 변경
      */
-    public void setMorningAlertEnabled(boolean enabled) {
-        preferences.edit().putBoolean(KEY_MORNING_ALERT, enabled).apply();
-        morningAlertEnabled.setValue(enabled);
-        updateMorningAlarmSettings();
+    public void setAutoStopEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_AUTO_STOP_ENABLED, enabled).apply();
+        autoStopEnabled.setValue(enabled);
+        // 설정이 변경되면 현재 시간 체크
+        checkAndStopNotificationsIfNeeded();
     }
     
     /**
@@ -179,22 +180,22 @@ public class SettingsViewModel extends AndroidViewModel {
     }
     
     /**
-     * 아침 알림 시간 설정
+     * 알림 종료 시간 설정
      */
-    public void setMorningAlarmTime(int hourOfDay, int minute) {
+    public void setStopTime(int hourOfDay, int minute) {
         // 시간 저장
         preferences.edit()
-                .putInt(KEY_MORNING_HOUR, hourOfDay)
-                .putInt(KEY_MORNING_MINUTE, minute)
+                .putInt(KEY_STOP_HOUR, hourOfDay)
+                .putInt(KEY_STOP_MINUTE, minute)
                 .apply();
-        
+
         // 시간 표시 업데이트
         updateTimeText(hourOfDay, minute);
-        
-        // 알람 업데이트
-        updateMorningAlarmSettings();
-        
-        toastMessage.setValue("아침 알림 시간이 설정되었습니다");
+
+        // 현재 시간 체크
+        checkAndStopNotificationsIfNeeded();
+
+        toastMessage.setValue("알림 종료 시간이 설정되었습니다");
     }
     
     /**
@@ -210,39 +211,65 @@ public class SettingsViewModel extends AndroidViewModel {
     }
     
     /**
-     * 아침 알람 설정 업데이트
+     * 현재 시간이 종료 시간을 지났는지 확인하고 알림 중단
      */
-    private void updateMorningAlarmSettings() {
-        boolean isEnabled = preferences.getBoolean(KEY_MORNING_ALERT, true);
-        
-        if (isEnabled) {
-            // 알람 설정
-            int hour = preferences.getInt(KEY_MORNING_HOUR, 7);
-            int minute = preferences.getInt(KEY_MORNING_MINUTE, 0);
-            
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(Calendar.HOUR_OF_DAY, hour);
-            calendar.set(Calendar.MINUTE, minute);
-            calendar.set(Calendar.SECOND, 0);
-            
-            // 이미 지난 시간이면 다음 날로 설정
-            if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
-                calendar.add(Calendar.DAY_OF_YEAR, 1);
-            }
-            
-            // 알람 설정 (매일 반복)
-            alarmManager.setRepeating(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.getTimeInMillis(),
-                    AlarmManager.INTERVAL_DAY,
-                    morningAlarmIntent);
-            
-            toastMessage.setValue("아침 알림이 활성화되었습니다");
-        } else {
-            // 알람 취소
-            alarmManager.cancel(morningAlarmIntent);
-            toastMessage.setValue("아침 알림이 비활성화되었습니다");
+    private void checkAndStopNotificationsIfNeeded() {
+        boolean isAutoStopEnabled = preferences.getBoolean(KEY_AUTO_STOP_ENABLED, true);
+
+        if (!isAutoStopEnabled) {
+            return; // 자동 종료가 비활성화되어 있으면 아무것도 하지 않음
         }
+
+        int stopHour = preferences.getInt(KEY_STOP_HOUR, 10);
+        int stopMinute = preferences.getInt(KEY_STOP_MINUTE, 0);
+
+        Calendar now = Calendar.getInstance();
+        Calendar stopTime = Calendar.getInstance();
+        stopTime.set(Calendar.HOUR_OF_DAY, stopHour);
+        stopTime.set(Calendar.MINUTE, stopMinute);
+        stopTime.set(Calendar.SECOND, 0);
+
+        // 현재 시간이 종료 시간을 지났으면 알림 중단
+        if (now.after(stopTime)) {
+            // 상태바 알림 중단
+            if (preferences.getBoolean(KEY_PERSISTENT_NOTIFICATION, false)) {
+                PersistentNotificationService.setEnabled(getApplication(), false);
+                preferences.edit().putBoolean(KEY_PERSISTENT_NOTIFICATION, false).apply();
+                persistentNotificationEnabled.setValue(false);
+            }
+
+            // 버스 알림 중단
+            if (preferences.getBoolean(KEY_BUS_NOTIFICATION, false)) {
+                BusNotificationService.setEnabled(getApplication(), false);
+                preferences.edit().putBoolean(KEY_BUS_NOTIFICATION, false).apply();
+                busNotificationEnabled.setValue(false);
+            }
+
+            toastMessage.setValue("설정된 시간이 지나 알림이 자동으로 중단되었습니다");
+        }
+    }
+
+    /**
+     * 시간이 지났는지 확인하는 공개 메서드 (다른 클래스에서 호출 가능)
+     */
+    public static boolean shouldStopNotifications(Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        boolean isAutoStopEnabled = preferences.getBoolean(KEY_AUTO_STOP_ENABLED, true);
+
+        if (!isAutoStopEnabled) {
+            return false;
+        }
+
+        int stopHour = preferences.getInt(KEY_STOP_HOUR, 10);
+        int stopMinute = preferences.getInt(KEY_STOP_MINUTE, 0);
+
+        Calendar now = Calendar.getInstance();
+        Calendar stopTime = Calendar.getInstance();
+        stopTime.set(Calendar.HOUR_OF_DAY, stopHour);
+        stopTime.set(Calendar.MINUTE, stopMinute);
+        stopTime.set(Calendar.SECOND, 0);
+
+        return now.after(stopTime);
     }
     
     /**
@@ -274,8 +301,8 @@ public class SettingsViewModel extends AndroidViewModel {
     }
     
     // LiveData Getters
-    public LiveData<Boolean> getMorningAlertEnabled() {
-        return morningAlertEnabled;
+    public LiveData<Boolean> getAutoStopEnabled() {
+        return autoStopEnabled;
     }
     
     public LiveData<Boolean> getRainAlertEnabled() {

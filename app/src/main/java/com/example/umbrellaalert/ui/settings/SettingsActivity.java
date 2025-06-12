@@ -40,8 +40,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void observeViewModel() {
         // 스위치 상태 관찰
-        viewModel.getMorningAlertEnabled().observe(this, enabled ->
-            binding.switchMorningAlert.setChecked(enabled));
+        viewModel.getAutoStopEnabled().observe(this, enabled ->
+            binding.switchAutoStop.setChecked(enabled));
 
         viewModel.getRainAlertEnabled().observe(this, enabled ->
             binding.switchRainAlert.setChecked(enabled));
@@ -80,9 +80,9 @@ public class SettingsActivity extends AppCompatActivity {
         // 뒤로가기 버튼
         binding.btnBack.setOnClickListener(v -> finish());
 
-        // 아침 알림 스위치
-        binding.switchMorningAlert.setOnCheckedChangeListener((buttonView, isChecked) ->
-            viewModel.setMorningAlertEnabled(isChecked));
+        // 알림 자동 종료 스위치
+        binding.switchAutoStop.setOnCheckedChangeListener((buttonView, isChecked) ->
+            viewModel.setAutoStopEnabled(isChecked));
 
         // 비소식 알림 스위치
         binding.switchRainAlert.setOnCheckedChangeListener((buttonView, isChecked) ->
@@ -112,7 +112,7 @@ public class SettingsActivity extends AppCompatActivity {
         binding.switchBusNotification.setOnCheckedChangeListener((buttonView, isChecked) ->
             viewModel.setBusNotificationEnabled(isChecked));
 
-        // 아침 알림 시간 설정
+        // 알림 종료 시간 설정
         binding.timePickerContainer.setOnClickListener(v -> showTimePickerDialog());
     }
 
@@ -122,9 +122,9 @@ public class SettingsActivity extends AppCompatActivity {
                 this,
                 (view, hourOfDay, minute) -> {
                     // ViewModel에 시간 설정
-                    viewModel.setMorningAlarmTime(hourOfDay, minute);
+                    viewModel.setStopTime(hourOfDay, minute);
                 },
-                7, 0, false); // 기본값은 ViewModel에서 처리
+                10, 0, false); // 기본값: 오전 10시
 
         timePickerDialog.show();
     }
