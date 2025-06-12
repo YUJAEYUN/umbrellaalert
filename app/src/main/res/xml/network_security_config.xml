@@ -2,5 +2,7 @@
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">apis.data.go.kr</domain>
+        <domain includeSubdomains="true">maps.apigw.ntruss.com</domain>
+        <domain includeSubdomains="true">api.openweathermap.org</domain>
     </domain-config>
 </network-security-config>

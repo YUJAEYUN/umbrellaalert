@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Toast;
@@ -112,20 +113,38 @@ public class AddLocationDialog extends DialogFragment implements LocationSearchA
         // 검색 중 표시
         binding.recyclerSearchResults.setVisibility(View.VISIBLE);
 
+        // 로딩 상태 표시 (빈 어댑터로 설정)
+        searchAdapter.setSearchResults(null);
+        searchAdapter.setLoading(true);
+
         // 비동기 검색 수행
         new Thread(() -> {
-            List<SearchLocation> results = LocationSearchService.searchByName(query);
+            try {
+                List<SearchLocation> results = LocationSearchService.searchByName(query);
 
-            // UI 업데이트는 메인 스레드에서
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    if (results.isEmpty()) {
-                        hideSearchResults();
-                    } else {
-                        searchAdapter.setSearchResults(results);
+                // UI 업데이트는 메인 스레드에서
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        searchAdapter.setLoading(false);
+                        if (results.isEmpty()) {
+                            searchAdapter.setNoResults(true);
+                            binding.recyclerSearchResults.setVisibility(View.VISIBLE);
+                        } else {
+                            searchAdapter.setSearchResults(results);
+                            searchAdapter.setNoResults(false);
+                            binding.recyclerSearchResults.setVisibility(View.VISIBLE);
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.e("AddLocationDialog", "검색 중 오류 발생", e);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        searchAdapter.setLoading(false);
+                        searchAdapter.setNoResults(true);
                         binding.recyclerSearchResults.setVisibility(View.VISIBLE);
-                    }
-                });
+                    });
+                }
             }
         }).start();
     }
@@ -136,6 +155,8 @@ public class AddLocationDialog extends DialogFragment implements LocationSearchA
     private void hideSearchResults() {
         binding.recyclerSearchResults.setVisibility(View.GONE);
         searchAdapter.setSearchResults(null);
+        searchAdapter.setLoading(false);
+        searchAdapter.setNoResults(false);
     }
 
     /**

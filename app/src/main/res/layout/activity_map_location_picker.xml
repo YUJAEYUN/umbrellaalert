@@ -101,24 +101,53 @@
             android:padding="@dimen/ios_spacing_md">
 
             <!-- 선택된 위치 정보 -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal"
                 android:layout_marginBottom="@dimen/ios_spacing_xs"
-                android:text="선택된 위치"
-                android:textColor="@color/text_secondary"
-                android:textSize="@dimen/ios_text_footnote"
-                android:fontFamily="@font/pretendard_font_family" />
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_location"
+                    android:tint="@color/text_secondary"
+                    android:layout_marginEnd="4dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="선택된 위치"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/ios_text_footnote"
+                    android:fontFamily="@font/pretendard_font_family" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/text_selected_location"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/ios_spacing_md"
+                android:layout_marginBottom="@dimen/ios_spacing_xs"
                 android:text="지도에서 위치를 선택해주세요"
                 android:textColor="@color/text_primary"
                 android:textSize="@dimen/ios_text_body"
-                android:fontFamily="@font/pretendard_font_family" />
+                android:fontFamily="@font/pretendard_font_family"
+                android:minHeight="48dp"
+                android:gravity="center_vertical" />
+
+            <!-- 좌표 정보 (선택적 표시) -->
+            <TextView
+                android:id="@+id/text_coordinates"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/ios_spacing_md"
+                android:text=""
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:fontFamily="@font/pretendard_font_family"
+                android:visibility="gone" />
 
             <!-- 위치 선택 완료 버튼 -->
             <Button

@@ -7,6 +7,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -148,28 +149,49 @@ public class MapLocationPickerActivity extends AppCompatActivity implements OnMa
     }
     
     private void getAddressFromCoordinates(double latitude, double longitude) {
-        // 네이버 클라우드 플랫폼 Reverse Geocoding API 사용
+        // 로딩 상태 표시
+        runOnUiThread(() -> {
+            binding.textSelectedLocation.setText("주소를 찾는 중...");
+        });
+
+        // Handler를 사용한 백그라운드 실행
+        android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
         new Thread(() -> {
             try {
                 String address = com.example.umbrellaalert.service.LocationSearchService
                     .getAddressFromCoordinates(latitude, longitude);
 
-                selectedLocationName = address;
-                if (selectedLocationName == null || selectedLocationName.isEmpty()) {
+                // 주소가 유효한지 확인
+                if (address != null && !address.isEmpty() &&
+                    !address.equals("주소를 찾을 수 없습니다") &&
+                    !address.startsWith("위치 (")) {
+                    selectedLocationName = address;
+                    Log.d(TAG, "주소 변환 성공: " + address);
+                } else {
+                    // 기본 주소 형식 사용
                     selectedLocationName = String.format("위치 (%.4f, %.4f)", latitude, longitude);
+                    Log.w(TAG, "주소 변환 실패, 좌표 사용: " + selectedLocationName);
                 }
 
                 // UI 업데이트는 메인 스레드에서
-                runOnUiThread(() -> {
+                handler.post(() -> {
                     binding.textSelectedLocation.setText(selectedLocationName);
+                    // 좌표 정보도 표시
+                    String coordinates = String.format("위도: %.6f, 경도: %.6f", latitude, longitude);
+                    binding.textCoordinates.setText(coordinates);
+                    binding.textCoordinates.setVisibility(View.VISIBLE);
                 });
 
             } catch (Exception e) {
                 Log.e(TAG, "네이버 Reverse Geocoding 실패", e);
                 selectedLocationName = String.format("위치 (%.4f, %.4f)", latitude, longitude);
 
-                runOnUiThread(() -> {
+                handler.post(() -> {
                     binding.textSelectedLocation.setText(selectedLocationName);
+                    // 좌표 정보도 표시
+                    String coordinates = String.format("위도: %.6f, 경도: %.6f", latitude, longitude);
+                    binding.textCoordinates.setText(coordinates);
+                    binding.textCoordinates.setVisibility(View.VISIBLE);
                 });
             }
         }).start();
