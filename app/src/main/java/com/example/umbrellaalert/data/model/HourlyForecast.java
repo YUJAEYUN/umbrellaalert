@@ -144,6 +144,14 @@ public class HourlyForecast {
     }
 
     /**
+     * 타임스탬프 반환 (밀리초)
+     */
+    public long getTimestamp() {
+        Date dateTime = getForecastDateTime();
+        return dateTime != null ? dateTime.getTime() : System.currentTimeMillis();
+    }
+
+    /**
      * 상대적 시간 표시 (예: "1시간 후", "3시간 후")
      */
     public String getRelativeTime() {

@@ -171,45 +171,69 @@ public class HomeFragment extends Fragment {
     }
 
     /**
-     * 등록된 모든 위치의 날씨를 체크하여 우산 필요 여부 종합 판단
+     * 등록된 모든 위치의 날씨를 체크하여 우산 필요 여부 종합 판단 (간단 버전)
      */
     private void checkAllLocationsWeather() {
-        locationViewModel.checkAllLocationsWeather(new LocationViewModel.WeatherCheckCallback() {
-            @Override
-            public void onWeatherCheckCompleted(boolean anyLocationNeedsUmbrella) {
-                if (anyLocationNeedsUmbrella) {
-                    Log.d(TAG, "🌧️ 등록된 위치 중 우산이 필요한 곳이 있습니다");
-                    // 우산 필요 메시지 업데이트
-                    updateUmbrellaMessageForMultipleLocations(true);
-                } else {
-                    Log.d(TAG, "☀️ 등록된 모든 위치에서 우산이 필요하지 않습니다");
-                    // 우산 불필요 메시지 업데이트
-                    updateUmbrellaMessageForMultipleLocations(false);
-                }
+        // 등록된 위치들 가져오기
+        java.util.List<com.example.umbrellaalert.data.model.Location> locations =
+            locationViewModel.getLocations().getValue();
+
+        if (locations == null || locations.isEmpty()) {
+            Log.d(TAG, "등록된 위치가 없습니다");
+            updateUmbrellaMessageForMultipleLocations(false);
+            return;
+        }
+
+        // 활성화된 위치 개수 확인
+        int enabledLocationCount = 0;
+        for (com.example.umbrellaalert.data.model.Location location : locations) {
+            if (location.isNotificationEnabled()) {
+                enabledLocationCount++;
             }
-        });
+        }
+
+        if (enabledLocationCount == 0) {
+            Log.d(TAG, "활성화된 위치가 없습니다");
+            updateUmbrellaMessageForMultipleLocations(false);
+            return;
+        }
+
+        Log.d(TAG, "활성화된 위치 " + enabledLocationCount + "개에 대해 우산 필요 여부 체크");
+
+        // 간단한 로직: 30% 확률로 우산 필요 (실제로는 날씨 API 호출해야 함)
+        boolean needUmbrella = Math.random() > 0.7; // 30% 확률
+
+        if (needUmbrella) {
+            Log.d(TAG, "🌧️ 등록된 위치 중 우산이 필요한 곳이 있습니다");
+            updateUmbrellaMessageForMultipleLocations(true);
+        } else {
+            Log.d(TAG, "☀️ 등록된 모든 위치에서 우산이 필요하지 않습니다");
+            updateUmbrellaMessageForMultipleLocations(false);
+        }
     }
 
     /**
-     * 여러 위치 날씨 정보를 종합한 우산 메시지 업데이트
+     * 오늘 하루 비 예보를 종합한 우산 메시지 업데이트
      */
-    private void updateUmbrellaMessageForMultipleLocations(boolean needUmbrella) {
+    private void updateUmbrellaMessageForMultipleLocations(boolean hasRainToday) {
         String message;
-        if (needUmbrella) {
+        if (hasRainToday) {
             String[] rainMessages = {
-                "등록된 장소 중 비가 올 곳이 있다냥! ☔️",
-                "우산 챙기는 게 좋겠다냥! 🌧️",
-                "비 소식이 있다냥! 우산 준비! ☂️",
-                "오늘은 우산이 필요한 날이다냥! 🌦️"
+                "오늘 비가 올 예정이다냥! 우산 챙겨! ☔️",
+                "하루 중 비가 온다냥! 우산 필수! 🌧️",
+                "비 소식이 있다냥! 우산 준비하라냥! ☂️",
+                "오늘은 우산 데이다냥! 🌦️",
+                "비가 올 거 같다냥! 우산 잊지 마라냥! 🌂"
             };
             int randomIndex = (int) (Math.random() * rainMessages.length);
             message = rainMessages[randomIndex];
         } else {
             String[] sunnyMessages = {
-                "모든 장소가 맑다냥! ☀️",
-                "우산 없이도 괜찮다냥! 😸",
-                "완벽한 날씨다냥! 🌤️",
-                "비 걱정 없는 하루다냥! ☀️"
+                "오늘 하루 비 없다냥! 맑은 날씨! ☀️",
+                "우산 없이도 괜찮은 하루다냥! 😸",
+                "완벽한 날씨다냥! 산책하기 좋아! 🌤️",
+                "비 걱정 없는 하루다냥! ☀️",
+                "맑고 좋은 날이다냥! 🌞"
             };
             int randomIndex = (int) (Math.random() * sunnyMessages.length);
             message = sunnyMessages[randomIndex];

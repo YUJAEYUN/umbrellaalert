@@ -195,4 +195,69 @@ public class LocationService implements LocationListener {
     public void onProviderDisabled(String provider) {
         Log.d(TAG, "Location provider disabled: " + provider);
     }
+
+    /**
+     * 위치 권한 확인
+     */
+    private boolean hasLocationPermission() {
+        return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+               ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * 가장 좋은 마지막 알려진 위치 가져오기
+     */
+    private Location getBestLastKnownLocation() throws SecurityException {
+        Location gpsLocation = null;
+        Location networkLocation = null;
+        Location passiveLocation = null;
+
+        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        }
+
+        if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+            networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        }
+
+        if (locationManager.isProviderEnabled(LocationManager.PASSIVE_PROVIDER)) {
+            passiveLocation = locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+        }
+
+        // 가장 정확하고 최근 위치 선택
+        Location bestLocation = null;
+
+        if (gpsLocation != null) {
+            bestLocation = gpsLocation;
+        }
+
+        if (networkLocation != null && (bestLocation == null || networkLocation.getTime() > bestLocation.getTime())) {
+            bestLocation = networkLocation;
+        }
+
+        if (passiveLocation != null && (bestLocation == null || passiveLocation.getTime() > bestLocation.getTime())) {
+            bestLocation = passiveLocation;
+        }
+
+        return bestLocation;
+    }
+
+    /**
+     * 마지막으로 알려진 위치 가져오기 (동기)
+     */
+    public Location getLastKnownLocation() {
+        if (!hasLocationPermission()) {
+            return null;
+        }
+
+        try {
+            return getBestLastKnownLocation();
+        } catch (SecurityException e) {
+            Log.e(TAG, "위치 권한이 없습니다", e);
+            return null;
+        } catch (Exception e) {
+            Log.e(TAG, "위치 가져오기 실패", e);
+            return null;
+        }
+    }
 }

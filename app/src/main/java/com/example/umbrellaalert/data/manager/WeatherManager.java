@@ -35,6 +35,8 @@ public class WeatherManager {
         this.weatherService = weatherService;
     }
 
+
+
     /**
      * 현재 위치의 날씨 가져오기 - OpenWeather API 사용
      */
@@ -87,63 +89,154 @@ public class WeatherManager {
     }
 
     /**
-     * 우산 알림 서비스를 위한 모든 위치에 대한 날씨 체크
+     * 현재 위치와 등록된 모든 위치에 대해 오늘 하루 비 예보 체크
      */
-    public void checkAllLocationsWeather(List<Location> locations, WeatherCheckCallback callback) {
-        if (locations == null || locations.isEmpty()) {
+    public void checkTodayRainForAllLocations(double currentLat, double currentLng, List<Location> locations, WeatherCheckCallback callback) {
+        Log.d(TAG, "🌧️ 현재 위치와 등록된 위치들의 오늘 하루 비 예보 체크 시작");
+
+        // 체크할 위치들 수집 (현재 위치 + 활성화된 등록 위치들)
+        List<LocationInfo> locationsToCheck = new ArrayList<>();
+
+        // 1. 현재 위치 추가
+        locationsToCheck.add(new LocationInfo("현재 위치", currentLat, currentLng));
+
+        // 2. 활성화된 등록 위치들 추가
+        if (locations != null) {
+            for (Location location : locations) {
+                if (location.isNotificationEnabled()) {
+                    locationsToCheck.add(new LocationInfo(location.getName(), location.getLatitude(), location.getLongitude()));
+                }
+            }
+        }
+
+        if (locationsToCheck.isEmpty()) {
             Log.d(TAG, "체크할 위치가 없습니다");
             callback.onWeatherCheckCompleted(false);
             return;
         }
 
-        // 활성화된 위치만 필터링
-        List<Location> enabledLocations = new ArrayList<>();
-        for (Location location : locations) {
-            if (location.isNotificationEnabled()) {
-                enabledLocations.add(location);
-            }
-        }
+        Log.d(TAG, "총 " + locationsToCheck.size() + "개 위치의 오늘 하루 비 예보 체크");
 
-        if (enabledLocations.isEmpty()) {
-            Log.d(TAG, "활성화된 위치가 없습니다");
-            callback.onWeatherCheckCompleted(false);
-            return;
-        }
-
-        Log.d(TAG, "활성화된 위치 " + enabledLocations.size() + "개에 대해 날씨 체크 시작");
-
-        // 비동기로 각 위치의 날씨 정보 수집
+        // 비동기로 각 위치의 오늘 하루 예보 체크
         AtomicInteger completedCount = new AtomicInteger(0);
-        AtomicBoolean anyLocationNeedsUmbrella = new AtomicBoolean(false);
+        AtomicBoolean anyLocationHasRain = new AtomicBoolean(false);
 
-        for (Location location : enabledLocations) {
-            getCurrentWeather(location.getLatitude(), location.getLongitude(), new WeatherCallback() {
+        for (LocationInfo locationInfo : locationsToCheck) {
+            checkTodayRainForLocation(locationInfo.latitude, locationInfo.longitude, locationInfo.name, new RainCheckCallback() {
                 @Override
-                public void onSuccess(Weather weather) {
-                    Log.d(TAG, "위치 '" + location.getName() + "' 날씨: " + weather.getWeatherCondition() +
-                              ", 우산 필요: " + weather.isNeedUmbrella());
+                public void onRainCheckCompleted(boolean hasRainToday) {
+                    Log.d(TAG, "위치 '" + locationInfo.name + "' 오늘 비 예보: " + (hasRainToday ? "있음" : "없음"));
 
-                    if (weather.isNeedUmbrella()) {
-                        anyLocationNeedsUmbrella.set(true);
+                    if (hasRainToday) {
+                        anyLocationHasRain.set(true);
                     }
 
                     // 모든 위치 체크 완료 시 콜백 호출
-                    if (completedCount.incrementAndGet() == enabledLocations.size()) {
-                        callback.onWeatherCheckCompleted(anyLocationNeedsUmbrella.get());
+                    if (completedCount.incrementAndGet() == locationsToCheck.size()) {
+                        boolean finalResult = anyLocationHasRain.get();
+                        Log.d(TAG, "🌧️ 전체 위치 비 예보 체크 완료: " + (finalResult ? "비 예상됨" : "비 없음"));
+                        callback.onWeatherCheckCompleted(finalResult);
                     }
                 }
 
                 @Override
                 public void onError(String error) {
-                    Log.e(TAG, "위치 '" + location.getName() + "' 날씨 체크 실패: " + error);
+                    Log.e(TAG, "위치 '" + locationInfo.name + "' 비 예보 체크 실패: " + error);
 
                     // 에러가 발생해도 카운트 증가 (다른 위치들은 계속 체크)
-                    if (completedCount.incrementAndGet() == enabledLocations.size()) {
-                        callback.onWeatherCheckCompleted(anyLocationNeedsUmbrella.get());
+                    if (completedCount.incrementAndGet() == locationsToCheck.size()) {
+                        callback.onWeatherCheckCompleted(anyLocationHasRain.get());
                     }
                 }
             });
         }
+    }
+
+    /**
+     * 특정 위치의 오늘 하루 비 예보 체크
+     */
+    private void checkTodayRainForLocation(double latitude, double longitude, String locationName, RainCheckCallback callback) {
+        // 12시간 예보를 가져와서 오늘 하루 비 여부 판단
+        get12HourForecast(latitude, longitude, new ForecastCallback() {
+            @Override
+            public void onSuccess(List<HourlyForecast> forecasts) {
+                boolean hasRainToday = false;
+
+                // 오늘 날짜 계산
+                long todayStart = getTodayStartTime();
+                long todayEnd = todayStart + 24 * 60 * 60 * 1000; // 24시간 후
+
+                for (HourlyForecast forecast : forecasts) {
+                    long forecastTime = forecast.getTimestamp();
+
+                    // 오늘 범위 내의 예보만 체크
+                    if (forecastTime >= todayStart && forecastTime < todayEnd) {
+                        if (isRainyWeather(forecast.getWeatherCondition()) || forecast.getPrecipitation() > 0.1f) {
+                            hasRainToday = true;
+                            Log.d(TAG, locationName + " - 비 예보 발견: " + forecast.getWeatherCondition() +
+                                      ", 강수량: " + forecast.getPrecipitation() + "mm");
+                            break;
+                        }
+                    }
+                }
+
+                callback.onRainCheckCompleted(hasRainToday);
+            }
+
+            @Override
+            public void onError(String error) {
+                callback.onError(error);
+            }
+        });
+    }
+
+    /**
+     * 오늘 시작 시간 (00:00) 계산
+     */
+    private long getTodayStartTime() {
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        calendar.set(java.util.Calendar.MINUTE, 0);
+        calendar.set(java.util.Calendar.SECOND, 0);
+        calendar.set(java.util.Calendar.MILLISECOND, 0);
+        return calendar.getTimeInMillis();
+    }
+
+    /**
+     * 비가 오는 날씨인지 판단
+     */
+    private boolean isRainyWeather(String weatherCondition) {
+        if (weatherCondition == null) return false;
+
+        String condition = weatherCondition.toLowerCase();
+        return condition.contains("rain") || condition.contains("비") ||
+               condition.contains("drizzle") || condition.contains("이슬비") ||
+               condition.contains("shower") || condition.contains("소나기") ||
+               condition.contains("thunderstorm") || condition.contains("천둥") ||
+               condition.contains("storm") || condition.contains("폭풍");
+    }
+
+    /**
+     * 위치 정보를 담는 내부 클래스
+     */
+    private static class LocationInfo {
+        final String name;
+        final double latitude;
+        final double longitude;
+
+        LocationInfo(String name, double latitude, double longitude) {
+            this.name = name;
+            this.latitude = latitude;
+            this.longitude = longitude;
+        }
+    }
+
+    /**
+     * 비 예보 체크 콜백 인터페이스
+     */
+    public interface RainCheckCallback {
+        void onRainCheckCompleted(boolean hasRainToday);
+        void onError(String error);
     }
 
     // === 콜백 인터페이스 ===

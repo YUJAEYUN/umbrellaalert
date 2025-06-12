@@ -129,7 +129,7 @@ public class LocationViewModel extends AndroidViewModel {
     }
 
     /**
-     * 모든 활성화된 위치에 대해 날씨를 체크하여 우산 필요 여부 확인
+     * 모든 활성화된 위치에 대해 우산 필요 여부 체크 (간단 버전)
      */
     public void checkAllLocationsWeather(WeatherCheckCallback callback) {
         List<Location> currentLocations = locations.getValue();
@@ -138,15 +138,12 @@ public class LocationViewModel extends AndroidViewModel {
             return;
         }
 
-        // WeatherManager를 통해 날씨 체크 (실제 구현에서는 Hilt로 주입받아야 함)
-        // 현재는 목업 데이터로 처리
         executorService.execute(() -> {
             boolean anyLocationNeedsUmbrella = false;
 
             for (Location location : currentLocations) {
                 if (location.isNotificationEnabled()) {
-                    // 실제 구현에서는 WeatherManager.checkAllLocationsWeather 사용
-                    // 현재는 간단한 로직으로 처리 (위치 이름에 따라 임의 결정)
+                    // 간단한 로직으로 처리 (실제로는 날씨 API 호출해야 함)
                     boolean needsUmbrella = location.getName().contains("학교") ||
                                           location.getName().contains("대학") ||
                                           Math.random() > 0.7; // 30% 확률로 우산 필요
