@@ -15,18 +15,18 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="@dimen/ios_card_padding">
+        android:padding="8dp">
 
         <!-- 버스 아이콘 -->
         <ImageView
             android:id="@+id/bus_icon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:src="@drawable/ic_bus"
             android:tint="@color/ios_blue"
             android:background="@drawable/circle_background"
             android:backgroundTint="@color/ios_blue_light"
-            android:padding="8dp"
+            android:padding="6dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -35,53 +35,54 @@
             android:id="@+id/tv_route_no"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/ios_spacing_md"
-            android:textSize="20sp"
+            android:layout_marginStart="8dp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/ios_blue"
             app:layout_constraintStart_toEndOf="@id/bus_icon"
             app:layout_constraintTop_toTopOf="@id/bus_icon"
             tools:text="370번" />
 
-        <!-- 정류장명과 방향 정보 -->
+        <!-- 정류장명 (간결하게) -->
         <TextView
             android:id="@+id/tv_node_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="@dimen/ios_spacing_sm"
-            android:textSize="14sp"
+            android:layout_marginTop="1dp"
+            android:layout_marginEnd="4dp"
+            android:textSize="12sp"
             android:textColor="@color/text_secondary"
             android:ellipsize="end"
-            android:maxLines="2"
-            android:lineSpacingExtra="2dp"
+            android:maxLines="1"
             app:layout_constraintStart_toStartOf="@id/tv_route_no"
             app:layout_constraintTop_toBottomOf="@id/tv_route_no"
             app:layout_constraintEnd_toStartOf="@id/tv_arrival_time"
-            tools:text="세종시청 정류장\n🚌 대전역 방면" />
+            app:layout_constraintHorizontal_bias="0"
+            tools:text="세종시청 정류장" />
 
-        <!-- 방향 정보 -->
+        <!-- 스마트 상태 메시지 (간결하고 임팩트 있게) -->
         <TextView
-            android:id="@+id/tv_direction"
+            android:id="@+id/tv_smart_status"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:layout_marginEnd="@dimen/ios_spacing_sm"
-            android:textSize="12sp"
-            android:textColor="@color/text_tertiary"
+            android:layout_marginEnd="4dp"
+            android:textSize="11sp"
+            android:textStyle="bold"
             android:ellipsize="end"
             android:maxLines="1"
             app:layout_constraintStart_toStartOf="@id/tv_route_no"
             app:layout_constraintTop_toBottomOf="@id/tv_node_name"
             app:layout_constraintEnd_toStartOf="@id/tv_arrival_time"
-            tools:text="→ 대전역 방면" />
+            tools:text="🏃‍♂️ 지금 출발!" />
 
-        <!-- 도착 시간 - 메인 정보 -->
+        <!-- 도착 시간 - 간결하게 -->
         <TextView
             android:id="@+id/tv_arrival_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
+            android:layout_marginStart="4dp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/ios_blue"
             android:background="@drawable/arrival_time_background"
@@ -89,49 +90,29 @@
             android:paddingTop="4dp"
             android:paddingEnd="8dp"
             android:paddingBottom="4dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/tv_route_no"
-            tools:text="⏰ 5분 후 도착" />
+            tools:text="5분" />
 
-        <!-- 정류장 수 정보 -->
+        <!-- 도보 시간 (간결하게) -->
         <TextView
-            android:id="@+id/tv_station_count"
+            android:id="@+id/tv_walking_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textSize="12sp"
-            android:textColor="@color/text_secondary"
+            android:layout_marginTop="2dp"
+            android:textSize="10sp"
+            android:textColor="@color/text_tertiary"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_arrival_time"
-            tools:text="3정거장 전" />
+            tools:text="🚶‍♂️ 5분" />
 
-        <!-- 도보 시간 정보 -->
-        <LinearLayout
-            android:id="@+id/walking_time_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_station_count">
 
-            <ImageView
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:src="@drawable/ic_walk"
-                android:tint="@color/text_tertiary"
-                android:layout_marginEnd="4dp" />
-
-            <TextView
-                android:id="@+id/tv_walking_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="11sp"
-                android:textColor="@color/text_tertiary"
-                tools:text="도보 5분" />
-
-        </LinearLayout>
 
         <!-- 로딩 상태 -->
         <ProgressBar
@@ -141,20 +122,18 @@
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/tv_route_no"
-            app:layout_constraintBottom_toBottomOf="@id/tv_station_count" />
+            app:layout_constraintBottom_toBottomOf="@id/tv_walking_time" />
 
         <!-- 오류 상태 -->
         <TextView
             android:id="@+id/tv_error_state"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="정보 없음"
-            android:textSize="12sp"
-            android:textColor="@color/text_tertiary"
+            android:text="❌"
+            android:textSize="14sp"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tv_route_no"
-            app:layout_constraintBottom_toBottomOf="@id/tv_direction" />
+            app:layout_constraintTop_toTopOf="@id/tv_route_no" />
 
         <!-- 삭제 버튼 (스와이프 시 표시) -->
         <ImageButton

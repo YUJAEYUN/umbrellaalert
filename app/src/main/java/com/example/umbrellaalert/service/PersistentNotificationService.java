@@ -34,6 +34,7 @@ import com.example.umbrellaalert.data.database.BusDao;
 import com.example.umbrellaalert.data.database.DatabaseHelper;
 import com.example.umbrellaalert.receiver.NotificationDismissReceiver;
 import com.example.umbrellaalert.ui.main.MainActivity;
+import com.example.umbrellaalert.util.WalkingTimeCalculator;
 
 import java.util.List;
 import java.util.concurrent.Future;
@@ -72,6 +73,7 @@ public class PersistentNotificationService extends Service implements LocationLi
     private Runnable updateRunnable;
     private LocationManager locationManager;
     private Location currentLocation;
+    private WalkingTimeCalculator walkingTimeCalculator;
 
     @Override
     public void onCreate() {
@@ -83,6 +85,7 @@ public class PersistentNotificationService extends Service implements LocationLi
         executorService = Executors.newSingleThreadExecutor();
         handler = new Handler(Looper.getMainLooper());
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        walkingTimeCalculator = new WalkingTimeCalculator(this);
 
         // 업데이트 Runnable 정의
         updateRunnable = new Runnable() {
@@ -124,6 +127,9 @@ public class PersistentNotificationService extends Service implements LocationLi
         // 업데이트 중지
         handler.removeCallbacks(updateRunnable);
         stopLocationUpdates();
+        if (walkingTimeCalculator != null) {
+            walkingTimeCalculator.shutdown();
+        }
         executorService.shutdown();
     }
 
@@ -236,7 +242,10 @@ public class PersistentNotificationService extends Service implements LocationLi
     private String getBusInfo() {
         try {
             List<RegisteredBus> buses = busDao.getAllRegisteredBuses();
+            Log.d(TAG, "📋 등록된 버스 수: " + (buses != null ? buses.size() : 0));
+
             if (buses == null || buses.isEmpty()) {
+                Log.d(TAG, "❌ 등록된 버스가 없음");
                 return "등록된 버스가 없습니다";
             }
 
@@ -244,48 +253,122 @@ public class PersistentNotificationService extends Service implements LocationLi
             int count = 0;
 
             for (RegisteredBus bus : buses) {
-                if (count >= 2) break; // 최대 2개만 표시
+                // 모든 즐겨찾기 버스 표시 (제한 제거)
 
                 try {
                     Future<List<BusArrival>> future = busApiClient.getBusArrivalInfo(bus.getNodeId(), bus.getCityCode());
-                    List<BusArrival> arrivals = future.get(3, TimeUnit.SECONDS); // 3초 타임아웃
+                    List<BusArrival> arrivals = future.get(10, TimeUnit.SECONDS); // 10초 타임아웃으로 증가
+
+                    Log.d(TAG, "🚌 " + bus.getRouteNo() + "번 버스 API 응답: " + arrivals.size() + "개");
 
                     // 해당 버스 찾기
                     boolean found = false;
                     for (BusArrival arrival : arrivals) {
                         if (bus.getRouteNo().equals(arrival.getRouteNo())) {
-                            if (count > 0) busInfo.append(" | ");
-                            busInfo.append(bus.getRouteNo()).append("번: ").append(arrival.getFormattedArrTime());
-                            count++;
+                            int arrivalMinutes = arrival.getArrTime();
+
+                            // 정류장 위치 정보가 있는 경우 도보 시간 고려
+                            if (bus.getLatitude() != 0.0 && bus.getLongitude() != 0.0 && currentLocation != null) {
+                                try {
+                                    Future<Integer> walkingTimeFuture = walkingTimeCalculator.calculateWalkingTime(
+                                            currentLocation.getLatitude(), currentLocation.getLongitude(),
+                                            bus.getLatitude(), bus.getLongitude());
+                                    int walkingTimeMinutes = walkingTimeFuture.get(5, TimeUnit.SECONDS);
+
+                                    // 도보 시간을 고려한 직관적인 메시지 생성
+                                    String smartMessage = generateSmartBusMessage(bus.getRouteNo(), arrivalMinutes, walkingTimeMinutes);
+                                    if (smartMessage != null) {
+                                        if (count > 0) busInfo.append(" | ");
+                                        busInfo.append(smartMessage);
+                                        count++;
+                                    }
+                                } catch (Exception e) {
+                                    Log.e(TAG, "도보 시간 계산 실패: " + bus.getRouteNo(), e);
+                                    // 도보 시간 계산 실패시 기본 메시지
+                                    String basicMessage = generateBasicBusMessage(bus.getRouteNo(), arrivalMinutes);
+                                    if (basicMessage != null) {
+                                        if (count > 0) busInfo.append(" | ");
+                                        busInfo.append(basicMessage);
+                                        count++;
+                                    }
+                                }
+                            } else {
+                                // 위치 정보가 없는 경우 기본 메시지
+                                String basicMessage = generateBasicBusMessage(bus.getRouteNo(), arrivalMinutes);
+                                if (basicMessage != null) {
+                                    if (count > 0) busInfo.append(" | ");
+                                    busInfo.append(basicMessage);
+                                    count++;
+                                }
+                            }
+
                             found = true;
                             break;
                         }
                     }
 
-                    // 해당 버스를 찾지 못한 경우
-                    if (!found) {
-                        if (count > 0) busInfo.append(" | ");
-                        busInfo.append(bus.getRouteNo()).append("번: 운행정보 없음");
-                        count++;
-                    }
+                    // 해당 버스를 찾지 못한 경우는 표시하지 않음 (노이즈 제거)
 
                 } catch (Exception e) {
                     Log.e(TAG, "버스 정보 가져오기 실패: " + bus.getRouteNo(), e);
-                    if (count > 0) busInfo.append(" | ");
-                    busInfo.append(bus.getRouteNo()).append("번: 정보 오류");
-                    count++;
+                    // 오류 발생한 버스는 표시하지 않음 (노이즈 제거)
                 }
             }
 
             if (busInfo.length() == 0) {
-                return "버스 도착 정보를 가져올 수 없습니다";
+                return "🚌 버스 없음";
             }
 
             return busInfo.toString();
 
         } catch (Exception e) {
             Log.e(TAG, "버스 정보 조회 오류", e);
-            return "버스 정보 조회 중 오류가 발생했습니다";
+            return "🚌 정보 오류";
+        }
+    }
+
+    /**
+     * 도보 시간을 고려한 스마트 버스 메시지 생성
+     */
+    private String generateSmartBusMessage(String routeNo, int arrivalMinutes, int walkingMinutes) {
+        // 여유 시간 계산 (버스 도착 시간 - 도보 시간)
+        int bufferTime = arrivalMinutes - walkingMinutes;
+
+        if (bufferTime <= 0) {
+            // 이미 늦었거나 바로 나가야 함
+            return "🏃‍♂️ " + routeNo + "번 지금 뛰어!";
+        } else if (bufferTime <= 1) {
+            // 1분 여유 - 지금 나가야 함
+            return "🚶‍♂️ " + routeNo + "번 지금 출발!";
+        } else if (bufferTime <= 3) {
+            // 2-3분 여유 - 준비하고 나가면 됨
+            return "⏰ " + routeNo + "번 " + arrivalMinutes + "분 (준비하세요)";
+        } else if (bufferTime <= 10) {
+            // 4-10분 여유 - 여유있음
+            return "👍 " + routeNo + "번 " + arrivalMinutes + "분 (여유)";
+        } else if (bufferTime <= 30) {
+            // 10-30분 여유 - 시간 표시만
+            return "🕐 " + routeNo + "번 " + arrivalMinutes + "분";
+        } else {
+            // 30분 이상 - 간단히 표시
+            return "⏳ " + routeNo + "번 " + arrivalMinutes + "분";
+        }
+    }
+
+    /**
+     * 기본 버스 메시지 생성 (도보 시간 정보 없을 때)
+     */
+    private String generateBasicBusMessage(String routeNo, int arrivalMinutes) {
+        if (arrivalMinutes <= 1) {
+            return "🏃‍♂️ " + routeNo + "번 지금!";
+        } else if (arrivalMinutes <= 3) {
+            return "⚡ " + routeNo + "번 " + arrivalMinutes + "분";
+        } else if (arrivalMinutes <= 10) {
+            return "👍 " + routeNo + "번 " + arrivalMinutes + "분";
+        } else if (arrivalMinutes <= 30) {
+            return "🕐 " + routeNo + "번 " + arrivalMinutes + "분";
+        } else {
+            return "⏳ " + routeNo + "번 " + arrivalMinutes + "분";
         }
     }
 

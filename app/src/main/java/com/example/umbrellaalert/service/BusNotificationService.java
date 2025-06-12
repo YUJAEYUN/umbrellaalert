@@ -233,11 +233,11 @@ public class BusNotificationService extends Service {
         Intent intent = new Intent(this, HomeActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-        
-        String title = "슬슬 나가자냥!";
-        String message = String.format("%s번 버스가 %d분 후 도착해요! 지금 출발하면 딱 맞아요~ (도보 %d분)", 
+
+        String title = "🏃‍♂️ 지금 출발!";
+        String message = String.format("%s번 %d분 후 도착 (도보 %d분)",
                 bus.getRouteNo(), arrivalMinutes, walkingMinutes);
-        
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(title)
                 .setContentText(message)
@@ -247,10 +247,10 @@ public class BusNotificationService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .build();
-        
+
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.notify(NOTIFICATION_ID + bus.getRouteNo().hashCode(), notification);
-        
+
         Log.d(TAG, "버스 알림 발송: " + message);
     }
     

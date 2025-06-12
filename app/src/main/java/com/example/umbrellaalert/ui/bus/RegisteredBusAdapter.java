@@ -132,21 +132,21 @@ public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdap
         }
 
         public void bind(RegisteredBus bus) {
-            // 등록한 버스+정류장 조합을 명확하게 표시
+            // 버스 번호 (간결하게)
             binding.tvRouteNo.setText(bus.getRouteNo() + "번");
 
-            // 정류장명을 메인으로 표시
-            StringBuilder mainInfo = new StringBuilder();
-            mainInfo.append("📍 ").append(bus.getNodeName());
-
-            // 방향 정보가 있으면 추가
-            if (bus.getDirectionName() != null && !bus.getDirectionName().isEmpty()
-                && !bus.getDirectionName().equals("수동 등록")) {
-                mainInfo.append("\n🚌 ").append(bus.getDirectionName()).append(" 방면");
+            // 정류장명만 간결하게 표시
+            String nodeName = bus.getNodeName();
+            if (nodeName.length() > 12) {
+                nodeName = nodeName.substring(0, 12) + "...";
             }
-
-            binding.tvNodeName.setText(mainInfo.toString());
-            binding.tvDirection.setVisibility(View.GONE); // 정류장명에 포함시켰으므로 숨김
+            binding.tvNodeName.setText(nodeName);
+            // 초기 상태 설정
+            binding.tvArrivalTime.setVisibility(View.GONE);
+            binding.tvWalkingTime.setVisibility(View.GONE);
+            binding.tvSmartStatus.setVisibility(View.GONE);
+            binding.tvErrorState.setVisibility(View.GONE);
+            binding.progressBarItem.setVisibility(View.VISIBLE);
 
             // 도착 정보 설정
             String key = bus.getNodeId() + "_" + bus.getRouteId();
@@ -156,63 +156,29 @@ public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdap
             }
 
             if (arrival != null) {
-                // 등록한 버스가 해당 정류장에 도착하는 정보 표시
+                // 버스 정보가 있는 경우
                 binding.progressBarItem.setVisibility(View.GONE);
                 binding.tvErrorState.setVisibility(View.GONE);
                 binding.tvArrivalTime.setVisibility(View.VISIBLE);
-                binding.tvStationCount.setVisibility(View.VISIBLE);
 
-                // 메인 도착 시간 표시 - 더 강조
+                // 도착 시간 간결하게 표시
                 String arrivalText = arrival.getFormattedArrTime();
-                if (arrival.getArrTime() <= 3) {
-                    // 3분 이하면 빨간색으로 강조
-                    binding.tvArrivalTime.setText("🚨 " + arrivalText + " 후 도착!");
-                    binding.tvArrivalTime.setTextColor(context.getResources().getColor(android.R.color.holo_red_dark));
-                } else if (arrival.getArrTime() <= 5) {
-                    // 5분 이하면 주황색
-                    binding.tvArrivalTime.setText("⚡ " + arrivalText + " 후 도착");
-                    binding.tvArrivalTime.setTextColor(context.getResources().getColor(android.R.color.holo_orange_dark));
-                } else {
-                    // 일반적인 경우
-                    binding.tvArrivalTime.setText("⏰ " + arrivalText + " 후 도착");
-                    binding.tvArrivalTime.setTextColor(context.getResources().getColor(R.color.ios_blue));
+                // "3분 후" -> "3분"으로 간소화
+                if (arrivalText.contains("분 후")) {
+                    arrivalText = arrivalText.replace("분 후", "분");
+                } else if (arrivalText.contains("곧 도착")) {
+                    arrivalText = "곧";
                 }
+                binding.tvArrivalTime.setText(arrivalText);
 
-                // 정류장 수 정보
-                String stationText = arrival.getFormattedStationCount();
-                if (stationText != null && !stationText.isEmpty()) {
-                    binding.tvStationCount.setText("📍 " + stationText + " 전");
-                } else {
-                    binding.tvStationCount.setText("📍 정류장 정보 없음");
-                }
-
-                // 도보 시간과 버스 도착 시간을 비교하여 스마트 알림 표시
+                // 스마트 알림 표시
                 showSmartNotification(bus, arrival);
             } else {
-                // 도착 정보가 없는 경우 - 더 구체적인 상태 표시
-                binding.tvArrivalTime.setVisibility(View.GONE);
-                binding.tvStationCount.setVisibility(View.GONE);
+                // 도착 정보가 없는 경우
                 binding.progressBarItem.setVisibility(View.GONE);
+                binding.tvArrivalTime.setVisibility(View.GONE);
                 binding.tvErrorState.setVisibility(View.VISIBLE);
-
-                // 현재 시간을 기준으로 상태 메시지 결정
-                java.util.Calendar cal = java.util.Calendar.getInstance();
-                int hour = cal.get(java.util.Calendar.HOUR_OF_DAY);
-
-                if (hour >= 23 || hour < 5) {
-                    // 심야 시간대
-                    binding.tvErrorState.setText("🌙 심야 운행 종료");
-                } else if (hour >= 5 && hour < 7) {
-                    // 이른 아침
-                    binding.tvErrorState.setText("🌅 운행 준비 중");
-                } else {
-                    // 일반 운행 시간대
-                    binding.tvErrorState.setText("🚌 다음 버스 대기 중");
-                }
             }
-
-            // 도보 시간 계산 및 표시
-            calculateAndDisplayWalkingTime(bus);
 
             // 클릭 리스너
             binding.getRoot().setOnClickListener(v -> {
@@ -243,46 +209,7 @@ public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdap
             }
         }
 
-        /**
-         * 도보 시간 계산 및 표시
-         */
-        private void calculateAndDisplayWalkingTime(RegisteredBus bus) {
-            // 정류장 위치 정보가 있는지 확인
-            if (bus.getLatitude() == 0.0 && bus.getLongitude() == 0.0) {
-                binding.walkingTimeContainer.setVisibility(View.GONE);
-                return;
-            }
 
-            // 현재 위치 가져오기
-            Location currentLocation = locationService.getLastLocation();
-            if (currentLocation == null) {
-                binding.walkingTimeContainer.setVisibility(View.GONE);
-                return;
-            }
-
-            // 도보 시간 계산 (백그라운드에서)
-            new Thread(() -> {
-                try {
-                    Future<Integer> walkingTimeFuture = walkingTimeCalculator.calculateWalkingTime(
-                            currentLocation.getLatitude(), currentLocation.getLongitude(),
-                            bus.getLatitude(), bus.getLongitude());
-
-                    int walkingTimeMinutes = walkingTimeFuture.get();
-
-                    // UI 스레드에서 업데이트
-                    binding.getRoot().post(() -> {
-                        binding.walkingTimeContainer.setVisibility(View.VISIBLE);
-                        binding.tvWalkingTime.setText("도보 " + walkingTimeMinutes + "분");
-                    });
-
-                } catch (Exception e) {
-                    // 오류 발생 시 숨김
-                    binding.getRoot().post(() -> {
-                        binding.walkingTimeContainer.setVisibility(View.GONE);
-                    });
-                }
-            }).start();
-        }
 
         /**
          * 로딩 상태 표시
@@ -290,7 +217,8 @@ public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdap
         public void showLoading() {
             binding.progressBarItem.setVisibility(View.VISIBLE);
             binding.tvArrivalTime.setVisibility(View.GONE);
-            binding.tvStationCount.setVisibility(View.GONE);
+            binding.tvWalkingTime.setVisibility(View.GONE);
+            binding.tvSmartStatus.setVisibility(View.GONE);
             binding.tvErrorState.setVisibility(View.GONE);
         }
 
@@ -300,18 +228,29 @@ public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdap
         public void showError(String message) {
             binding.progressBarItem.setVisibility(View.GONE);
             binding.tvArrivalTime.setVisibility(View.GONE);
-            binding.tvStationCount.setVisibility(View.GONE);
+            binding.tvWalkingTime.setVisibility(View.GONE);
+            binding.tvSmartStatus.setVisibility(View.GONE);
             binding.tvErrorState.setVisibility(View.VISIBLE);
-            binding.tvErrorState.setText(message);
         }
 
         /**
-         * 스마트 알림 표시 - 도보 시간과 버스 도착 시간을 비교
+         * 스마트 알림 표시 - 새로운 로직 적용
          */
         private void showSmartNotification(RegisteredBus bus, BusArrival arrival) {
+            // 정류장 위치 정보가 없으면 건너뛰기
+            if (bus.getLatitude() == 0.0 && bus.getLongitude() == 0.0) {
+                binding.tvWalkingTime.setVisibility(View.GONE);
+                binding.tvSmartStatus.setVisibility(View.GONE);
+                return;
+            }
+
             // 현재 위치 가져오기
             Location currentLocation = locationService.getLastLocation();
-            if (currentLocation == null) return;
+            if (currentLocation == null) {
+                binding.tvWalkingTime.setVisibility(View.GONE);
+                binding.tvSmartStatus.setVisibility(View.GONE);
+                return;
+            }
 
             // 도보 시간 계산 (백그라운드에서)
             new Thread(() -> {
@@ -323,41 +262,52 @@ public class RegisteredBusAdapter extends RecyclerView.Adapter<RegisteredBusAdap
                     int walkingTimeMinutes = walkingTimeFuture.get();
                     int busArrivalMinutes = arrival.getArrTime();
 
-                    // UI 스레드에서 알림 표시
+                    // UI 스레드에서 업데이트
                     binding.getRoot().post(() -> {
-                        showTimingAdvice(walkingTimeMinutes, busArrivalMinutes);
+                        // 도보 시간 표시
+                        binding.tvWalkingTime.setVisibility(View.VISIBLE);
+                        binding.tvWalkingTime.setText("🚶‍♂️ " + walkingTimeMinutes + "분");
+
+                        // 스마트 상태 메시지 표시
+                        showSmartStatus(walkingTimeMinutes, busArrivalMinutes);
                     });
 
                 } catch (Exception e) {
-                    // 오류 발생 시 무시
+                    // 오류 발생 시 숨김
+                    binding.getRoot().post(() -> {
+                        binding.tvWalkingTime.setVisibility(View.GONE);
+                        binding.tvSmartStatus.setVisibility(View.GONE);
+                    });
                 }
             }).start();
         }
 
         /**
-         * 타이밍 조언 표시
+         * 스마트 상태 메시지 표시 - 새로운 로직
          */
-        private void showTimingAdvice(int walkingTime, int busArrival) {
-            String advice = "";
-            int timeDiff = busArrival - walkingTime;
+        private void showSmartStatus(int walkingTime, int busArrival) {
+            String statusMessage = "";
+            int statusColor = R.color.text_secondary;
 
-            if (timeDiff <= 1) {
-                advice = "🏃‍♂️ 지금 출발하세요!";
-                binding.tvStationCount.setTextColor(context.getResources().getColor(android.R.color.holo_red_dark));
-            } else if (timeDiff <= 3) {
-                advice = "⚡ 곧 출발 준비하세요";
-                binding.tvStationCount.setTextColor(context.getResources().getColor(android.R.color.holo_orange_dark));
-            } else if (timeDiff <= 5) {
-                advice = "👍 여유있게 준비하세요";
-                binding.tvStationCount.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
+            // 새로운 로직: 버스 도착시간 < 도보시간 × 0.8 일 때
+            if (busArrival < walkingTime * 0.8) {
+                statusMessage = "😅 다음 버스 확인해보세요";
+                statusColor = android.R.color.holo_orange_dark;
+            } else if (busArrival <= walkingTime + 1) {
+                statusMessage = "🏃‍♂️ 지금 출발!";
+                statusColor = android.R.color.holo_red_dark;
+            } else if (busArrival <= walkingTime + 3) {
+                statusMessage = "⚡ 준비하세요";
+                statusColor = android.R.color.holo_orange_dark;
             } else {
-                advice = "😌 아직 시간 여유가 있어요";
-                binding.tvStationCount.setTextColor(context.getResources().getColor(R.color.text_secondary));
+                statusMessage = "👍 여유있음";
+                statusColor = android.R.color.holo_green_dark;
             }
 
-            if (!advice.isEmpty()) {
-                binding.tvStationCount.setText(binding.tvStationCount.getText() + " • " + advice);
-            }
+            // 스마트 상태 표시
+            binding.tvSmartStatus.setVisibility(View.VISIBLE);
+            binding.tvSmartStatus.setText(statusMessage);
+            binding.tvSmartStatus.setTextColor(context.getResources().getColor(statusColor));
         }
     }
 
