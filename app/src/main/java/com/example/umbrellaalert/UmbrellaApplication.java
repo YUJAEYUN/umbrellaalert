@@ -5,6 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.os.Build;
 
+import com.example.umbrellaalert.service.LocationSearchService;
 import com.example.umbrellaalert.service.PersistentNotificationService;
 import com.example.umbrellaalert.service.WeatherUpdateService;
 import com.example.umbrellaalert.ui.settings.ThemeActivity;
@@ -22,6 +23,9 @@ public class UmbrellaApplication extends Application {
 
         // 저장된 테마 적용
         ThemeActivity.applyTheme(this);
+
+        // 네이버 클라우드 플랫폼 Geocoding API 초기화
+        LocationSearchService.initialize(this);
 
         // 알림 채널 생성
         createNotificationChannel();

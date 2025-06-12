@@ -8,7 +8,10 @@ import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.data.model.HourlyForecast;
 import com.example.umbrellaalert.weather.SimpleWeatherService;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -87,8 +90,60 @@ public class WeatherManager {
      * 우산 알림 서비스를 위한 모든 위치에 대한 날씨 체크
      */
     public void checkAllLocationsWeather(List<Location> locations, WeatherCheckCallback callback) {
-        // TODO: 필요시 구현
-        Log.d(TAG, "checkAllLocationsWeather - 구현 예정");
+        if (locations == null || locations.isEmpty()) {
+            Log.d(TAG, "체크할 위치가 없습니다");
+            callback.onWeatherCheckCompleted(false);
+            return;
+        }
+
+        // 활성화된 위치만 필터링
+        List<Location> enabledLocations = new ArrayList<>();
+        for (Location location : locations) {
+            if (location.isNotificationEnabled()) {
+                enabledLocations.add(location);
+            }
+        }
+
+        if (enabledLocations.isEmpty()) {
+            Log.d(TAG, "활성화된 위치가 없습니다");
+            callback.onWeatherCheckCompleted(false);
+            return;
+        }
+
+        Log.d(TAG, "활성화된 위치 " + enabledLocations.size() + "개에 대해 날씨 체크 시작");
+
+        // 비동기로 각 위치의 날씨 정보 수집
+        AtomicInteger completedCount = new AtomicInteger(0);
+        AtomicBoolean anyLocationNeedsUmbrella = new AtomicBoolean(false);
+
+        for (Location location : enabledLocations) {
+            getCurrentWeather(location.getLatitude(), location.getLongitude(), new WeatherCallback() {
+                @Override
+                public void onSuccess(Weather weather) {
+                    Log.d(TAG, "위치 '" + location.getName() + "' 날씨: " + weather.getWeatherCondition() +
+                              ", 우산 필요: " + weather.isNeedUmbrella());
+
+                    if (weather.isNeedUmbrella()) {
+                        anyLocationNeedsUmbrella.set(true);
+                    }
+
+                    // 모든 위치 체크 완료 시 콜백 호출
+                    if (completedCount.incrementAndGet() == enabledLocations.size()) {
+                        callback.onWeatherCheckCompleted(anyLocationNeedsUmbrella.get());
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "위치 '" + location.getName() + "' 날씨 체크 실패: " + error);
+
+                    // 에러가 발생해도 카운트 증가 (다른 위치들은 계속 체크)
+                    if (completedCount.incrementAndGet() == enabledLocations.size()) {
+                        callback.onWeatherCheckCompleted(anyLocationNeedsUmbrella.get());
+                    }
+                }
+            });
+        }
     }
 
     // === 콜백 인터페이스 ===

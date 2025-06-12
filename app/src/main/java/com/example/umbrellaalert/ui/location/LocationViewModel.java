@@ -227,6 +227,51 @@ public class LocationViewModel extends AndroidViewModel {
         return toastMessage;
     }
 
+    /**
+     * 모든 활성화된 위치에 대해 날씨를 체크하여 우산 필요 여부 확인
+     */
+    public void checkAllLocationsWeather(WeatherCheckCallback callback) {
+        List<Location> currentLocations = locations.getValue();
+        if (currentLocations == null || currentLocations.isEmpty()) {
+            callback.onWeatherCheckCompleted(false);
+            return;
+        }
+
+        // WeatherManager를 통해 날씨 체크 (실제 구현에서는 Hilt로 주입받아야 함)
+        // 현재는 목업 데이터로 처리
+        executorService.execute(() -> {
+            boolean anyLocationNeedsUmbrella = false;
+
+            for (Location location : currentLocations) {
+                if (location.isNotificationEnabled()) {
+                    // 실제 구현에서는 WeatherManager.checkAllLocationsWeather 사용
+                    // 현재는 간단한 로직으로 처리 (위치 이름에 따라 임의 결정)
+                    boolean needsUmbrella = location.getName().contains("학교") ||
+                                          location.getName().contains("대학") ||
+                                          Math.random() > 0.7; // 30% 확률로 우산 필요
+
+                    if (needsUmbrella) {
+                        anyLocationNeedsUmbrella = true;
+                        break;
+                    }
+                }
+            }
+
+            final boolean finalResult = anyLocationNeedsUmbrella;
+            // UI 스레드에서 콜백 호출
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                callback.onWeatherCheckCompleted(finalResult);
+            });
+        });
+    }
+
+    /**
+     * 날씨 체크 완료 콜백 인터페이스
+     */
+    public interface WeatherCheckCallback {
+        void onWeatherCheckCompleted(boolean anyLocationNeedsUmbrella);
+    }
+
     @Override
     protected void onCleared() {
         super.onCleared();

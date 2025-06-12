@@ -148,47 +148,31 @@ public class MapLocationPickerActivity extends AppCompatActivity implements OnMa
     }
     
     private void getAddressFromCoordinates(double latitude, double longitude) {
-        try {
-            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
-            if (addresses != null && !addresses.isEmpty()) {
-                Address address = addresses.get(0);
-                
-                // 주소 정보 조합
-                StringBuilder addressBuilder = new StringBuilder();
-                
-                if (address.getThoroughfare() != null) {
-                    addressBuilder.append(address.getThoroughfare());
-                }
-                if (address.getSubThoroughfare() != null) {
-                    if (addressBuilder.length() > 0) addressBuilder.append(" ");
-                    addressBuilder.append(address.getSubThoroughfare());
-                }
-                if (address.getSubLocality() != null) {
-                    if (addressBuilder.length() > 0) addressBuilder.append(", ");
-                    addressBuilder.append(address.getSubLocality());
-                }
-                if (address.getLocality() != null) {
-                    if (addressBuilder.length() > 0) addressBuilder.append(", ");
-                    addressBuilder.append(address.getLocality());
-                }
-                
-                selectedLocationName = addressBuilder.toString();
-                if (selectedLocationName.isEmpty()) {
+        // 네이버 클라우드 플랫폼 Reverse Geocoding API 사용
+        new Thread(() -> {
+            try {
+                String address = com.example.umbrellaalert.service.LocationSearchService
+                    .getAddressFromCoordinates(latitude, longitude);
+
+                selectedLocationName = address;
+                if (selectedLocationName == null || selectedLocationName.isEmpty()) {
                     selectedLocationName = String.format("위치 (%.4f, %.4f)", latitude, longitude);
                 }
-                
-                // UI 업데이트
-                binding.textSelectedLocation.setText(selectedLocationName);
-                
-            } else {
+
+                // UI 업데이트는 메인 스레드에서
+                runOnUiThread(() -> {
+                    binding.textSelectedLocation.setText(selectedLocationName);
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "네이버 Reverse Geocoding 실패", e);
                 selectedLocationName = String.format("위치 (%.4f, %.4f)", latitude, longitude);
-                binding.textSelectedLocation.setText(selectedLocationName);
+
+                runOnUiThread(() -> {
+                    binding.textSelectedLocation.setText(selectedLocationName);
+                });
             }
-        } catch (IOException e) {
-            Log.e(TAG, "주소 변환 실패", e);
-            selectedLocationName = String.format("위치 (%.4f, %.4f)", latitude, longitude);
-            binding.textSelectedLocation.setText(selectedLocationName);
-        }
+        }).start();
     }
     
     private void moveToCurrentLocation() {

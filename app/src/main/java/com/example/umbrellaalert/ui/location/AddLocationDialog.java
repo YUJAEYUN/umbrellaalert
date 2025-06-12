@@ -106,16 +106,28 @@ public class AddLocationDialog extends DialogFragment implements LocationSearchA
     }
 
     /**
-     * 장소 검색 수행
+     * 장소 검색 수행 (네이버 API 사용, 비동기)
      */
     private void performSearch(String query) {
-        List<SearchLocation> results = LocationSearchService.searchByName(query);
-        if (results.isEmpty()) {
-            hideSearchResults();
-        } else {
-            searchAdapter.setSearchResults(results);
-            binding.recyclerSearchResults.setVisibility(View.VISIBLE);
-        }
+        // 검색 중 표시
+        binding.recyclerSearchResults.setVisibility(View.VISIBLE);
+
+        // 비동기 검색 수행
+        new Thread(() -> {
+            List<SearchLocation> results = LocationSearchService.searchByName(query);
+
+            // UI 업데이트는 메인 스레드에서
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (results.isEmpty()) {
+                        hideSearchResults();
+                    } else {
+                        searchAdapter.setSearchResults(results);
+                        binding.recyclerSearchResults.setVisibility(View.VISIBLE);
+                    }
+                });
+            }
+        }).start();
     }
 
     /**

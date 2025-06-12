@@ -22,6 +22,7 @@ import com.example.umbrellaalert.data.model.Weather;
 import com.example.umbrellaalert.databinding.FragmentHomeBinding;
 import com.example.umbrellaalert.service.LocationService;
 import com.example.umbrellaalert.ui.home.WeatherViewModel;
+import com.example.umbrellaalert.ui.location.LocationViewModel;
 
 import java.util.Locale;
 
@@ -35,6 +36,7 @@ public class HomeFragment extends Fragment {
 
     private FragmentHomeBinding binding;
     private WeatherViewModel weatherViewModel;
+    private LocationViewModel locationViewModel;
     private LocationService locationService;
 
     @Override
@@ -49,15 +51,21 @@ public class HomeFragment extends Fragment {
         
         // Activity의 공유 ViewModel 사용
         weatherViewModel = ((com.example.umbrellaalert.ui.main.MainActivity) requireActivity()).getSharedWeatherViewModel();
-        
+
+        // LocationViewModel 초기화
+        locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
+
         // LocationService 초기화
         locationService = LocationService.getInstance(requireContext());
-        
+
         // UI 관찰자 설정
         setupObservers();
-        
+
         // 위치 권한 확인 및 날씨 정보 로드
         checkLocationPermissionAndLoadWeather();
+
+        // 등록된 위치들의 날씨 체크 (우산 필요 여부 종합 판단)
+        checkAllLocationsWeather();
     }
 
     private void setupObservers() {
@@ -160,6 +168,60 @@ public class HomeFragment extends Fragment {
 
         // 날씨 상태 표시
         binding.weatherCondition.setText(weatherViewModel.getWeatherConditionText(weather.getWeatherCondition()));
+    }
+
+    /**
+     * 등록된 모든 위치의 날씨를 체크하여 우산 필요 여부 종합 판단
+     */
+    private void checkAllLocationsWeather() {
+        locationViewModel.checkAllLocationsWeather(new LocationViewModel.WeatherCheckCallback() {
+            @Override
+            public void onWeatherCheckCompleted(boolean anyLocationNeedsUmbrella) {
+                if (anyLocationNeedsUmbrella) {
+                    Log.d(TAG, "🌧️ 등록된 위치 중 우산이 필요한 곳이 있습니다");
+                    // 우산 필요 메시지 업데이트
+                    updateUmbrellaMessageForMultipleLocations(true);
+                } else {
+                    Log.d(TAG, "☀️ 등록된 모든 위치에서 우산이 필요하지 않습니다");
+                    // 우산 불필요 메시지 업데이트
+                    updateUmbrellaMessageForMultipleLocations(false);
+                }
+            }
+        });
+    }
+
+    /**
+     * 여러 위치 날씨 정보를 종합한 우산 메시지 업데이트
+     */
+    private void updateUmbrellaMessageForMultipleLocations(boolean needUmbrella) {
+        String message;
+        if (needUmbrella) {
+            String[] rainMessages = {
+                "등록된 장소 중 비가 올 곳이 있다냥! ☔️",
+                "우산 챙기는 게 좋겠다냥! 🌧️",
+                "비 소식이 있다냥! 우산 준비! ☂️",
+                "오늘은 우산이 필요한 날이다냥! 🌦️"
+            };
+            int randomIndex = (int) (Math.random() * rainMessages.length);
+            message = rainMessages[randomIndex];
+        } else {
+            String[] sunnyMessages = {
+                "모든 장소가 맑다냥! ☀️",
+                "우산 없이도 괜찮다냥! 😸",
+                "완벽한 날씨다냥! 🌤️",
+                "비 걱정 없는 하루다냥! ☀️"
+            };
+            int randomIndex = (int) (Math.random() * sunnyMessages.length);
+            message = sunnyMessages[randomIndex];
+        }
+
+        // UI 업데이트는 메인 스레드에서
+        requireActivity().runOnUiThread(() -> {
+            if (binding != null) {
+                binding.umbrellaMessage.setText(message);
+                binding.umbrellaMessage.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
 
