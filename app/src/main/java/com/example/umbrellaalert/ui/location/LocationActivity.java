@@ -12,6 +12,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.umbrellaalert.data.model.Location;
 import com.example.umbrellaalert.databinding.ActivityLocationBinding;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint
 public class LocationActivity extends AppCompatActivity implements LocationAdapter.LocationListener {
 
     private ActivityLocationBinding binding;

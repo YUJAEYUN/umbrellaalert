@@ -171,10 +171,21 @@ public class NaverGeocodingApiClient {
                 if (!displayAddress.isEmpty()) {
                     double lat = address.getDouble("y");
                     double lng = address.getDouble("x");
-                    
+
                     // 장소명은 주소에서 추출하거나 간단한 이름 생성
                     String placeName = extractPlaceNameFromAddress(displayAddress);
-                    
+
+                    // 만약 영어 주소가 있다면 더 구체적인 이름을 시도
+                    if (!englishAddress.isEmpty() && englishAddress.contains(",")) {
+                        String[] englishParts = englishAddress.split(",");
+                        if (englishParts.length > 0) {
+                            String englishPlaceName = englishParts[0].trim();
+                            if (!englishPlaceName.isEmpty() && englishPlaceName.length() < placeName.length()) {
+                                placeName = englishPlaceName;
+                            }
+                        }
+                    }
+
                     SearchLocation location = new SearchLocation(
                         placeName,
                         displayAddress,
@@ -182,7 +193,7 @@ public class NaverGeocodingApiClient {
                         lng,
                         "검색결과"
                     );
-                    
+
                     results.add(location);
                     Log.d(TAG, "검색 결과 추가: " + placeName + " (" + lat + ", " + lng + ")");
                 }
@@ -246,14 +257,23 @@ public class NaverGeocodingApiClient {
         if (address == null || address.isEmpty()) {
             return "검색된 장소";
         }
-        
-        // 주소의 마지막 부분을 장소명으로 사용
+
+        // 주소에서 의미있는 장소명 추출
         String[] parts = address.split(" ");
-        if (parts.length > 0) {
-            return parts[parts.length - 1];
+
+        // 마지막 2-3개 부분을 조합하여 장소명 생성
+        StringBuilder placeName = new StringBuilder();
+        int startIndex = Math.max(0, parts.length - 3);
+
+        for (int i = startIndex; i < parts.length; i++) {
+            if (placeName.length() > 0) {
+                placeName.append(" ");
+            }
+            placeName.append(parts[i]);
         }
-        
-        return "검색된 장소";
+
+        String result = placeName.toString();
+        return result.isEmpty() ? "검색된 장소" : result;
     }
 
     /**
