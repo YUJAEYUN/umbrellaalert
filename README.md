@@ -27,7 +27,7 @@
 ## 🚀 주요 기능
 
 ### 🌦️ 스마트 날씨 알림
-- **기상청 API** 연동으로 정확한 날씨 예보
+- **OpenWeather API** 연동으로 정확한 실시간 날씨 정보
 - **우산 필요도 분석**: 강수확률, 강수량, 사용자 이동거리 종합 고려
 - **12시간 상세 예보**: 3시간 간격 날씨 변화 추이
 - **고양이 날씨 분석가**: 날씨 데이터를 분석하여 재미있는 메시지와 추천사항 제공
@@ -42,6 +42,8 @@
 - **네이버 클라우드 플랫폼 지도** 연동
 - **GPS 기반 위치 추적**: 실시간 위치 기반 맞춤 정보
 - **지도 기반 위치 설정**: 직관적인 지도 인터페이스로 집/학교 위치 등록
+- **장소 검색**: 네이버 Geocoding API를 통한 정확한 장소 검색
+- **주소 변환**: Reverse Geocoding으로 좌표를 읽기 쉬운 주소로 변환
 
 ### 🔔 스마트 알림 시스템
 - **위젯 지원**: 홈 화면에서 바로 확인 가능한 날씨 + 버스 정보
@@ -70,9 +72,9 @@
 - **Maps**: Naver Cloud Platform Maps SDK
 
 ### API 연동
-- **기상청 단기예보 API**: 날씨 정보
-- **공공데이터 버스정보 API**: 실시간 버스 도착 정보  
-- **네이버 클라우드 플랫폼**: 지도 서비스, 길찾기 API
+- **OpenWeather API**: 실시간 날씨 정보 및 5일 예보
+- **공공데이터 버스정보 API**: 실시간 버스 도착 정보
+- **네이버 클라우드 플랫폼**: 지도 서비스, Geocoding, Reverse Geocoding, Places API
 
 ## 📋 시스템 요구사항
 
@@ -93,22 +95,23 @@ cd umbrellaalert
 프로젝트 루트에 `local.properties` 파일을 생성하고 다음 API 키들을 추가하세요:
 
 ```properties
-# 기상청 공공데이터포털 API 키
-weather.api.service.key=YOUR_WEATHER_API_KEY
+# OpenWeather API 키 (날씨 정보)
+weather.api.service.key=YOUR_OPENWEATHER_API_KEY
 
-# 버스정보 공공데이터포털 API 키  
+# 버스정보 공공데이터포털 API 키
 bus.api.service.key=YOUR_BUS_API_KEY
 
-# 네이버 클라우드 플랫폼 지도 API 클라이언트 ID
+# 네이버 클라우드 플랫폼 API 키
 naver.map.client.id=YOUR_NAVER_MAP_CLIENT_ID
+naver.map.client.secret=YOUR_NAVER_MAP_CLIENT_SECRET
 ```
 
 ### 3. API 키 발급 방법
 
-#### 🌤️ 기상청 API (날씨 정보)
-1. [공공데이터포털](https://www.data.go.kr/) 회원가입
-2. "기상청_단기예보 ((구)동네예보) 조회서비스" 검색
-3. 활용신청 → 승인 후 인증키 발급
+#### 🌤️ OpenWeather API (날씨 정보)
+1. [OpenWeather](https://openweathermap.org/api) 회원가입
+2. "Current Weather Data" 및 "5 Day / 3 Hour Forecast" API 선택
+3. 무료 플랜으로 API 키 발급 (월 1,000회 호출 제한)
 4. `weather.api.service.key`에 입력
 
 #### 🚌 버스 API (교통 정보)
@@ -119,12 +122,16 @@ naver.map.client.id=YOUR_NAVER_MAP_CLIENT_ID
 3. 활용신청 → 승인 후 인증키 발급
 4. `bus.api.service.key`에 입력
 
-#### 🗺️ 네이버 클라우드 플랫폼 (지도)
+#### 🗺️ 네이버 클라우드 플랫폼 (지도 및 위치 서비스)
 1. [네이버 클라우드 플랫폼](https://www.ncloud.com/) 회원가입
 2. Console → Services → AI·Application Service → Maps
 3. Application 등록 → Mobile Dynamic Map 선택
-4. 클라이언트 ID 발급
-5. `naver.map.client.id`에 입력
+4. 추가로 다음 서비스들도 활성화:
+   - **Geocoding**: 주소/장소명을 좌표로 변환
+   - **Reverse Geocoding**: 좌표를 주소로 변환
+   - **Places**: POI(관심지점) 검색
+5. 클라이언트 ID와 클라이언트 Secret 발급
+6. `naver.map.client.id`와 `naver.map.client.secret`에 입력
 
 ### 4. 빌드 및 실행
 ```bash
